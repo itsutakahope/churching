@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare } from 'lucide-react'; // 新增 CheckSquare icon
+import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle} from 'lucide-react'; // 新增 CheckSquare icon
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -85,6 +85,7 @@ const PurchaseRequestBoard = () => {
     description: '',
     requester: '',
     accountingCategory: '',
+    priority: 'general', // <-- 新增：緊急程度
     isAlreadyPurchased: false, // <-- 新增：是否已購買的旗標
     purchaseAmount: '',       // <-- 新增：購買金額
   });
@@ -111,6 +112,11 @@ const PurchaseRequestBoard = () => {
   const statusLabels = {
     'pending': { text: '待購買', color: 'bg-yellow-100 text-yellow-800' },
     'purchased': { text: '已購買', color: 'bg-green-100 text-green-800' }
+  };
+
+  const priorityLabels = {
+    'general': { text: '一般', color: 'bg-gray-100 text-gray-800' },
+    'urgent': { text: '緊急', color: 'bg-red-100 text-red-800' }
   };
 
   const fetchRequests = useCallback(async () => {
@@ -217,6 +223,7 @@ const PurchaseRequestBoard = () => {
         text: formData.title.trim(),
         description: formData.description.trim(),
         accountingCategory: formData.accountingCategory.trim(),
+        priority: formData.priority, // <-- 新增：傳遞緊急程度
       };
 
       // 如果使用者已購買，則在 payload 中加入購買資訊
@@ -254,9 +261,8 @@ const PurchaseRequestBoard = () => {
     }
 
     // 3. 不再呼叫 fetchRequests()，直接處理 UI
-    setFormData({ title: '', description: '', requester: currentUser?.displayName || '', accountingCategory: '', isAlreadyPurchased: false, purchaseAmount: '' });
+    setFormData({ title: '', description: '', requester: currentUser?.displayName || '', accountingCategory: '', priority: 'general', isAlreadyPurchased: false, purchaseAmount: '' });
     setShowModal(false);
-
     // ▲▲▲ 核心修改結束 ▲▲▲
 
   } catch (error) {
@@ -474,10 +480,41 @@ const PurchaseRequestBoard = () => {
   };
 
   const filteredRequests = useMemo(() => requests.filter(req => filter === 'all' || req.status === filter), [requests, filter]);
-  const sortedRequests = useMemo(() => [...filteredRequests].sort((a, b) => {
-    const dateA = new Date(a.createdAt || 0); const dateB = new Date(b.createdAt || 0);
-    return sortBy === 'newest' ? dateB - dateA : dateA - dateB;
-  }), [filteredRequests, sortBy]);
+  
+  const sortedRequests = useMemo(() => {
+    const priorityValues = { 'urgent': 2, 'general': 1 };
+    
+    return [...filteredRequests].sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        case 'oldest':
+          return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+        case 'priority_desc': {
+          const priorityBValue = priorityValues[b.priority] || 0;
+          const priorityAValue = priorityValues[a.priority] || 0;
+          if (priorityBValue !== priorityAValue) {
+            return priorityBValue - priorityAValue; // 緊急優先
+          }
+          // 同優先級則最新的排前面
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        }
+        case 'priority_asc': {
+          const priorityBValue = priorityValues[b.priority] || 0;
+          const priorityAValue = priorityValues[a.priority] || 0;
+          if (priorityAValue !== priorityBValue) {
+            return priorityAValue - priorityBValue; // 一般優先
+          }
+          // 同優先級則最新的排前面
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        }
+        default:
+          // 預設使用最新建立排序
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }
+    });
+  }, [filteredRequests, sortBy]);
+
 
   const filteredPurchaseRecords = useMemo(() => {
     // 修正日期篩選邏輯，透過將日期轉換為 UTC 時間來避免時區問題
@@ -615,6 +652,7 @@ const PurchaseRequestBoard = () => {
         description: '', 
         requester: currentUser?.displayName || '',
         accountingCategory: '',
+        priority: 'general',
         isAlreadyPurchased: false,
         purchaseAmount: ''
       });
@@ -661,6 +699,8 @@ const PurchaseRequestBoard = () => {
             >
               <option value="newest">最新建立</option>
               <option value="oldest">最舊建立</option>
+              <option value="priority_desc">緊急優先</option>
+              <option value="priority_asc">一般優先</option>
             </select>
           </div>
         </div>
@@ -714,12 +754,19 @@ const PurchaseRequestBoard = () => {
           {sortedRequests.map((request) => {
             const isExpanded = !!expandedCards[request.id];
             const isLongText = request.description && request.description.length > 50;
+            const isUrgent = request.priority === 'urgent';
             return (
-              <div key={request.id} className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <div className="p-4 pb-0">
+              <div key={request.id} className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-300 ${isUrgent ? 'border-red-400' : 'border-gray-200'} ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <div className="p-4 pb-0 flex justify-between items-start">
                   <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
                     {statusLabels[request.status]?.text || request.status}
                   </span>
+                  {isUrgent && (
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
+                      <AlertTriangle size={14} />
+                      {priorityLabels.urgent.text}
+                    </span>
+                  )}
                 </div>
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{request.title || request.text}</h3>
@@ -787,7 +834,19 @@ const PurchaseRequestBoard = () => {
                           <div> 
                             <label htmlFor="formTitle" className="block text-sm font-medium text-gray-700 mb-2"> 需求標題* </label> 
                             <input id="formTitle" type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="請輸入標題..." className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required /> 
-                            </div> 
+                            </div>
+                            <div>
+                              <label htmlFor="formPriority" className="block text-sm font-medium text-gray-700 mb-2"> 緊急程度 </label>
+                              <select 
+                                id="formPriority" 
+                                value={formData.priority} 
+                                onChange={(e) => setFormData({...formData, priority: e.target.value})} 
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="general">一般</option>
+                                <option value="urgent">緊急</option>
+                              </select>
+                            </div>
                             <div> 
                               <label htmlFor="formDescription" className="block text-sm font-medium text-gray-700 mb-2"> 詳細描述 </label> 
                               <textarea id="formDescription" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} placeholder="請描述需求的詳細內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /> 

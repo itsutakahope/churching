@@ -106,7 +106,7 @@ app.get('/api/users', verifyFirebaseToken, async (req, res) => {
 app.post('/api/requirements', verifyFirebaseToken, async (req, res) => {
   try {
     // 👇 解構出所有可能的欄位
-    const { text, description, accountingCategory, status, purchaseAmount, purchaseDate } = req.body;
+    const { text, description, accountingCategory, status, purchaseAmount, purchaseDate, priority } = req.body;
 
     if (!text) {
       return res.status(400).json({ message: 'Text (title) is required' });
@@ -116,6 +116,7 @@ app.post('/api/requirements', verifyFirebaseToken, async (req, res) => {
       text,
       description: description || "",
       accountingCategory: accountingCategory || "",
+      priority: priority || 'general', // <-- 新增：設置緊急程度，預設為 'general'
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       userId: req.user.uid,
