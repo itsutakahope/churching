@@ -322,40 +322,6 @@ app.get('/api/requirements', verifyFirebaseToken, async (req, res) => {
   }
 });
 
-// GET /api/requirements/:id (Read One)
-app.get('/api/requirements/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const doc = await db.collection('requirements').doc(id).get();
-    if (!doc.exists) {
-      return res.status(404).json({ message: 'Requirement not found' });
-    }
-    const data = doc.data();
-
-    // Fetch comments
-    const commentsSnapshot = await db.collection('requirements').doc(id).collection('comments').orderBy('createdAt', 'asc').get();
-    const comments = commentsSnapshot.docs.map(commentDoc => ({
-      id: commentDoc.id,
-      ...commentDoc.data(),
-      createdAt: commentDoc.data().createdAt?.toDate().toISOString(),
-    }));
-
-    const requesterName = data.requesterName || await getUserDisplayName(data.userId);
-
-    res.status(200).json({
-      id: doc.id,
-      ...data,
-      requesterName,
-      comments,
-      createdAt: data.createdAt?.toDate().toISOString(),
-      updatedAt: data.updatedAt?.toDate().toISOString(),
-    });
-  } catch (error) {
-    logger.error('Error fetching requirement:', error);
-    res.status(500).json({ message: 'Error fetching requirement', error: error.message });
-  }
-});
-
 // --- Comments API Endpoints ---
 
 // POST /api/requirements/:reqId/comments (Create Comment) - Protected
