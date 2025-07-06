@@ -27,21 +27,7 @@ const getUserDisplayName = async (uid) => {
   }
 };
 
-// Helper function to get user details (name and email)
-const getUserDetails = async (uid) => {
-  if (!uid) return { name: null, email: null };
-  try {
-    const userRecord = await admin.auth().getUser(uid);
-    return {
-      name: userRecord.displayName,
-      email: userRecord.email,
-    };
-  } catch (error) {
-    // 如果因為找不到用戶等原因出錯，回傳 null，避免整個 API 崩潰
-    logger.warn('Could not fetch user data for uid:', uid, error.code);
-    return { name: null, email: null };
-  }
-};
+
 // Authentication Middleware
 const verifyFirebaseToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
