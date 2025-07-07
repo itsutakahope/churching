@@ -108,7 +108,7 @@ const TithingTaskList = () => {
             case 'ACCOUNT_NOT_APPROVED':
               setError("權限不足：您的帳號正在等待管理員審核，請聯繫管理員。");
               break;
-            case 'INSUFFICENT_PERMISSIONS': // 注意：後端代碼是 INSUFFICIENT_PERMISSIONS
+            case 'INSUFFICIENT_PERMISSIONS': // 注意：後端代碼是 INSUFFICIENT_PERMISSIONS
               setError("權限不足：您需要財務同工或司庫權限才能查看此頁面。");
               break;
             default:
