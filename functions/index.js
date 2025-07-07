@@ -49,18 +49,49 @@ const verifyFirebaseToken = async (req, res, next) => {
     if (!userDoc.exists || userDoc.data().status !== 'approved') {
       logger.warn(`User ${decodedToken.uid} is not approved or profile does not exist.`);
       return res.status(403).json({
-        message: 'Forbidden. Your account requires administrator approval to access this resource.'
+        message: 'Forbidden. Your account requires administrator approval to access this resource.',
+        code: 'ACCOUNT_NOT_APPROVED' 
       });
     }
     // --- 審核邏輯結束 ---
 
-    req.user = decodedToken;
+    // ⭐ 核心修改：合併 Token 和 Firestore 的使用者資料
+    req.user = {
+      ...decodedToken, // 包含 uid, email, 和 'name' 屬性
+      ...userDoc.data()  // 包含 status, roles, 和 'displayName' 屬性
+    };
+
     logger.log('ID Token correctly decoded', decodedToken);
     next();
   } catch (error) {
     logger.error('Error while verifying Firebase ID token:', error);
     res.status(403).json({ message: 'Forbidden. Invalid token.', error: error.message });
   }
+};
+
+
+/**
+ * 中介軟體工廠函式，用於產生角色驗證的中介軟體。
+ * @param {string[]} allowedRoles - 允許存取此路由的角色陣列。
+ * @returns Express middleware function
+ */
+const verifyRole = (allowedRoles) => {
+  return (req, res, next) => {
+    const userRoles = req.user?.roles;
+
+    const hasPermission = Array.isArray(userRoles) && 
+                          userRoles.some(role => allowedRoles.includes(role));
+
+    if (!hasPermission) {
+      logger.warn(`Permission denied for user ${req.user.uid}. Required roles: ${allowedRoles.join(', ')}. User roles: ${userRoles?.join(', ')}`);
+      return res.status(403).json({ 
+        message: 'Forbidden. You do not have the required permissions to access this resource.',
+        code: 'INSUFFICIENT_PERMISSIONS' 
+      });
+    }
+
+    next();
+  };
 };
 
 // API endpoint for health check
@@ -380,7 +411,7 @@ app.delete('/api/requirements/:reqId/comments/:commentId', verifyFirebaseToken, 
 // =================================================================
 
 // GET all tithing tasks
-app.get('/api/tithe-tasks', verifyFirebaseToken, async (req, res) => {
+app.get('/api/tithe-tasks', verifyFirebaseToken, verifyRole(['finance_staff', 'treasurer']), async (req, res) => {
   try {
     const snapshot = await db.collection('tithe').orderBy('calculationTimestamp', 'desc').get();
     
@@ -403,7 +434,7 @@ app.get('/api/tithe-tasks', verifyFirebaseToken, async (req, res) => {
 });
 
 // POST a new tithing task
-app.post('/api/tithe-tasks', verifyFirebaseToken, async (req, res) => {
+app.post('/api/tithe-tasks', verifyFirebaseToken, verifyRole(['finance_staff', 'treasurer']), async (req, res) => {
   try {
     const { uid, name, email } = req.user; // 從已驗證的 token 中取得司庫資訊
     const { financeStaffUid } = req.body; // 從請求的 body 中獲取財務同工的 UID
@@ -443,7 +474,7 @@ app.post('/api/tithe-tasks', verifyFirebaseToken, async (req, res) => {
   }
 });
 
-app.get('/api/finance-staff', verifyFirebaseToken, async (req, res) => {
+app.get('/api/finance-staff', verifyFirebaseToken, verifyRole(['finance_staff', 'treasurer']), async (req, res) => {
   try {
     const requestingUserUid = req.user.uid; // 新增：取得請求者 UID
     const staffQuery = db.collection('users').where('roles', 'array-contains-any', ['finance_staff', 'treasurer']);
@@ -561,20 +592,37 @@ export const createuserprofile = functions.auth.user().onCreate(async (user) => 
 
 // New Cloud Function for Tithing Task Aggregation
 export const completeTithingTask = onCall(async (request) => {
-  // 1. Authentication check
+     // 1. 身份驗證 (Authentication) - 已有
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
   }
 
-  const { taskId } = request.data;
-  if (!taskId) {
-    throw new HttpsError('invalid-argument', 'The function must be called with a "taskId" argument.');
-  }
-
-  const taskRef = db.collection('tithe').doc(taskId);
-  const dedicationsRef = taskRef.collection('dedications');
-
   try {
+
+    const uid = request.auth.uid;
+    const userDocRef = db.collection('users').doc(uid);
+    const userDoc = await userDocRef.get();
+
+    const userRoles = userDoc.exists ? userDoc.data().roles || [] : [];
+    const allowedRoles = ['finance_staff', 'treasurer'];
+
+    if (!userDoc.exists || !userRoles.some(role => allowedRoles.includes(role))) {
+      throw new HttpsError('permission-denied', 'You do not have permission to perform this action.');
+    }
+
+    // --- 權限檢查通過 ---
+
+    // 👇 您提到的程式碼就放在這裡 👇
+    // 步驟 3: 處理傳入的參數並準備資料庫操作
+    const { taskId } = request.data;
+    if (!taskId) {
+      throw new HttpsError('invalid-argument', 'The function must be called with a "taskId" argument.');
+    }
+
+    const taskRef = db.collection('tithe').doc(taskId);
+    const dedicationsRef = taskRef.collection('dedications');
+
+
     const taskDoc = await taskRef.get();
     if (!taskDoc.exists) {
       throw new HttpsError('not-found', 'The specified task does not exist.');

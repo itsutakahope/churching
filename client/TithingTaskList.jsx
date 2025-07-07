@@ -99,7 +99,34 @@ const TithingTaskList = () => {
       
     } catch (err) {
       console.error("Error fetching tithing tasks:", err);
-      setError("無法載入奉獻計算任務。請稍後再試。");
+      // --- ▼▼▼ 核心修改開始 ▼▼▼ ---
+      if (err.response) {
+        // 伺服器有回應，但狀態碼不是 2xx
+        if (err.response.status === 403) {
+          const errorCode = err.response.data?.code; // 使用 optional chaining 增加安全性
+          switch (errorCode) {
+            case 'ACCOUNT_NOT_APPROVED':
+              setError("權限不足：您的帳號正在等待管理員審核，請聯繫管理員。");
+              break;
+            case 'INSUFFICENT_PERMISSIONS': // 注意：後端代碼是 INSUFFICIENT_PERMISSIONS
+              setError("權限不足：您需要財務同工或司庫權限才能查看此頁面。");
+              break;
+            default:
+              setError("權限不足，無法載入奉獻計算任務。");
+              break;
+          }
+        } else {
+          // 處理其他伺服器錯誤，如 404, 500
+          setError(`伺服器發生錯誤 (代碼: ${err.response.status})，請稍後再試。`);
+        }
+      } else if (err.request) {
+        // 請求已發出，但沒有收到回應 (例如網路問題)
+        setError("無法連線至伺服器，請檢查您的網路連線。");
+      } else {
+        // 其他錯誤 (例如設定請求時發生錯誤)
+        setError("發生預期外的錯誤，請稍後再試。");
+      }
+      // --- ▲▲▲ 核心修改結束 ▲▲▲ ---
     } finally {
       setLoading(false);
     }
@@ -128,6 +155,34 @@ const TithingTaskList = () => {
       console.error("Error fetching finance staff:", err);
       setError("無法載入財務同工名單，請重試。");
       setIsModalOpen(false); // 發生錯誤時關閉 modal
+      // --- ▼▼▼ 核心修改開始 ▼▼▼ ---
+      if (err.response) {
+        // 伺服器有回應，但狀態碼不是 2xx
+        if (err.response.status === 403) {
+          const errorCode = err.response.data?.code;
+          switch (errorCode) {
+            case 'ACCOUNT_NOT_APPROVED':
+              setError("權限不足：您的帳號正在等待管理員審核，無法執行此操作。");
+              break;
+            case 'INSUFFICIENT_PERMISSIONS':
+              setError("權限不足：您需要財務同工或司庫權限才能新增任務。");
+              break;
+            default:
+              setError("權限不足，無法載入財務同工名單。");
+              break;
+          }
+        } else {
+          // 處理其他伺服器錯誤
+          setError(`伺服器錯誤 (代碼: ${err.response.status})：無法載入財務同工名單。`);
+        }
+      } else if (err.request) {
+        // 請求已發出，但沒有收到回應
+        setError("無法連線至伺服器，請檢查您的網路連線。");
+      } else {
+        // 其他錯誤
+        setError("發生預期外的錯誤，請稍後再試。");
+      }
+      // --- ▲▲▲ 核心修改結束 ▲▲▲ ---
     } finally {
       setIsStaffListLoading(false);
     }
@@ -154,6 +209,33 @@ const TithingTaskList = () => {
       console.error("Error creating new task:", err);
       setError("建立新任務失敗，請重試。");
       setIsModalOpen(false);
+      if (err.response) {
+        // 伺服器有回應，但狀態碼不是 2xx
+        if (err.response.status === 403) {
+          const errorCode = err.response.data?.code;
+          switch (errorCode) {
+            case 'ACCOUNT_NOT_APPROVED':
+              setError("權限不足：您的帳號正在等待管理員審核，無法建立新任務。");
+              break;
+            case 'INSUFFICIENT_PERMISSIONS':
+              setError("權限不足：您需要財務同工或司庫權限才能建立新任務。");
+              break;
+            default:
+              setError("權限不足，無法建立新任務。");
+              break;
+          }
+        } else {
+          // 處理其他伺服器錯誤
+          setError(`伺服器錯誤 (代碼: ${err.response.status})：建立新任務失敗。`);
+        }
+      } else if (err.request) {
+        // 請求已發出，但沒有收到回應
+        setError("無法連線至伺服器，請檢查您的網路連線。");
+      } else {
+        // 其他錯誤
+        setError("建立新任務時發生預期外的錯誤，請稍後再試。");
+      }
+      // --- ▲▲▲ 核心修改結束 ▲▲▲ ---
     }
   };
 
