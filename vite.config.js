@@ -18,33 +18,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-         // id 是每個被打包檔案的完整路徑
-          // 例如：/Users/user/project/node_modules/firebase/app/dist/index.mjs
-          if (id.includes('node_modules')) {
-            // 從路徑中提取出套件的名稱
-            const moduleName = id.split('node_modules/')[1].split('/')[0];
-
-            // 針對特定的大型套件進行拆分
-            switch (moduleName) {
-              case 'firebase':
-              case 'jspdf':
-              case 'jspdf-autotable':
-              case 'html2canvas': // jspdf 可能會間接依賴
-                return moduleName;
-              
-              case 'react':
-              case 'react-dom':
-              case 'lucide-react':
-              case 'react-linkify':
-                return 'react-vendor'; // 將 React 相關的打包在一起
-
-              // 其他所有第三方套件，都打包到一個通用的 vendor 檔案
-              default:
-                return 'vendor';
-            }
-          }
-        }
+         // manualChunks 設定已移除，讓 Vite 自動處理
       }
     },
     // 👇 新增這個設定來調整警告門檻 (單位：kB)
