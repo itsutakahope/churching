@@ -167,12 +167,36 @@ const PurchaseRequestBoard = () => {
       }
     } catch (error) {
       console.error('Error fetching purchase requests:', error);
-      // 當 token 失效或驗證失敗時，後端會回傳 403 Forbidden
-      if (error.response && error.response.status === 403) {
-         setFetchError('您的登入狀態已過期或無效，請重新整理頁面或再次登入。');
+      // --- ▼▼▼ 核心修改開始 ▼▼▼ ---
+      if (error.response) {
+        // 後端有回應，優先使用後端提供的錯誤訊息
+        const backendMessage = error.response.data?.message;
+
+        // 檢查 HTTP 狀態碼
+        if (error.response.status === 403) {
+          const errorCode = error.response.data?.code;
+          switch (errorCode) {
+            case 'ACCOUNT_NOT_APPROVED':
+              setFetchError("權限不足：您的帳號正在等待管理員審核，無法查看購物清單。");
+              break;
+            default:
+              // 如果有後端訊息，就用它，否則用通用訊息
+              setFetchError(backendMessage || "權限不足，無法載入採購請求。");
+              break;
+          }
+        } else {
+          // 處理其他伺服器錯誤 (如 500)
+          // 同樣優先使用後端訊息
+          setFetchError(backendMessage || `伺服器發生錯誤 (代碼: ${error.response.status})，請稍後再試。`);
+        }
+      } else if (error.request) {
+        // 請求已發出，但沒有收到回應 (網路問題)
+        setFetchError("無法連線至伺服器，請檢查您的網路連線。");
       } else {
-         setFetchError('無法載入採購請求。 ' + (error.response?.data?.message || error.message));
+        // 其他前端設定錯誤
+        setFetchError("發生預期外的錯誤，請稍後再試。");
       }
+      // --- ▲▲▲ 核心修改結束 ▲▲▲ ---
       setRequests([]);
       setPurchaseRecords([]);
     } finally {
