@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle} from 'lucide-react'; // 新增 CheckSquare icon
+import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List} from 'lucide-react'; // 新增 CheckSquare icon
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -20,6 +20,12 @@ const PurchaseRequestBoard = () => {
   const [purchaseRecords, setPurchaseRecords] = useState([]);
   const [selectedRecordIds, setSelectedRecordIds] = useState(new Set());
 
+   // --- 新增開始：視圖切換與詳情彈窗的狀態 ---
+   const [viewMode, setViewMode] = useState('grid'); // 'grid' 或 'list'
+   const [showDetailModal, setShowDetailModal] = useState(false);
+   const [selectedRequestForDetail, setSelectedRequestForDetail] = useState(null);
+   // --- 新增結束 ---
+
   const handleRecordSelection = (recordId) => {
     setSelectedRecordIds(prev => {
       const newSet = new Set(prev);
@@ -31,6 +37,13 @@ const PurchaseRequestBoard = () => {
       return newSet;
     });
   };
+
+  // --- 新增開始：打開詳情彈窗的處理函式 ---
+  const handleShowDetails = (request) => {
+    setSelectedRequestForDetail(request);
+    setShowDetailModal(true);
+  };
+  // --- 新增結束 ---
 
   const handleBatchExport = () => {
     if (selectedRecordIds.size === 0) {
@@ -727,6 +740,27 @@ const PurchaseRequestBoard = () => {
               <option value="priority_asc">一般優先</option>
             </select>
           </div>
+           {/* --- 新增開始：視圖切換器 --- */}
+           <div className="flex items-center gap-2">
+            <span className="text-gray-700 font-medium shrink-0">檢視：</span>
+            <div className="flex items-center rounded-lg bg-gray-200 p-1">
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                title="列表模式"
+              >
+                <List size={20} />
+              </button>
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                title="網格模式"
+              >
+                <LayoutGrid size={20} />
+              </button>
+            </div>
+          </div>
+          {/* --- 新增結束 --- */}
         </div>
       </div>
       
@@ -773,75 +807,118 @@ const PurchaseRequestBoard = () => {
         )}
 
       {/* ... (Request cards grid JSX remains the same) ... */}
-      {requests.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sortedRequests.map((request) => {
-            const isExpanded = !!expandedCards[request.id];
-            const isLongText = request.description && request.description.length > 50;
-            const isUrgent = request.priority === 'urgent';
-            return (
-              <div key={request.id} className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-300 ${isUrgent ? 'border-red-400' : 'border-gray-200'} ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <div className="p-4 pb-0 flex justify-between items-start">
-                  <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
-                    {statusLabels[request.status]?.text || request.status}
-                  </span>
-                  {isUrgent && (
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
-                      <AlertTriangle size={14} />
-                      {priorityLabels.urgent.text}
-                    </span>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{request.title || request.text}</h3>
-                  <p className={`text-gray-600 text-sm mb-2 whitespace-pre-wrap break-words ${!isExpanded ? 'line-clamp-3' : ''}`}>
-                    <Linkify componentDecorator={componentDecorator}>
-                      {request.description}
-                    </Linkify>
-                  </p>
-                  {isLongText && (
-                    <button
-                      onClick={() => toggleCardExpansion(request.id)}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium mb-3 transition-colors"
-                    >
-                      {isExpanded ? '收合內容' : '...顯示更多'}
-                    </button>
-                  )}
-                  <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                    <div className="flex items-center gap-1"> <Calendar size={16} /> <span>{new Date(request.createdAt).toLocaleDateString()}</span> </div>
-                    {request.comments?.length > 0 && (<div className="flex items-center gap-1"> <MessageCircle size={16} /> <span>{request.comments.length}</span> </div>)}
+       {/* --- 修改開始：根據 viewMode 條件渲染 --- */}
+       {requests.length > 0 && (
+        <>
+          {viewMode === 'grid' && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {sortedRequests.map((request) => {
+                const isExpanded = !!expandedCards[request.id];
+                const isLongText = request.description && request.description.length > 50;
+                const isUrgent = request.priority === 'urgent';
+                return (
+                  <div key={request.id} className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-300 ${isUrgent ? 'border-red-400' : 'border-gray-200'} ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <div className="p-4 pb-0 flex justify-between items-start">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                        {statusLabels[request.status]?.text || request.status}
+                      </span>
+                      {isUrgent && (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
+                          <AlertTriangle size={14} />
+                          {priorityLabels.urgent.text}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{request.title || request.text}</h3>
+                      <p className={`text-gray-600 text-sm mb-2 whitespace-pre-wrap break-words ${!isExpanded ? 'line-clamp-3' : ''}`}>
+                        <Linkify componentDecorator={componentDecorator}>
+                          {request.description}
+                        </Linkify>
+                      </p>
+                      {isLongText && (
+                        <button
+                          onClick={() => toggleCardExpansion(request.id)}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium mb-3 transition-colors"
+                        >
+                          {isExpanded ? '收合內容' : '...顯示更多'}
+                        </button>
+                      )}
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                        <div className="flex items-center gap-1"> <Calendar size={16} /> <span>{new Date(request.createdAt).toLocaleDateString()}</span> </div>
+                        {request.comments?.length > 0 && (<div className="flex items-center gap-1"> <MessageCircle size={16} /> <span>{request.comments.length}</span> </div>)}
+                      </div>
+                      {request.requesterName && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-2"> <User size={16} /> <span>提出者：{request.requesterName}</span> </div>)}
+                      {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-4"> <Tag size={16} className="text-gray-500" /> <span>會計類別：{request.accountingCategory}</span> </div>)}
+                      {request.status === 'purchased' && request.purchaseAmount && ( <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4"> <div className="flex items-center gap-2 text-green-800"> <DollarSign size={16} /> <span className="font-medium">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div> <div className="text-sm text-green-600 mt-1"> 購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'} </div> {request.purchaserName && (<div className="text-sm text-green-600 mt-1"> 購買人：{request.purchaserName} </div>)} </div> )}
+                      <div className="flex gap-2 mb-3">
+                        <button onClick={() => openCommentModal(request)} className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> 留言 ({request.comments?.length || 0}) </button>
+                        {request.status === 'pending' && (<button onClick={() => updateStatus(request.id, 'purchased')} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買 </button>)}
+                        {request.status === 'purchased' && (<button onClick={() => updateStatus(request.id, 'pending')} className="flex items-center gap-1 px-3 py-1 text-orange-600 hover:bg-orange-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}撤銷購買 </button>)}
+                        <button onClick={() => deleteRequest(request.id)} className="flex items-center gap-1 px-3 py-1 text-red-600 hover:bg-red-50 rounded transition-colors text-sm ml-auto disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}刪除 </button>
+                      </div>
+                      {request.comments?.length > 0 && ( 
+                        <div className="border-t pt-3 mt-3"> 
+                         <h4 className="text-sm font-semibold text-gray-700 mb-2">留言列表：</h4> 
+                         <div className="space-y-2 max-h-32 overflow-y-auto"> {request.comments.map((comment) => ( 
+                          <div key={comment.id} className="bg-gray-50 rounded p-2 group relative"> 
+                          <div className="flex justify-between items-start mb-1"> 
+                            <div> 
+                              <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span> 
+                              <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span> 
+                              </div> 
+                              {currentUser && comment.userId === currentUser.uid && (<button onClick={() => handleDeleteComment(request.id, comment.id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button> )} </div> 
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                <Linkify componentDecorator={componentDecorator}>
+                                  {comment.text}
+                                </Linkify>
+                              </p>
+                              </div> ))} </div> </div> )}
+                    </div>
                   </div>
-                  {request.requesterName && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-2"> <User size={16} /> <span>提出者：{request.requesterName}</span> </div>)}
-                  {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-4"> <Tag size={16} className="text-gray-500" /> <span>會計類別：{request.accountingCategory}</span> </div>)}
-                  {request.status === 'purchased' && request.purchaseAmount && ( <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4"> <div className="flex items-center gap-2 text-green-800"> <DollarSign size={16} /> <span className="font-medium">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div> <div className="text-sm text-green-600 mt-1"> 購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'} </div> {request.purchaserName && (<div className="text-sm text-green-600 mt-1"> 購買人：{request.purchaserName} </div>)} </div> )}
-                  <div className="flex gap-2 mb-3">
-                    <button onClick={() => openCommentModal(request)} className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> 留言 ({request.comments?.length || 0}) </button>
-                    {request.status === 'pending' && (<button onClick={() => updateStatus(request.id, 'purchased')} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買 </button>)}
-                    {request.status === 'purchased' && (<button onClick={() => updateStatus(request.id, 'pending')} className="flex items-center gap-1 px-3 py-1 text-orange-600 hover:bg-orange-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}撤銷購買 </button>)}
-                    <button onClick={() => deleteRequest(request.id)} className="flex items-center gap-1 px-3 py-1 text-red-600 hover:bg-red-50 rounded transition-colors text-sm ml-auto disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}刪除 </button>
-                  </div>
-                  {request.comments?.length > 0 && ( 
-                    <div className="border-t pt-3 mt-3"> 
-                     <h4 className="text-sm font-semibold text-gray-700 mb-2">留言列表：</h4> 
-                     <div className="space-y-2 max-h-32 overflow-y-auto"> {request.comments.map((comment) => ( 
-                      <div key={comment.id} className="bg-gray-50 rounded p-2 group relative"> 
-                      <div className="flex justify-between items-start mb-1"> 
-                        <div> 
-                          <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span> 
-                          <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span> 
-                          </div> 
-                          {currentUser && comment.userId === currentUser.uid && (<button onClick={() => handleDeleteComment(request.id, comment.id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button> )} </div> 
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                            <Linkify componentDecorator={componentDecorator}>
-                              {comment.text}
-                            </Linkify>
-                          </p>
-                          </div> ))} </div> </div> )}
-                </div>
-              </div>
-            )})}
-        </div>
+                )})}
+            </div>
+          )}
+
+          {viewMode === 'list' && (
+            <div className="space-y-3">
+              {sortedRequests.map(request => {
+                 const isUrgent = request.priority === 'urgent';
+                 return (
+                  <button 
+                    key={request.id} 
+                    onClick={() => handleShowDetails(request)}
+                    className={`w-full text-left bg-white rounded-lg shadow-sm border p-4 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-4 ${isUrgent ? 'border-red-400' : 'border-gray-200'}`}
+                  >
+                    <div className="flex-shrink-0">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium w-20 justify-center ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                        {statusLabels[request.status]?.text || request.status}
+                      </span>
+                    </div>
+                    <div className="flex-grow">
+                      <h3 className="text-md font-semibold text-gray-800">{request.title || request.text}</h3>
+                    </div>
+                    <div className="flex-shrink-0 flex items-center gap-4 text-sm text-gray-500">
+                      {isUrgent && (
+                        <span className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
+                          <AlertTriangle size={14} />
+                          {priorityLabels.urgent.text}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={16} />
+                        <span>{new Date(request.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </button>
+                 )
+              })}
+            </div>
+          )}
+        </>
       )}
+      {/* --- 修改結束 --- */}
+
       
 {/* Modals */}
 {showModal && (
@@ -1167,6 +1244,99 @@ const PurchaseRequestBoard = () => {
         </div>
       )}
       {/* --- 修改/新增結束 --- */}
+
+      {/* --- 新增開始：詳情顯示彈出視窗 --- */}
+      {showDetailModal && selectedRequestForDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowDetailModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gray-100 p-4 rounded-t-lg flex justify-between items-center flex-shrink-0 border-b">
+              <h2 className="text-lg font-semibold text-gray-800">需求詳情</h2>
+              <button onClick={() => setShowDetailModal(false)} className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto">
+              {(() => {
+                const request = selectedRequestForDetail;
+                const isExpanded = !!expandedCards[request.id];
+                const isLongText = request.description && request.description.length > 50;
+                const isUrgent = request.priority === 'urgent';
+                return (
+                  <div className={`bg-white rounded-b-lg overflow-hidden transition-all duration-300`}>
+                    <div className="p-5 pb-0 flex justify-between items-start">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                        {statusLabels[request.status]?.text || request.status}
+                      </span>
+                      {isUrgent && (
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
+                          <AlertTriangle size={14} />
+                          {priorityLabels.urgent.text}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-3">{request.title || request.text}</h3>
+                      <p className={`text-gray-700 text-base mb-3 whitespace-pre-wrap break-words`}>
+                        <Linkify componentDecorator={componentDecorator}>
+                          {request.description}
+                        </Linkify>
+                      </p>
+                      
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-500 my-4 py-4 border-t border-b">
+                        <div className="flex items-center gap-2"> <Calendar size={16} /> <span><b>提出日期:</b> {new Date(request.createdAt).toLocaleDateString()}</span> </div>
+                        <div className="flex items-center gap-2"> <User size={16} /> <span><b>提出者:</b> {request.requesterName}</span> </div>
+                        <div className="flex items-center gap-2 col-span-2"> <Tag size={16} className="text-gray-500" /> <span><b>會計類別:</b> {request.accountingCategory || '未分類'}</span> </div>
+                      </div>
+
+                      {request.status === 'purchased' && request.purchaseAmount && ( 
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 my-4"> 
+                          <div className="flex items-center gap-2 text-green-800 mb-2"> <DollarSign size={18} /> <span className="font-semibold text-lg">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div> 
+                          <div className="text-sm text-green-700 grid grid-cols-2 gap-1">
+                            <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div> 
+                            {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)} 
+                          </div>
+                        </div> 
+                      )}
+
+                      <div className="flex gap-2 my-4">
+                        <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> 留言 ({request.comments?.length || 0}) </button>
+                        {request.status === 'pending' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'purchased'); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white hover:bg-green-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買 </button>)}
+                        {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} 撤銷購買 </button>)}
+                        <button onClick={() => { setShowDetailModal(false); deleteRequest(request.id); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors text-sm ml-auto disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />} 刪除 </button>
+                      </div>
+
+                      {request.comments?.length > 0 && ( 
+                        <div className="border-t pt-4 mt-4"> 
+                         <h4 className="text-base font-semibold text-gray-700 mb-3">留言列表：</h4> 
+                         <div className="space-y-3 max-h-40 overflow-y-auto pr-2"> 
+                          {request.comments.map((comment) => ( 
+                            <div key={comment.id} className="bg-gray-50 rounded-lg p-3 group relative"> 
+                              <div className="flex justify-between items-start mb-1"> 
+                                <div> 
+                                  <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span> 
+                                  <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span> 
+                                </div> 
+                                {currentUser && comment.userId === currentUser.uid && (<button onClick={() => {setShowDetailModal(false); handleDeleteComment(request.id, comment.id);}} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button> )} 
+                              </div> 
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                <Linkify componentDecorator={componentDecorator}>
+                                  {comment.text}
+                                </Linkify>
+                              </p>
+                            </div> 
+                          ))} 
+                         </div> 
+                        </div> 
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* --- 新增結束 --- */}
 
       {/* ... (Other modals JSX remains the same) ... */}
       {isCommentModalOpen && currentRequestForComment && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-gray-800"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div> )}
