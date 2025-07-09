@@ -30,15 +30,25 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
-    // Tithing Subsystem Rules (Advanced) - TEMPORARILY OPEN FOR DEBUGGING
+    // Tithing Subsystem Rules
     match /tithe/{taskId} {
-      // Temporarily allow all access for debugging
-      allow read, write: if true;
+      // Allow read/write access if the user is the treasurer, the assigned finance staff, or an admin.
+      // The resource.data object refers to the document being accessed.
+      allow read, write: if request.auth != null && (
+                           request.auth.uid == resource.data.treasurerUid ||
+                           request.auth.uid == resource.data.financeStaffUid ||
+                           hasRole('admin')
+                         );
 
       // Rules for the 'dedications' subcollection
       match /dedications/{dedicationId} {
-        // Temporarily allow all access for debugging
-        allow read, write: if true;
+        // Inherit the same logic: access is granted if the user has access to the parent task document.
+        // We use get() to check the parent document's data.
+        allow read, write: if request.auth != null && (
+                           get(/databases/$(database)/documents/tithe/$(taskId)).data.treasurerUid == request.auth.uid ||
+                           get(/databases/$(database)/documents/tithe/$(taskId)).data.financeStaffUid == request.auth.uid ||
+                           hasRole('admin')
+                         );
       }
     }
   }

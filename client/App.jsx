@@ -40,7 +40,7 @@ function App() {
   return (
     <div className="bg-gray-100 min-h-screen p-1 sm:p-6">
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center">BQ GRACE CHURCH</h1>
           {!currentUser && (
             <button
@@ -56,7 +56,7 @@ function App() {
         <UserProfile />
 
         {currentUser && (
-          <nav className="bg-white shadow-md rounded-lg p-2 mb-6 flex items-center gap-2">
+          <nav className="bg-white shadow-md rounded-lg p-2 mb-3 flex items-center gap-2">
             <NavLink to="/purchase">
               <LayoutDashboard size={18} />
               採購看板

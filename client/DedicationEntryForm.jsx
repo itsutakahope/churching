@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 
 const DEDICATION_CATEGORIES = [
-  "主日", "十一", "感恩", "宣教", "特別", 
+  "十一", "感恩", "主日", "宣教", "特別", 
   "專案", "裝潢", "指定", "慈惠", "植堂"
 ];
 
