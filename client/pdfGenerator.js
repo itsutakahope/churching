@@ -82,7 +82,7 @@ export const generateVoucherPDF = async (records, currentUser) => {
     if (index === 0) {
       // 第一行總是包含貸方資訊和總金額
       return [
-        rec.accountingCategory || 'N/A',
+        rec.accountingCategory || '',
         rec.title,
         (rec.purchaseAmount || 0).toLocaleString(),
         '銀行存款',
@@ -92,7 +92,7 @@ export const generateVoucherPDF = async (records, currentUser) => {
     } else {
       // 後續行數的貸方欄位為空
       return [
-        rec.accountingCategory || 'N/A',
+        rec.accountingCategory || '',
         rec.title,
         (rec.purchaseAmount || 0).toLocaleString(),
         '',
