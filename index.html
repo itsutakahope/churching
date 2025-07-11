@@ -2,12 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BQ GRACECHURCH | Purchase Board</title>
+    <title>BQ GRACE CHURCH</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/client/main.jsx"></script>
+    <script>
+      (function() {
+        const originalTitle = " 認識真福音 | 活出真福音 | 傳揚真福音 |";
+        // 加上一些間隔讓捲動看起來更自然
+        const marqueeTitle = originalTitle + "      ";
+        let i = 0;
+        setInterval(() => {
+          document.title = marqueeTitle.substring(i) + marqueeTitle.substring(0, i);
+          i = (i + 1) % marqueeTitle.length;
+        }, 300); // 透過調整這個數字（毫秒）來改變捲動速度
+      })();
+    </script>
   </body>
 </html>
