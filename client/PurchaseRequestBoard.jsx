@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List} from 'lucide-react'; // 新增 CheckSquare icon
+import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck} from 'lucide-react'; // 新增 CheckSquare icon
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -14,7 +14,7 @@ const SpinnerIcon = ({ className = "" }) => <Loader2 size={16} className={`anima
 const PurchaseRequestBoard = () => {
   const commenterNameInputRef = useRef(null);
   const selectAllCheckboxRef = useRef(null);
-  const { currentUser } = useAuth();
+  const { currentUser, isReimburser } = useAuth();
 
   const [requests, setRequests] = useState([]);
   const [purchaseRecords, setPurchaseRecords] = useState([]);
@@ -42,6 +42,25 @@ const PurchaseRequestBoard = () => {
   const handleShowDetails = (request) => {
     setSelectedRequestForDetail(request);
     setShowDetailModal(true);
+  };
+  // --- 新增結束 ---
+
+  // --- 👇 新增：打開 "新增需求" 彈窗的處理函式 ---
+  const handleOpenAddModal = () => {
+    setSubmitError(null);
+    setFormData({ 
+      title: '', 
+      description: '', 
+      requester: currentUser?.displayName || '',
+      accountingCategory: '',
+      priority: 'general',
+      isAlreadyPurchased: false,
+      purchaseAmount: ''
+    });
+    // 重設報帳代理人相關狀態
+    setIsDifferentReimburser(false);
+    setSelectedReimburserId('');
+    setShowModal(true);
   };
   // --- 新增結束 ---
 
@@ -93,6 +112,16 @@ const PurchaseRequestBoard = () => {
   const [filterEndDate, setFilterEndDate] = useState('');
   const [allUsers, setAllUsers] = useState([]);
   const [filterPurchaserUid, setFilterPurchaserUid] = useState('');
+  const [filterReimburserUid, setFilterReimburserUid] = useState(''); // <-- 1. 新增 state
+
+ // --- 👇 新增：用於確認購買彈窗的狀態 ---
+ const [isDifferentReimburser, setIsDifferentReimburser] = useState(false);
+ const [reimbursementContacts, setReimbursementContacts] = useState([]);
+ const [selectedReimburserId, setSelectedReimburserId] = useState('');
+ const [isLoadingContacts, setIsLoadingContacts] = useState(false);
+ // --- 狀態新增結束 ---
+
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -103,22 +132,26 @@ const PurchaseRequestBoard = () => {
     purchaseAmount: '',       // <-- 新增：購買金額
   });
 
-  useEffect(() => {
-    const fetchUsers = async () => {
+   // --- 2. 修改此 useEffect，讓它在打開紀錄視窗時，能同時獲取兩份人員列表 ---
+   useEffect(() => {
+    const fetchModalData = async () => {
       if (showRecordsModal && currentUser) {
         try {
           const token = await currentUser.getIdToken();
-          const response = await axios.get('/api/users', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          setAllUsers(response.data);
+          // 使用 Promise.all 平行發送請求，提升效率
+          const [usersResponse, contactsResponse] = await Promise.all([
+            axios.get('/api/users', { headers: { 'Authorization': `Bearer ${token}` } }),
+            axios.get('/api/users/reimbursement-contacts', { headers: { 'Authorization': `Bearer ${token}` } })
+          ]);
+          setAllUsers(usersResponse.data);
+          setReimbursementContacts(contactsResponse.data);
         } catch (error) {
-          console.error('Error fetching users:', error);
-          // Optionally, set an error state to show a message to the user
+          console.error('Error fetching users/contacts for records modal:', error);
+          // 可以選擇性地設定一個錯誤狀態來提示使用者
         }
       }
     };
-    fetchUsers();
+    fetchModalData();
   }, [showRecordsModal, currentUser]);
 
 
@@ -170,7 +203,11 @@ const PurchaseRequestBoard = () => {
           purchaseDate: p.purchaseDate,
           purchaserName: p.purchaserName,
           purchaserId: p.purchaserId, // <-- 確保 purchaserId 被正確映射
-          accountingCategory: p.accountingCategory
+          accountingCategory: p.accountingCategory,
+          // --- 👇 核心修改：新增這兩個遺漏的欄位 ---
+          reimbursementerId: p.reimbursementerId,
+          reimbursementerName: p.reimbursementerName,
+          // --- 修改結束 ---
         })));
       } else {
         console.error('API response for /api/requirements is not an array:', response.data);
@@ -235,6 +272,55 @@ const PurchaseRequestBoard = () => {
     return () => unsubscribe();
 }, [fetchRequests]);
 
+useEffect(() => {
+  const fetchReimbursementContacts = async () => {
+    if (!currentUser) return;
+    setIsLoadingContacts(true);
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await axios.get('/api/users/reimbursement-contacts', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setReimbursementContacts(response.data);
+    } catch (error) {
+      console.error('Error fetching reimbursement contacts:', error);
+      // 根據哪個彈窗開啟，來決定在哪裡顯示錯誤
+      if (showPurchaseModal) setUpdateError('無法載入可報帳人員列表。');
+      if (showModal) setSubmitError('無法載入可報帳人員列表。');
+    } finally {
+      setIsLoadingContacts(false);
+    }
+  };
+
+  const shouldFetch = showPurchaseModal || (showModal && formData.isAlreadyPurchased);
+
+  if (shouldFetch) {
+    fetchReimbursementContacts();
+    // 核心邏輯：根據登入者是否有報帳權限，來決定UI的預設狀態
+    if (!isReimburser) {
+      // 如果當前用戶沒有報帳權限，強制他必須指定代理人
+      setIsDifferentReimburser(true);
+    } else {
+      // 只有在 "標記已購買" 彈窗開啟時，才重設為 false
+      // 在 "新增" 彈窗中，由使用者手動控制
+      if (showPurchaseModal) {
+         setIsDifferentReimburser(false);
+      }
+    }
+    // 清空上一次的選擇
+    if (showPurchaseModal) {
+      setSelectedReimburserId('');
+    }
+  }
+
+  // 當在 "新增" 彈窗中取消勾選 "我已購買"，也要重設狀態
+  if (showModal && !formData.isAlreadyPurchased) {
+    setIsDifferentReimburser(false);
+    setSelectedReimburserId('');
+  }
+}, [showPurchaseModal, showModal, formData.isAlreadyPurchased, currentUser, isReimburser]);
+
+
   const handleSubmit = async () => {
     if (!formData.title.trim()) {
       alert('請填寫需求標題。');
@@ -243,6 +329,11 @@ const PurchaseRequestBoard = () => {
     // 如果已勾選購買，則必須填寫有效的金額
     if (formData.isAlreadyPurchased && (!formData.purchaseAmount || parseFloat(formData.purchaseAmount) <= 0)) {
       alert('您已勾選「我已購買此項目」，請輸入有效的購買金額。');
+      return;
+    }
+    // --- 👇 新增：如果需要指定代理人，則必須選擇一個 ---
+    if (formData.isAlreadyPurchased && isDifferentReimburser && !selectedReimburserId) {
+      alert('請選擇一位報帳請款人。');
       return;
     }
     if (!currentUser) {
@@ -270,6 +361,15 @@ const PurchaseRequestBoard = () => {
         payload.purchaseDate = new Date().toISOString(); // 使用當前時間作為購買日期
         payload.purchaserName = currentUser.displayName; // 自動填入當前使用者
         payload.purchaserId = currentUser.uid;
+
+        // --- 👇 新增：如果指定了不同的報帳人，則加入 payload ---
+        if (isDifferentReimburser && selectedReimburserId) {
+          const selectedContact = reimbursementContacts.find(c => c.uid === selectedReimburserId);
+          if (selectedContact) {
+            payload.reimbursementerId = selectedContact.uid;
+            payload.reimbursementerName = selectedContact.displayName;
+          }
+        }
       }
       
       // 無論是哪種情況，都發送到同一個 endpoint
@@ -322,6 +422,12 @@ const PurchaseRequestBoard = () => {
       setUpdateError(null); 
       setPurchaseAmount(''); 
       setPurchaserNameInput(currentUser?.displayName || '');
+      // 清理舊狀態
+      // --- 👇 核心修改：移除此處的狀態設定，將權力完全交給 useEffect ---
+      // setIsDifferentReimburser(false);
+      // --- 修改結束 ---
+      setSelectedReimburserId('');
+      setReimbursementContacts([]);
       setShowPurchaseModal(true);
     } else { 
       const confirmed = window.confirm("您確定要撤銷這次的購買紀錄嗎？相關的購買金額與日期將會被清除。");
@@ -342,7 +448,9 @@ const PurchaseRequestBoard = () => {
           purchaseAmount: null,
           purchaseDate: null,
           purchaserName: null,
-          purchaserId: null
+          purchaserId: null,
+          reimbursementerId: null, // <-- 新增：一併清除報帳人
+          reimbursementerName: null, // <-- 新增：一併清除報帳人
         };
         await axios.put(`/api/requirements/${id}`, payload, { headers: { 'Authorization': `Bearer ${token}` } });
         await fetchRequests();
@@ -364,6 +472,11 @@ const PurchaseRequestBoard = () => {
   const confirmPurchase = async () => {
     if (!purchaseAmount || parseFloat(purchaseAmount) <= 0) { alert('請輸入有效的購買金額'); return; }
     if (!purchaserNameInput.trim()) { alert('請輸入購買人姓名'); return; }
+    // --- 👇 新增：如果需要指定代理人，則必須選擇一個 ---
+    if (isDifferentReimburser && !selectedReimburserId) {
+      alert('請選擇一位報帳請款人。');
+      return;
+    }
     if (!currentUser) { alert("請登入以確認購買。"); setUpdateError("請登入以確認購買。"); return; }
     setIsUpdatingRequest(true);
     setUpdateError(null);
@@ -376,6 +489,16 @@ const PurchaseRequestBoard = () => {
         purchaserName: purchaserNameInput.trim(),
         purchaserId: currentUser.uid
       };
+
+       // --- 👇 新增：如果指定了不同的報帳人，則加入 payload ---
+       if (isDifferentReimburser && selectedReimburserId) {
+        const selectedContact = reimbursementContacts.find(c => c.uid === selectedReimburserId);
+        if (selectedContact) {
+          payload.reimbursementerId = selectedContact.uid;
+          payload.reimbursementerName = selectedContact.displayName;
+        }
+      }
+
       await axios.put(`/api/requirements/${selectedRequestId}`, payload, { headers: { 'Authorization': `Bearer ${token}` } });
       setPurchaseAmount('');
       setPurchaserNameInput('');
@@ -578,6 +701,11 @@ const PurchaseRequestBoard = () => {
         ? record.purchaserId === filterPurchaserUid
         : true;
 
+              // --- 👇 核心修改：加入對請款人的篩選邏輯 ---
+      const matchesReimburser = filterReimburserUid
+      ? record.reimbursementerId === filterReimburserUid
+      : true;
+
       if (!record.purchaseDate) return false;
 
       let rDate = null;
@@ -593,7 +721,7 @@ const PurchaseRequestBoard = () => {
 
       return matchesPurchaser && matchesStartDate && matchesEndDate;
     });
-  }, [purchaseRecords, filterPurchaserUid, filterStartDate, filterEndDate]);
+  }, [purchaseRecords, filterPurchaserUid, filterReimburserUid, filterStartDate, filterEndDate]);
 
   const handleSelectAll = (e) => {
     const isChecked = e.target.checked;
@@ -1006,26 +1134,86 @@ const PurchaseRequestBoard = () => {
               type="checkbox"
               className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               checked={formData.isAlreadyPurchased}
-              onChange={(e) => setFormData({ ...formData, isAlreadyPurchased: e.target.checked, purchaseAmount: '' })}
+              onChange={(e) => {
+                const isChecked = e.target.checked;
+                setFormData({ ...formData, isAlreadyPurchased: isChecked, purchaseAmount: '' });
+                // 如果取消勾選，也要重設報帳人狀態
+                if (!isChecked) {
+                    setIsDifferentReimburser(false);
+                    setSelectedReimburserId('');
+                }
+            }}
             />
             <label htmlFor="isAlreadyPurchased" className="ml-3 block text-sm font-medium text-gray-800">
               我已購買此項目 (直接登記為「已購買」)
             </label>
           </div>
           {formData.isAlreadyPurchased && (
-            <div className="mt-4">
-              <label htmlFor="formPurchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                購買總金額 (NT$)*
-              </label>
-              <input
-                id="formPurchaseAmount"
-                type="number"
-                value={formData.purchaseAmount}
-                onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })}
-                placeholder="請輸入購買總金額或代墊金額..."
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                required
-              />
+            <div className="mt-4 pl-2 border-l-2 border-gray-200">
+              <div className="mb-4">
+                <label htmlFor="formPurchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                  購買總金額 (NT$)*
+                </label>
+                <input
+                  id="formPurchaseAmount"
+                  type="number"
+                  value={formData.purchaseAmount}
+                  onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })}
+                  placeholder="請輸入購買總金額或代墊金額..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+
+              {/* --- 👇 新增：報帳代理人區塊 --- */}
+              <div className="mb-2 pt-4 border-t border-gray-200">
+                <div className="flex items-center">
+                  <input
+                    id="isDifferentReimburser_add"
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-70"
+                    checked={isDifferentReimburser}
+                    onChange={(e) => setIsDifferentReimburser(e.target.checked)}
+                    disabled={!isReimburser}
+                  />
+                  <label htmlFor="isDifferentReimburser_add" className="ml-3 block text-sm font-medium text-gray-800">
+                    指定他人請款 (非本人報帳)
+                  </label>
+                </div>
+
+                {!isReimburser && (
+                  <p className="text-xs text-orange-600 mt-2 p-2 bg-orange-50 rounded-md">您的帳號無請款權限，請務必指定一位報帳代理人。</p>
+                )}
+                
+                {isDifferentReimburser && (
+                  <div className="mt-4">
+                    <label htmlFor="reimburserSelect_add" className="block text-sm font-medium text-gray-700 mb-2">
+                      報帳請款人*
+                    </label>
+                    {isLoadingContacts ? (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <SpinnerIcon />
+                        <span>正在載入人員列表...</span>
+                      </div>
+                    ) : (
+                      <select
+                        id="reimburserSelect_add"
+                        value={selectedReimburserId}
+                        onChange={(e) => setSelectedReimburserId(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="" disabled>請選擇一位報帳請款人...</option>
+                        {reimbursementContacts.map(contact => (
+                          <option key={contact.uid} value={contact.uid}>
+                            {contact.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* --- 新增區塊結束 --- */}
             </div>
           )}
         </div>
@@ -1046,7 +1234,7 @@ const PurchaseRequestBoard = () => {
             type="button"
             onClick={handleSubmit}
             className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            disabled={isSubmittingRequest}
+            disabled={isSubmittingRequest || (formData.isAlreadyPurchased && isLoadingContacts)}
           >
             {isSubmittingRequest && <SpinnerIcon />}
             {isSubmittingRequest ? '提交中...' : '提交需求'}
@@ -1091,19 +1279,71 @@ const PurchaseRequestBoard = () => {
               <input id="purchaserName" type="text" value={purchaserNameInput} onChange={(e) => setPurchaserNameInput(e.target.value)} 
                      placeholder="請輸入購買人姓名..." 
                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" /> 
-              </div> 
+              </div>
+
+              {/* --- 👇 新增：報帳代理人區塊 --- */}
+              <div className="mb-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center">
+                  <input
+                    id="isDifferentReimburser"
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-70"
+                    checked={isDifferentReimburser}
+                    onChange={(e) => setIsDifferentReimburser(e.target.checked)}
+                    disabled={!isReimburser}
+                  />
+                  <label htmlFor="isDifferentReimburser" className="ml-3 block text-sm font-medium text-gray-800">
+                    指定他人請款 (非本人報帳)
+                  </label>
+                </div>
+
+                {!isReimburser && (
+                  <p className="text-xs text-orange-600 mt-2 p-2 bg-orange-50 rounded-md">您的帳號無請款權限，請務必指定一位報帳代理人。</p>
+                )}
+                
+                {isDifferentReimburser && (
+                  <div className="mt-4">
+                    <label htmlFor="reimburserSelect" className="block text-sm font-medium text-gray-700 mb-2">
+                      報帳請款人*
+                    </label>
+                    {isLoadingContacts ? (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <SpinnerIcon />
+                        <span>正在載入人員列表...</span>
+                      </div>
+                    ) : (
+                      <select
+                        id="reimburserSelect"
+                        value={selectedReimburserId}
+                        onChange={(e) => setSelectedReimburserId(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="" disabled>請選擇一位報帳請款人...</option>
+                        {reimbursementContacts.map(contact => (
+                          <option key={contact.uid} value={contact.uid}>
+                            {contact.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* --- 新增區塊結束 --- */}
+
               <div className="flex gap-3"> 
                 <button type="button" 
                         onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }} 
-                        className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors" d
-                        isabled={isUpdatingRequest}> 
+                        className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors" 
+                        disabled={isUpdatingRequest}> 
                         取消 
                 </button> 
                 <button 
                 type="button" 
                 onClick={confirmPurchase} 
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2" 
-                disabled={isUpdatingRequest}> {isUpdatingRequest && <SpinnerIcon />} {isUpdatingRequest ? '處理中...' : '確認購買'} 
+                disabled={isUpdatingRequest || (isDifferentReimburser && !selectedReimburserId) || isLoadingContacts}> 
+                {isUpdatingRequest && <SpinnerIcon />} {isUpdatingRequest ? '處理中...' : '確認購買'} 
                 </button> 
           </div> 
        </div> 
@@ -1141,8 +1381,8 @@ const PurchaseRequestBoard = () => {
             <div className="p-6 overflow-y-auto flex-grow">
               <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <h4 className="text-md font-semibold text-gray-800 mb-3">篩選條件</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* ... (Filter inputs remain the same) ... */}
+                {/* --- 👇 核心修改：調整 grid 排版並新增「請款人」篩選器 --- */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <label htmlFor="filterPurchaser" className="block text-sm font-medium text-gray-700 mb-1">購買人</label>
                     <select 
@@ -1158,6 +1398,20 @@ const PurchaseRequestBoard = () => {
                     </select>
                   </div>
                   <div>
+                    <label htmlFor="filterReimburser" className="block text-sm font-medium text-gray-700 mb-1">請款人</label>
+                    <select 
+                      id="filterReimburser" 
+                      value={filterReimburserUid} 
+                      onChange={(e) => setFilterReimburserUid(e.target.value)} 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">所有請款人</option>
+                      {reimbursementContacts.map(contact => (
+                        <option key={contact.uid} value={contact.uid}>{contact.displayName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
                     <label htmlFor="filterSDate" className="block text-sm font-medium text-gray-700 mb-1">購買日期 (起)</label>
                     <input id="filterSDate" type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
                   </div>
@@ -1166,6 +1420,7 @@ const PurchaseRequestBoard = () => {
                     <input id="filterEDate" type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
                   </div>
                 </div>
+                {/* --- 修改結束 --- */}
               </div>
               
               {filteredPurchaseRecords.length === 0 ? (
@@ -1231,6 +1486,15 @@ const PurchaseRequestBoard = () => {
                             <div><span className="text-gray-600">需求日期：</span><span className="font-medium">{record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span></div>
                             <div><span className="text-gray-600">購買日期：</span><span className="font-medium">{record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span></div>
                             {record.purchaserName && (<div className="sm:col-span-2"><span className="text-gray-600">購買人：</span><span className="font-medium">{record.purchaserName}</span></div>)}
+                            {/* --- 👇 修改：顯示請款人 --- */}
+                            <div className="flex items-center gap-1">
+                              <span className="text-gray-600">請款人：</span>
+                              <span className="font-medium flex items-center gap-1">{record.reimbursementerName || record.purchaserName}
+                                {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                                  <UserCheck size={14} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                                )}
+                              </span>
+                            </div>
                             {record.accountingCategory && (<div className="sm:col-span-2"><span className="text-gray-600">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
                           </div>
                         </div>

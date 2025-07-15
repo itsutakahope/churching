@@ -116,6 +116,46 @@ app.get('/api/users', verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// GET /api/users/reimbursement-contacts (Get All Reimbursement Contacts) - Protected
+app.get('/api/users/reimbursement-contacts', verifyFirebaseToken, async (req, res) => {
+  try {
+    // 步驟 1: 從 Firestore 查詢有 'reimbursementContact' 角色的使用者 UID
+    const contactsQuery = db.collection('users').where('roles', 'array-contains', 'reimbursementContact');
+    const contactsSnapshot = await contactsQuery.get();
+
+    if (contactsSnapshot.empty) {
+      return res.status(200).json([]);
+    }
+
+    const contactUids = contactsSnapshot.docs.map(doc => doc.id);
+
+    if (contactUids.length === 0) {
+      return res.status(200).json([]);
+    }
+    
+    // 步驟 2: 使用 UID 列表批次從 Firebase Authentication 獲取使用者紀錄
+    const userRecordsResult = await admin.auth().getUsers(contactUids.map(uid => ({ uid })));
+
+    // 步驟 3: 建立最終回傳列表，使用 Firebase Auth 的 displayName
+    const contactsList = userRecordsResult.users.map(user => ({
+      uid: user.uid,
+      displayName: user.displayName || user.email || 'N/A', // 優先使用 displayName
+    }));
+
+    // (可選，但建議) 記錄下哪些在 Firestore 中有紀錄但在 Auth 中找不到的使用者
+    if (userRecordsResult.notFound.length > 0) {
+        logger.warn('The following UIDs were found in Firestore roles but not in Firebase Auth:', userRecordsResult.notFound.map(user => user.uid));
+    }
+
+    res.status(200).json(contactsList);
+
+  } catch (error) {
+    logger.error('Error fetching reimbursement contacts:', error);
+    res.status(500).json({ message: 'An unexpected error occurred while fetching reimbursement contacts.', error: error.message });
+  }
+});
+
+
 // --- Requirements API Endpoints ---
 
 // POST /api/requirements (Create) - Protected
@@ -123,7 +163,7 @@ app.get('/api/users', verifyFirebaseToken, async (req, res) => {
 app.post('/api/requirements', verifyFirebaseToken, async (req, res) => {
   try {
     // 👇 解構出所有可能的欄位
-    const { text, description, accountingCategory, status, purchaseAmount, purchaseDate, priority } = req.body;
+    const { text, description, accountingCategory, status, purchaseAmount, purchaseDate, priority, reimbursementerId, reimbursementerName } = req.body;
 
     if (!text) {
       return res.status(400).json({ message: 'Text (title) is required' });
@@ -152,6 +192,19 @@ app.post('/api/requirements', verifyFirebaseToken, async (req, res) => {
       newRequirement.purchaseDate = purchaseDate || new Date().toISOString();
       newRequirement.purchaserName = req.user.name || req.user.email; // 使用 token 中的使用者資訊
       newRequirement.purchaserId = req.user.uid;
+
+      // --- 👇 新增：處理報帳人邏輯 ---
+      if (reimbursementerId && reimbursementerName) {
+        // 如果前端已指定報帳人
+        newRequirement.reimbursementerId = reimbursementerId;
+        newRequirement.reimbursementerName = reimbursementerName;
+      } else {
+        // 如果未指定，則預設為購買人自己
+        newRequirement.reimbursementerId = newRequirement.purchaserId;
+        newRequirement.reimbursementerName = newRequirement.purchaserName;
+      }
+      // --- 報帳人邏輯結束 ---
+      
     } else {
       // 預設行為：建立 "待購買" 狀態
       newRequirement.status = 'pending';
@@ -187,26 +240,34 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
       const docData = doc.data();
       const actionRequesterId = req.user.uid;
 
+      // --- 👇 核心修正：將 updatePayload 的宣告移到最前面 ---
+      const updatePayload = { ...dataToUpdate };
+
       // Logic for marking as 'purchased'
       if (dataToUpdate.status === 'purchased') {
         // ✨ **關鍵檢查**：只允許在 'pending' 狀態下購買
         if (docData.status !== 'pending') {
           throw new Error('ALREADY_PURCHASED'); // Custom error for race condition
         }
+
+        // --- 處理報帳人邏輯 ---
+        // 如果前端沒有指定報帳人，則預設為購買人
+        if (!updatePayload.reimbursementerId) {
+          updatePayload.reimbursementerId = updatePayload.purchaserId;
+          updatePayload.reimbursementerName = updatePayload.purchaserName;
+        }
       }
       // Logic for reverting to 'pending'
       else if (dataToUpdate.status === 'pending') {
-        // Permission check: only the original purchaser can revert
-        if (docData.purchaserId !== actionRequesterId) {
+        // --- 👇 修正：權限檢查：原始購買人 或 目前的報帳代理人 才能撤銷 ---
+        if (docData.purchaserId !== actionRequesterId && docData.reimbursementerId !== actionRequesterId) {
           throw new Error('PERMISSION_DENIED');
         }
       }
 
-      // Prepare the update payload
-      const updatePayload = { ...dataToUpdate };
-
       // Handle clearing fields when reverting
-      const fieldsToClear = ['purchaseAmount', 'purchaseDate', 'purchaserName', 'purchaserId'];
+      // --- 👇 修正：將報帳人欄位也加入清除列表 ---
+      const fieldsToClear = ['purchaseAmount', 'purchaseDate', 'purchaserName', 'purchaserId', 'reimbursementerId', 'reimbursementerName'];
       for (const field of fieldsToClear) {
         if (updatePayload[field] === null) {
           updatePayload[field] = admin.firestore.FieldValue.delete();
@@ -238,7 +299,7 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
       return res.status(409).json({ message: '此需求已被他人標記為已購買，頁面將會自動更新。' });
     }
     if (error.message === 'PERMISSION_DENIED') {
-      return res.status(403).json({ message: '權限不足，只有原始購買者才能撤銷此操作。' });
+      return res.status(403).json({ message: '權限不足，只有原始購買者或目前的報帳代理人才能撤銷此操作。' });
     }
     res.status(500).json({ message: '更新採購需求時發生錯誤', error: error.message });
   }

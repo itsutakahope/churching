@@ -34,26 +34,37 @@ export const generateVoucherPDF = async (records, currentUser) => {
 
   let preparerName = 'N/A'; // 預設值
 
-  // 檢查 currentUser 是否存在，如果存在則嘗試從 Firestore 獲取姓名
-  if (currentUser && currentUser.uid) {
-    try {
-      const functions = getFunctions(app); // 獲取 functions 實例
-      const getUserDisplayName = httpsCallable(functions, 'getUserDisplayNameCallable'); // 引用 Callable Function
+ // --- 👇 核心修改開始 ---
+  // 1. 決定要查詢哪個使用者的 UID
+  //    - 如果是單筆紀錄且有指定請款人，就用請款人的 UID。
+  //    - 如果是多筆紀錄，或沒有指定請款人，就用當前操作者 (currentUser) 的 UID。
+  const primaryRecord = recordsArray[0];
+  const targetUid = (recordsArray.length === 1 && primaryRecord.reimbursementerId)
+    ? primaryRecord.reimbursementerId
+    : currentUser?.uid;
 
-      console.log(`Attempting to fetch display name for UID: ${currentUser.uid}`);
-      const result = await getUserDisplayName(); // 無需傳遞 UID，因為後端會從 context 獲取
+  // 2. 如果我們有有效的 UID，就呼叫雲端函式
+  if (targetUid) {
+    try {
+      const functions = getFunctions(app);
+      const getUserDisplayName = httpsCallable(functions, 'getUserDisplayNameCallable');
+
+      console.log(`Attempting to fetch display name for target UID: ${targetUid}`);
+      // 3. 將 targetUid 作為參數傳遞給後端
+      const result = await getUserDisplayName({ targetUid: targetUid });
       preparerName = result.data.displayName || 'N/A';
       console.log(`Fetched preparerName from Firestore: ${preparerName}`);
     } catch (error) {
       console.error("從 Firestore 獲取用戶姓名失敗:", error);
-      // 如果從 Firestore 獲取失敗，退回到使用 currentUser.displayName 或 recordsArray 中的值
-      preparerName = currentUser?.displayName || recordsArray[0]?.purchaserName || 'N/A';
-      alert(`無法從伺服器獲取最新用戶姓名，將使用備用姓名：${preparerName}。錯誤: ${error.message}`);
+      // 如果從 Firestore 獲取失敗，退回到使用 currentUser.displayName 或紀錄中的備用值
+      preparerName = currentUser?.displayName || primaryRecord?.reimbursementerName || primaryRecord?.purchaserName || 'N/A';
+      alert(`無法從伺服器獲取正式姓名，將使用備用姓名：${preparerName}。錯誤: ${error.message}`);
     }
   } else {
-    // 如果 currentUser 不存在，則使用 recordsArray 中的備用值
-    preparerName = recordsArray[0]?.purchaserName || 'N/A';
+    // 4. 如果連有效的 UID 都沒有，則使用紀錄中的備用值
+    preparerName = primaryRecord?.reimbursementerName || primaryRecord?.purchaserName || 'N/A';
   }
+  // --- 修改結束 ---
 
   try {
     const doc = new jsPDF();

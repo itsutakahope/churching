@@ -8,7 +8,10 @@ import { onAuthStateChanged,
          updateProfile, // 用於註冊時更新姓名 & 用戶自行編輯姓名 
          reload // 引入 reload 函式
        }from 'firebase/auth';
-import { auth } from './firebaseConfig'; // Ensure this path is correct
+import { auth, firestore } from './firebaseConfig'; // Ensure this path is correct
+import { doc, getDoc } from 'firebase/firestore';
+
+
 
 const AuthContext = createContext();
 
@@ -17,6 +20,8 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isReimburser, setIsReimburser] = useState(false);
+  const [userRoles, setUserRoles] = useState([]);
 
   // Example login function (add more like signUp, etc.)
   const login = (email, password) => {
@@ -59,10 +64,44 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    // --- 修改開始 ---
+    // 3. 將 onAuthStateChanged 的回呼函式改為 async，以便在內部使用 await
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      
+      // 4. 如果有使用者登入，就去 Firestore 讀取他的角色文件
+      if (user) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            const roles = userData.roles || []; // 從文件中取得 roles 陣列
+            setUserRoles(roles); // 儲存角色陣列
+            
+            // 檢查是否包含報帳權限的角色
+            setIsReimburser(roles.includes('reimbursementContact'));
+          } else {
+            // 如果找不到使用者文件，預設為沒有權限
+            console.warn("User document not found in Firestore for UID:", user.uid);
+            setUserRoles([]);
+            setIsReimburser(false);
+          }
+        } catch (error) {
+          console.error("Error fetching user roles:", error);
+          setUserRoles([]);
+          setIsReimburser(false);
+        }
+      } else {
+        // 5. 如果使用者登出，清除角色狀態
+        setUserRoles([]);
+        setIsReimburser(false);
+      }
+      
+      // 6. 將 setLoading(false) 移到所有非同步操作完成後，確保權限狀態也已就緒
       setLoading(false);
     });
+    // --- 修改結束 ---
     return unsubscribe; // Cleanup subscription on unmount
   }, []);
 
@@ -72,7 +111,12 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle, // <--- 3. 將新函式匯出
     logout,
     signUp, // 註冊
-    updateUserProfile // 編輯
+    updateUserProfile, // 編輯
+     // --- 修改開始 ---
+    // 7. 將新的權限狀態和角色列表匯出，供其他元件使用
+    isReimburser,
+    userRoles
+    // --- 修改結束 ---
     // Add other auth functions like signup, passwordReset, etc.
   };
 
