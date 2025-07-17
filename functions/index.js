@@ -4,11 +4,110 @@ import * as logger from "firebase-functions/logger"; // Gen 2 logging
 import {onRequest} from "firebase-functions/v2/https"; // For HTTP functions
 import {onCall, HttpsError} from "firebase-functions/v2/https"; // For Callable functions
 import * as functions from 'firebase-functions';
+import { google } from 'googleapis';
 
 
 // Initialize firebase-admin
 admin.initializeApp();
 const db = admin.firestore();
+
+// --- Gmail API Setup ---
+const GMAIL_CONFIG = functions.config().gmail;
+const oauth2Client = new google.auth.OAuth2(
+  GMAIL_CONFIG?.client_id,
+  GMAIL_CONFIG?.client_secret,
+  'https://developers.google.com/oauthplayground' // Redirect URL
+);
+
+if (GMAIL_CONFIG?.refresh_token) {
+    oauth2Client.setCredentials({
+      refresh_token: GMAIL_CONFIG.refresh_token,
+    });
+}
+
+const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+/**
+ * Sends an email notification about a new purchase request.
+ * @param {object} requirementData The data of the newly created requirement.
+ */
+async function sendNewRequestNotification(requirementData) {
+  // Check if Gmail config is available
+  if (!GMAIL_CONFIG?.client_id || !GMAIL_CONFIG?.refresh_token || !GMAIL_CONFIG?.sender) {
+    logger.warn('Gmail configuration is missing. Skipping email notification.');
+    return;
+  }
+
+  try {
+    // 1. Find users who want notifications
+    const usersSnapshot = await db.collection('users').where('wantsNewRequestNotification', '==', true).get();
+
+    if (usersSnapshot.empty) {
+      logger.log('No users are subscribed to new request notifications.');
+      return;
+    }
+
+    const recipients = usersSnapshot.docs.map(doc => doc.data().email).filter(email => email);
+    
+    if (recipients.length === 0) {
+      logger.log('Found subscribed users, but they have no valid email addresses.');
+      return;
+    }
+
+    // 2. Create Email Content
+    const subject = `[新採購申請] ${requirementData.requesterName} 申請了 ${requirementData.text}`;
+    const emailBody = `
+      您好,<br><br>
+      系統收到一筆新的採購申請，詳情如下：<br><br>
+      <ul>
+        <li><b>申請人:</b> ${requirementData.requesterName}</li>
+        <li><b>品項:</b> ${requirementData.text}</li>
+        <li><b>規格/描述:</b> ${requirementData.description || '無'}</li>
+        <li><b>會計科目:</b> ${requirementData.accountingCategory || '未分類'}</li>
+        <li><b>優先級:</b> ${requirementData.priority === 'urgent' ? '緊急' : '一般'}</li>
+      </ul>
+      <br>
+      請至採購板查看詳情。<br>
+      <small>(此為系統自動發送郵件，請勿回覆)</small>
+    `.trim();
+
+   // --- 👇 核心修改開始 ---
+    // 3. Construct and Send Email (with proper encoding for headers)
+    const senderDisplayName = '採購板系統';
+    const encodedDisplayName = `=?UTF-8?B?${Buffer.from(senderDisplayName).toString('base64')}?=`;
+    const fromHeader = `${encodedDisplayName} <${GMAIL_CONFIG.sender}>`;
+    
+    const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
+    
+    const rawMessage = [
+      `From: ${fromHeader}`,
+      `To: ${recipients.join(',')}`,
+      'Content-Type: text/html; charset=UTF-8',
+      'MIME-Version: 1.0',
+      `Subject: ${encodedSubject}`,
+      '',
+      emailBody,
+    ].join('\n');
+
+    const encodedMessage = Buffer.from(rawMessage).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage,
+      },
+    });
+    // --- ▲▲▲ 核心修改結束 ▲▲▲
+
+    logger.log(`Notification email sent successfully to ${recipients.length} recipient(s).`);
+
+  } catch (error) {
+    logger.error('Error sending new request notification email:', error);
+    if (error.response && error.response.data) {
+      logger.error('Gmail API Error Details:', error.response.data);
+    }
+  }
+}
 
 const app = express();
 
@@ -156,6 +255,48 @@ app.get('/api/users/reimbursement-contacts', verifyFirebaseToken, async (req, re
 });
 
 
+// PUT /api/user/preferences (Update user's notification preferences) - Protected
+app.put('/api/user/preferences', verifyFirebaseToken, async (req, res) => {
+  const { uid } = req.user;
+  const { wantsNewRequestNotification } = req.body;
+
+  // 新增：檢查用戶審核狀態
+  if (req.user.status !== 'approved') {
+    return res.status(403).json({ 
+      message: 'Forbidden. Your account requires administrator approval to modify notification preferences.',
+      code: 'ACCOUNT_NOT_APPROVED' 
+    });
+  }
+
+  if (typeof wantsNewRequestNotification !== 'boolean') {
+    return res.status(400).json({ message: 'Invalid value for wantsNewRequestNotification. It must be a boolean.' });
+  }
+
+  try {
+    const userRef = db.collection('users').doc(uid);
+    // Use `set` with `merge: true` to create or update the field without overwriting the whole document
+    await userRef.set({
+      wantsNewRequestNotification: wantsNewRequestNotification,
+    }, { merge: true });
+    
+    // Fetch the updated user document to send back to the client
+    const updatedUserDoc = await userRef.get();
+    const updatedUserData = updatedUserDoc.data();
+
+    res.status(200).json({ 
+        message: 'Preferences updated successfully.',
+        preferences: {
+            wantsNewRequestNotification: updatedUserData.wantsNewRequestNotification
+        } 
+    });
+  } catch (error) {
+    logger.error(`Error updating preferences for user ${uid}:`, error);
+    res.status(500).json({ message: 'Error updating preferences.', error: error.message });
+  }
+});
+
+
+
 // --- Requirements API Endpoints ---
 
 // POST /api/requirements (Create) - Protected
@@ -211,8 +352,19 @@ app.post('/api/requirements', verifyFirebaseToken, async (req, res) => {
     }
     // ▲▲▲ 修改結束 ▲▲▲
 
-    const docRef = await db.collection('requirements').add(newRequirement);
+    const docRef = await db.collection('requirements').add(newRequirement);    
     const createdData = { id: docRef.id, ...newRequirement, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()};
+
+    // --- 👇 新增：非同步觸發郵件通知 ---
+   // --- 👇 核心修改：只在狀態為 'pending' 時才觸發郵件通知 ---
+    // Only send a notification if the new request is in 'pending' status.
+    if (newRequirement.status === 'pending') {
+      sendNewRequestNotification(createdData).catch(err => {
+        logger.error("Failed to trigger notification email send:", err);
+      });
+    }
+    // --- 修改結束 ---
+
     res.status(201).json(createdData);
   } catch (error) {
     logger.error('Error creating requirement:', error);

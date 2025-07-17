@@ -3,24 +3,32 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to get user data
+     // Helper functions (no changes here)
     function getUserData(userId) {
       return get(/databases/$(database)/documents/users/$(userId)).data;
     }
-
-    // Helper function to check if a user has a specific role
     function hasRole(role) {
       return request.auth != null && getUserData(request.auth.uid).roles.hasAny([role]);
     }
 
     // Rules for the 'users' collection itself
     match /users/{userId} {
-      // Users can read their own profile
-      allow read: if request.auth != null && request.auth.uid == userId;
-      // Admins can read any user profile
-      allow read: if hasRole('admin');
-      // Only admins can create, update, or delete user profiles/roles
-      allow write: if hasRole('admin');
+      // READ rules (no changes here)
+      allow read: if request.auth != null && (request.auth.uid == userId || hasRole('admin'));
+
+      // --- 👇 核心修改開始 ---
+
+      // WRITE rules
+      // Admins can create and delete
+      allow create, delete: if hasRole('admin');
+
+      // UPDATE rule:
+      // Allow an update if the user is an admin, OR if a regular user is updating their own document
+      // WITHOUT changing the 'roles' or 'status' fields.
+      allow update: if hasRole('admin') || 
+                     (request.auth.uid == userId &&
+                      request.resource.data.roles == resource.data.roles &&
+                      request.resource.data.status == resource.data.status);
     }
 
     // Requirements rules (existing)

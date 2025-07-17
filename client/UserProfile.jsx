@@ -1,12 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { User, LogOut, Edit2, Check, X } from 'lucide-react';
+import { User, LogOut, Edit2, Check, X, Bell, Loader2 } from 'lucide-react';
 
 const UserProfile = () => {
-  const { currentUser, logout, updateUserProfile } = useAuth();
+  const { currentUser, logout, updateUserProfile, userProfile, updateUserPreferences } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [error, setError] = useState('');
+
+  // 在 UserProfile 元件中增加狀態檢查
+  const isApproved = userProfile?.status === 'approved';
+
+
+  // --- 新增通知偏好設定的狀態 ---
+  const [notificationPref, setNotificationPref] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [notificationError, setNotificationError] = useState('');
+
+  useEffect(() => {
+    // 從 currentUser 物件初始化通知設定
+    if (userProfile?.wantsNewRequestNotification) {
+      setNotificationPref(true);
+    } else {
+      setNotificationPref(false);
+    }
+  }, [userProfile]);
 
   const handleLogout = async () => {
     try {
@@ -40,6 +58,24 @@ const UserProfile = () => {
     } catch (err) {
       console.error("Failed to update profile:", err);
       setError('更新失敗，請稍後再試。');
+    }
+  };
+
+  const handlePreferenceChange = async (e) => {
+    const isChecked = e.target.checked;
+    setIsUpdating(true);
+    setNotificationError('');
+
+    try {
+       // ✨ 使用新的、專門的函式來更新
+       await updateUserPreferences({ wantsNewRequestNotification: isChecked });
+       // 成功後，AuthContext 會自動更新 userProfile，useEffect 會自動更新 UI
+
+    } catch (err) {
+      console.error("Failed to update notification preferences:", err);
+      setNotificationError('更新失敗，請刷新頁面再試。');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -81,6 +117,37 @@ const UserProfile = () => {
         )}
       </div>
       {error && <small className="text-red-500 mx-4">{error}</small>}
+     <div className="flex items-center gap-3 mx-4">
+       <label htmlFor="notification-switch" className={`flex items-center gap-1 cursor-pointer ${
+          isApproved ? 'text-gray-600' : 'text-gray-400'
+          }`}>
+        <Bell size={16} />
+         <span>新需求 Email 通知</span>
+         </label>
+  
+  {!isApproved ? (
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        disabled
+        className="form-checkbox h-4 w-4 text-gray-300 rounded cursor-not-allowed"
+      />
+      <small className="text-amber-600">需要管理員審核後才能使用</small>
+    </div>
+  ) : isUpdating ? (
+    <Loader2 size={18} className="animate-spin text-gray-500" />
+  ) : (
+    <input
+      type="checkbox"
+      id="notification-switch"
+      checked={notificationPref}
+      onChange={handlePreferenceChange}
+      className="form-checkbox h-4 w-4 text-blue-600 rounded cursor-pointer"
+    />
+  )}
+        {notificationError && <small className="text-red-500">{notificationError}</small>}
+      </div>
+
       <button 
         onClick={handleLogout}
         className="bg-red-500 hover:bg-red-600 text-white font-medium py-1 px-3 rounded-md flex items-center gap-1 transition-colors"

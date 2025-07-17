@@ -9,7 +9,7 @@ import { onAuthStateChanged,
          reload // 引入 reload 函式
        }from 'firebase/auth';
 import { auth, firestore } from './firebaseConfig'; // Ensure this path is correct
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 
 
@@ -19,6 +19,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null); // <-- 新增 userProfile 狀態
   const [loading, setLoading] = useState(true);
   const [isReimburser, setIsReimburser] = useState(false);
   const [userRoles, setUserRoles] = useState([]);
@@ -63,6 +64,15 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(auth.currentUser); 
   };
 
+// --- ✨✨✨ 新增：一個專門用來更新 Firestore user profile 的函式 ✨✨✨ ---
+const updateUserPreferences = async (preferences) => {
+  if (!currentUser) throw new Error("User not authenticated");
+  const userDocRef = doc(firestore, 'users', currentUser.uid);
+  await setDoc(userDocRef, preferences, { merge: true });
+  // 更新成功後，同步更新本地的 userProfile 狀態
+  setUserProfile(prevProfile => ({ ...prevProfile, ...preferences }));
+};
+
   useEffect(() => {
     // --- 修改開始 ---
     // 3. 將 onAuthStateChanged 的回呼函式改為 async，以便在內部使用 await
@@ -76,6 +86,7 @@ export const AuthProvider = ({ children }) => {
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
+            setUserProfile(userData); // <-- ✨ 設定 userProfile
             const roles = userData.roles || []; // 從文件中取得 roles 陣列
             setUserRoles(roles); // 儲存角色陣列
             
@@ -84,16 +95,19 @@ export const AuthProvider = ({ children }) => {
           } else {
             // 如果找不到使用者文件，預設為沒有權限
             console.warn("User document not found in Firestore for UID:", user.uid);
+            setUserProfile(null); // <-- ✨ 清空 userProfile
             setUserRoles([]);
             setIsReimburser(false);
           }
         } catch (error) {
           console.error("Error fetching user roles:", error);
+          setUserProfile(null); // <-- ✨ 清空 userProfile
           setUserRoles([]);
           setIsReimburser(false);
         }
       } else {
         // 5. 如果使用者登出，清除角色狀態
+        setUserProfile(null); // <-- ✨ 清空 userProfile
         setUserRoles([]);
         setIsReimburser(false);
       }
@@ -107,12 +121,13 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    userProfile, // <-- 匯出 userProfile
     login,
     signInWithGoogle, // <--- 3. 將新函式匯出
     logout,
     signUp, // 註冊
     updateUserProfile, // 編輯
-     // --- 修改開始 ---
+    updateUserPreferences, // <-- ✨ 匯出新的偏好設定更新函式
     // 7. 將新的權限狀態和角色列表匯出，供其他元件使用
     isReimburser,
     userRoles

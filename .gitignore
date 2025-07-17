@@ -49,3 +49,5 @@ TESTgemini.md
 .github/instructions/
 .obsidian/
 devotion_report.md
+.runtimeconfig.json
+.kiro/

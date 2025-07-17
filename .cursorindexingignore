@@ -12,3 +12,4 @@ functions/firestore-debug.log
 .cursor/
 .specstory/
 .firebase/
+.runtimeconfig.json
