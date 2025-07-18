@@ -101,6 +101,9 @@ const PurchaseRequestBoard = () => {
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [purchaseAmount, setPurchaseAmount] = useState('');
   const [purchaserNameInput, setPurchaserNameInput] = useState('');
+  const [purchaseNotes, setPurchaseNotes] = useState(''); // 1. 新增備註狀態
+  const [notesCharCount, setNotesCharCount] = useState(0); // 1. 新增備註字數狀態
+  const MAX_NOTES_LENGTH = 50; // 1. 新增備註最大長度
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [newComment, setNewComment] = useState('');
@@ -207,6 +210,7 @@ const PurchaseRequestBoard = () => {
           // --- 👇 核心修改：新增這兩個遺漏的欄位 ---
           reimbursementerId: p.reimbursementerId,
           reimbursementerName: p.reimbursementerName,
+          purchaseNotes: p.purchaseNotes, // 新增 purchaseNotes
           // --- 修改結束 ---
         })));
       } else {
@@ -422,6 +426,8 @@ useEffect(() => {
       setUpdateError(null); 
       setPurchaseAmount(''); 
       setPurchaserNameInput(currentUser?.displayName || '');
+      setPurchaseNotes(''); // 清空舊備註
+      setNotesCharCount(0); // 重設字數
       // 清理舊狀態
       // --- 👇 核心修改：移除此處的狀態設定，將權力完全交給 useEffect ---
       // setIsDifferentReimburser(false);
@@ -487,7 +493,8 @@ useEffect(() => {
         purchaseAmount: parseFloat(purchaseAmount),
         purchaseDate: new Date().toISOString(),
         purchaserName: purchaserNameInput.trim(),
-        purchaserId: currentUser.uid
+        purchaserId: currentUser.uid,
+        purchaseNotes: purchaseNotes.trim(), // 新增 purchaseNotes
       };
 
        // --- 👇 新增：如果指定了不同的報帳人，則加入 payload ---
@@ -1271,15 +1278,51 @@ useEffect(() => {
              placeholder="請輸入金額..." min="0" step="1" 
              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" /> 
              </div> 
-             <div className="mb-6"> 
+             <div className="mb-4"> 
               <label htmlFor="purchaserName" 
                      className="block text-sm font-medium text-gray-700 mb-2"> 
                      購買人* 
               </label> 
-              <input id="purchaserName" type="text" value={purchaserNameInput} onChange={(e) => setPurchaserNameInput(e.target.value)} 
-                     placeholder="請輸入購買人姓名..." 
-                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" /> 
+              <input id="purchaserName" 
+                type="text" 
+                value={purchaserNameInput} 
+                readOnly
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none bg-gray-100 cursor-not-allowed" 
+         /> 
               </div>
+
+              {/* 3. 新增購買備註欄位 */}
+      <div className="mb-6">
+        <label htmlFor="purchaseNotes" className="block text-sm font-medium text-gray-700 mb-2">
+          購買備註（選填）
+        </label>
+        <textarea
+          id="purchaseNotes"
+          value={purchaseNotes}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value.length <= MAX_NOTES_LENGTH) {
+              setPurchaseNotes(value);
+              setNotesCharCount(value.length);
+            }
+          }}
+          placeholder="例如：到貨時間、到貨後放置位置或廠商聯絡方式"
+          rows={4}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
+        />
+        <div className="flex justify-between items-center mt-1">
+          <p className="text-xs text-gray-500">
+            可記錄重要採購資訊
+          </p>
+          <span className={`text-xs ${
+            notesCharCount > MAX_NOTES_LENGTH * 0.9 
+              ? 'text-red-500' 
+              : 'text-gray-400'
+          }`}>
+            {notesCharCount}/{MAX_NOTES_LENGTH}
+          </span>
+        </div>
+      </div>
 
               {/* --- 👇 新增：報帳代理人區塊 --- */}
               <div className="mb-6 pt-4 border-t border-gray-200">
@@ -1497,6 +1540,15 @@ useEffect(() => {
                             </div>
                             {record.accountingCategory && (<div className="sm:col-span-2"><span className="text-gray-600">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
                           </div>
+                           {/* 新增：顯示購買備註 */}
+                           {record.purchaseNotes && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-sm font-medium text-gray-800 mb-1">購買備註：</p>
+                              <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded-md">
+                                {record.purchaseNotes}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1559,6 +1611,13 @@ useEffect(() => {
                             <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div> 
                             {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)} 
                           </div>
+                           {/* 新增：在詳情中顯示備註 */}
+                           {request.purchaseNotes && (
+                            <div className="mt-2 pt-2 border-t border-green-200">
+                              <p className="text-xs text-green-700 font-medium">備註：</p>
+                              <p className="text-sm text-green-800 whitespace-pre-wrap">{request.purchaseNotes}</p>
+                            </div>
+                          )}
                         </div> 
                       )}
 

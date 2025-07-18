@@ -193,6 +193,24 @@ const verifyRole = (allowedRoles) => {
   };
 };
 
+
+/**
+ * Sanitizes purchase notes to prevent XSS and limit length.
+ * @param {string | null | undefined} notes The raw notes string.
+ * @returns {string | null} The sanitized notes or null if empty.
+ */
+const sanitizePurchaseNotes = (notes) => {
+  if (!notes || typeof notes !== 'string') return null;
+  
+  // A simple way to strip HTML tags. For more robust sanitization, a library like DOMPurify would be better.
+  const cleanNotes = notes.replace(/<[^>]*>/g, '');
+  
+  // Trim and limit length
+  const trimmedNotes = cleanNotes.trim().substring(0, 500);
+  
+  return trimmedNotes || null;
+};
+
 // API endpoint for health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'UP', message: 'Server is healthy' });
@@ -408,6 +426,16 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
           updatePayload.reimbursementerId = updatePayload.purchaserId;
           updatePayload.reimbursementerName = updatePayload.purchaserName;
         }
+
+        // --- 👇 新增：處理購買備註 ---
+        if (dataToUpdate.purchaseNotes) {
+          updatePayload.purchaseNotes = sanitizePurchaseNotes(dataToUpdate.purchaseNotes);
+          if (updatePayload.purchaseNotes) { // Only add timestamp if notes are not empty
+            updatePayload.purchaseNotesCreatedAt = admin.firestore.FieldValue.serverTimestamp();
+            updatePayload.purchaseNotesCreatedBy = actionRequesterId;
+          }
+        }
+        // --- 備註處理結束 ---
       }
       // Logic for reverting to 'pending'
       else if (dataToUpdate.status === 'pending') {
@@ -419,7 +447,7 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
 
       // Handle clearing fields when reverting
       // --- 👇 修正：將報帳人欄位也加入清除列表 ---
-      const fieldsToClear = ['purchaseAmount', 'purchaseDate', 'purchaserName', 'purchaserId', 'reimbursementerId', 'reimbursementerName'];
+      const fieldsToClear = ['purchaseAmount', 'purchaseDate', 'purchaserName', 'purchaserId', 'reimbursementerId', 'reimbursementerName', 'purchaseNotes', 'purchaseNotesCreatedAt', 'purchaseNotesCreatedBy'];
       for (const field of fieldsToClear) {
         if (updatePayload[field] === null) {
           updatePayload[field] = admin.firestore.FieldValue.delete();
