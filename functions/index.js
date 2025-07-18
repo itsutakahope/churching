@@ -109,6 +109,110 @@ async function sendNewRequestNotification(requirementData) {
   }
 }
 
+/**
+ * Sends an email notification about a completed purchase to the original requester.
+ * @param {object} requirementData The data of the purchased requirement.
+ * @param {string} originalRequesterUid The UID of the original requester.
+ */
+async function sendPurchaseCompleteNotification(requirementData, originalRequesterUid) {
+  // Check if Gmail config is available
+  if (!GMAIL_CONFIG?.client_id || !GMAIL_CONFIG?.refresh_token || !GMAIL_CONFIG?.sender) {
+    logger.warn('Gmail configuration is missing. Skipping purchase complete notification.');
+    return;
+  }
+
+  try {
+    // 1. Get the original requester's notification preferences and email
+    const requesterDoc = await db.collection('users').doc(originalRequesterUid).get();
+    
+    if (!requesterDoc.exists) {
+      logger.warn(`Original requester ${originalRequesterUid} not found in Firestore. Skipping notification.`);
+      return;
+    }
+
+    const requesterData = requesterDoc.data();
+    
+    // Check if user wants purchase complete notifications
+    if (!requesterData.wantsPurchaseCompleteNotification) {
+      logger.log(`User ${originalRequesterUid} has disabled purchase complete notifications. Skipping.`);
+      return;
+    }
+
+    // Check if user has a valid email address
+    if (!requesterData.email) {
+      logger.warn(`User ${originalRequesterUid} has no email address. Skipping notification.`);
+      return;
+    }
+
+    // 2. Format purchase date for display
+    const purchaseDate = requirementData.purchaseDate 
+      ? new Date(requirementData.purchaseDate).toLocaleDateString('zh-TW', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })
+      : '未指定';
+
+    // 3. Format purchase amount for display
+    const formattedAmount = typeof requirementData.purchaseAmount === 'number' 
+      ? `NT$ ${requirementData.purchaseAmount.toLocaleString('zh-TW')}`
+      : '未指定';
+
+    // 4. Create Email Content
+    const subject = `[採購完成] ${requirementData.text} 已完成購買`;
+    const emailBody = `
+      您好 ${requesterData.displayName || ''},<br><br>
+      您申請的採購項目已完成購買，詳情如下：<br><br>
+      <ul>
+        <li><b>品項名稱:</b> ${requirementData.text}</li>
+        <li><b>規格/描述:</b> ${requirementData.description || '無'}</li>
+        <li><b>會計科目:</b> ${requirementData.accountingCategory || '未分類'}</li>
+        <li><b>購買金額:</b> ${formattedAmount}</li>
+        <li><b>購買人:</b> ${requirementData.purchaserName || '未指定'}</li>
+        <li><b>購買日期:</b> ${purchaseDate}</li>
+        ${requirementData.purchaseNotes ? `<li><b>購買備註:</b> ${requirementData.purchaseNotes}</li>` : ''}
+      </ul>
+      <br>
+      感謝您使用採購管理系統。<br>
+      <small>(此為系統自動發送郵件，請勿回覆)</small>
+    `.trim();
+
+    // 5. Construct and Send Email (with proper encoding for headers)
+    const senderDisplayName = '採購板系統';
+    const encodedDisplayName = `=?UTF-8?B?${Buffer.from(senderDisplayName).toString('base64')}?=`;
+    const fromHeader = `${encodedDisplayName} <${GMAIL_CONFIG.sender}>`;
+    
+    const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
+    
+    const rawMessage = [
+      `From: ${fromHeader}`,
+      `To: ${requesterData.email}`,
+      'Content-Type: text/html; charset=UTF-8',
+      'MIME-Version: 1.0',
+      `Subject: ${encodedSubject}`,
+      '',
+      emailBody,
+    ].join('\n');
+
+    const encodedMessage = Buffer.from(rawMessage).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage,
+      },
+    });
+
+    logger.log(`Purchase complete notification email sent successfully to ${requesterData.email} for requirement ${requirementData.id || 'unknown'}.`);
+
+  } catch (error) {
+    logger.error('Error sending purchase complete notification email:', error);
+    if (error.response && error.response.data) {
+      logger.error('Gmail API Error Details:', error.response.data);
+    }
+  }
+}
+
 const app = express();
 
 // Middleware for parsing JSON request bodies
@@ -276,7 +380,7 @@ app.get('/api/users/reimbursement-contacts', verifyFirebaseToken, async (req, re
 // PUT /api/user/preferences (Update user's notification preferences) - Protected
 app.put('/api/user/preferences', verifyFirebaseToken, async (req, res) => {
   const { uid } = req.user;
-  const { wantsNewRequestNotification } = req.body;
+  const { wantsNewRequestNotification, wantsPurchaseCompleteNotification } = req.body;
 
   // 新增：檢查用戶審核狀態
   if (req.user.status !== 'approved') {
@@ -286,16 +390,32 @@ app.put('/api/user/preferences', verifyFirebaseToken, async (req, res) => {
     });
   }
 
-  if (typeof wantsNewRequestNotification !== 'boolean') {
-    return res.status(400).json({ message: 'Invalid value for wantsNewRequestNotification. It must be a boolean.' });
+  // Validate notification preferences - maintain backward compatibility
+  const updateData = {};
+  
+  if (wantsNewRequestNotification !== undefined) {
+    if (typeof wantsNewRequestNotification !== 'boolean') {
+      return res.status(400).json({ message: 'Invalid value for wantsNewRequestNotification. It must be a boolean.' });
+    }
+    updateData.wantsNewRequestNotification = wantsNewRequestNotification;
+  }
+
+  if (wantsPurchaseCompleteNotification !== undefined) {
+    if (typeof wantsPurchaseCompleteNotification !== 'boolean') {
+      return res.status(400).json({ message: 'Invalid value for wantsPurchaseCompleteNotification. It must be a boolean.' });
+    }
+    updateData.wantsPurchaseCompleteNotification = wantsPurchaseCompleteNotification;
+  }
+
+  // Ensure at least one preference is being updated
+  if (Object.keys(updateData).length === 0) {
+    return res.status(400).json({ message: 'At least one notification preference must be provided.' });
   }
 
   try {
     const userRef = db.collection('users').doc(uid);
     // Use `set` with `merge: true` to create or update the field without overwriting the whole document
-    await userRef.set({
-      wantsNewRequestNotification: wantsNewRequestNotification,
-    }, { merge: true });
+    await userRef.set(updateData, { merge: true });
     
     // Fetch the updated user document to send back to the client
     const updatedUserDoc = await userRef.get();
@@ -304,7 +424,8 @@ app.put('/api/user/preferences', verifyFirebaseToken, async (req, res) => {
     res.status(200).json({ 
         message: 'Preferences updated successfully.',
         preferences: {
-            wantsNewRequestNotification: updatedUserData.wantsNewRequestNotification
+            wantsNewRequestNotification: updatedUserData.wantsNewRequestNotification,
+            wantsPurchaseCompleteNotification: updatedUserData.wantsPurchaseCompleteNotification
         } 
     });
   } catch (error) {
@@ -467,6 +588,17 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
     if (responseData.purchaseDate && responseData.purchaseDate.toDate) {
       responseData.purchaseDate = responseData.purchaseDate.toDate().toISOString();
     }
+
+    // --- 👇 新增：購買完成通知觸發邏輯 ---
+    // Check if status was changed from 'pending' to 'purchased' and trigger notification
+    if (dataToUpdate.status === 'purchased' && responseData.userId) {
+      // Trigger purchase complete notification asynchronously
+      sendPurchaseCompleteNotification(responseData, responseData.userId).catch(err => {
+        logger.error(`Failed to send purchase complete notification for requirement ${id}:`, err);
+      });
+      logger.log(`Purchase complete notification triggered for requirement ${id} to user ${responseData.userId}`);
+    }
+    // --- 購買完成通知觸發邏輯結束 ---
 
     res.status(200).json(responseData);
 
@@ -816,14 +948,73 @@ export const createuserprofile = functions.auth.user().onCreate(async (user) => 
     displayName: displayName || 'N/A',
     status: 'pending', // 預設狀態為待審核
     roles: ['user'],   // 可選：預設角色
+    // 通知偏好設定 - 為確保向後相容性，設定預設值
+    wantsNewRequestNotification: false, // 預設不接收新需求通知
+    wantsPurchaseCompleteNotification: true, // 預設接收購買完成通知
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
   try {
     await db.collection('users').doc(uid).set(userProfile);
-    functions.logger.log(`Successfully created profile for user ${uid}`);
+    functions.logger.log(`Successfully created profile for user ${uid} with notification preferences`);
   } catch (error) {
     functions.logger.error(`Error creating profile for user ${uid}:`, error);
+  }
+});
+
+// Migration function to add notification preferences to existing users
+// This is a one-time callable function to ensure backward compatibility
+export const migrateUserNotificationPreferences = onCall(async (request) => {
+  // Only allow admin users to run this migration
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+  }
+
+  try {
+    // Get the user's profile to check if they are admin
+    const userDoc = await db.collection('users').doc(request.auth.uid).get();
+    if (!userDoc.exists || !userDoc.data().roles?.includes('admin')) {
+      throw new HttpsError('permission-denied', 'Only admin users can run migration functions.');
+    }
+
+    // Get all users who don't have the new notification preference field
+    const usersSnapshot = await db.collection('users').get();
+    const batch = db.batch();
+    let updateCount = 0;
+
+    usersSnapshot.docs.forEach(doc => {
+      const userData = doc.data();
+      const updates = {};
+
+      // Add missing notification preferences with default values
+      if (userData.wantsPurchaseCompleteNotification === undefined) {
+        updates.wantsPurchaseCompleteNotification = true; // Default to true for existing users
+        updateCount++;
+      }
+
+      // Also ensure wantsNewRequestNotification exists (backward compatibility)
+      if (userData.wantsNewRequestNotification === undefined) {
+        updates.wantsNewRequestNotification = false; // Default to false for existing users
+      }
+
+      // Only update if there are changes needed
+      if (Object.keys(updates).length > 0) {
+        batch.update(doc.ref, updates);
+      }
+    });
+
+    if (updateCount > 0) {
+      await batch.commit();
+      logger.log(`Migration completed: Updated ${updateCount} users with notification preferences`);
+      return { success: true, updatedUsers: updateCount };
+    } else {
+      logger.log('Migration skipped: All users already have notification preferences');
+      return { success: true, updatedUsers: 0, message: 'All users already have notification preferences' };
+    }
+
+  } catch (error) {
+    logger.error('Error during user notification preferences migration:', error);
+    throw new HttpsError('internal', 'Migration failed: ' + error.message);
   }
 });
 

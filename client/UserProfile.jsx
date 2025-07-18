@@ -14,15 +14,22 @@ const UserProfile = () => {
 
   // --- 新增通知偏好設定的狀態 ---
   const [notificationPref, setNotificationPref] = useState(false);
+  const [purchaseCompleteNotificationPref, setPurchaseCompleteNotificationPref] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [notificationError, setNotificationError] = useState('');
 
   useEffect(() => {
-    // 從 currentUser 物件初始化通知設定
+    // 從 userProfile 物件初始化通知設定
     if (userProfile?.wantsNewRequestNotification) {
       setNotificationPref(true);
     } else {
       setNotificationPref(false);
+    }
+
+    if (userProfile?.wantsPurchaseCompleteNotification) {
+      setPurchaseCompleteNotificationPref(true);
+    } else {
+      setPurchaseCompleteNotificationPref(false);
     }
   }, [userProfile]);
 
@@ -79,6 +86,24 @@ const UserProfile = () => {
     }
   };
 
+  const handlePurchaseCompletePreferenceChange = async (e) => {
+    const isChecked = e.target.checked;
+    setIsUpdating(true);
+    setNotificationError('');
+
+    try {
+       // 更新購買完成通知偏好設定
+       await updateUserPreferences({ wantsPurchaseCompleteNotification: isChecked });
+       // 成功後，AuthContext 會自動更新 userProfile，useEffect 會自動更新 UI
+
+    } catch (err) {
+      console.error("Failed to update purchase complete notification preferences:", err);
+      setNotificationError('更新失敗，請刷新頁面再試。');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
 
 
   if (!currentUser) {
@@ -117,35 +142,65 @@ const UserProfile = () => {
         )}
       </div>
       {error && <small className="text-red-500 mx-4">{error}</small>}
-     <div className="flex items-center gap-3 mx-4">
-       <label htmlFor="notification-switch" className={`flex items-center gap-1 cursor-pointer ${
-          isApproved ? 'text-gray-600' : 'text-gray-400'
-          }`}>
-        <Bell size={16} />
-         <span>新需求 Email 通知</span>
+     <div className="flex items-center gap-6 mx-4">
+       {/* 新需求通知設定 */}
+       <div className="flex items-center gap-2">
+         <label htmlFor="notification-switch" className={`flex items-center gap-1 cursor-pointer ${
+            isApproved ? 'text-gray-600' : 'text-gray-400'
+            }`}>
+          <Bell size={16} />
+           <span>新需求通知</span>
          </label>
-  
-  {!isApproved ? (
-    <div className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        disabled
-        className="form-checkbox h-4 w-4 text-gray-300 rounded cursor-not-allowed"
-      />
-      <small className="text-amber-600">需要管理員審核後才能使用</small>
-    </div>
-  ) : isUpdating ? (
-    <Loader2 size={18} className="animate-spin text-gray-500" />
-  ) : (
-    <input
-      type="checkbox"
-      id="notification-switch"
-      checked={notificationPref}
-      onChange={handlePreferenceChange}
-      className="form-checkbox h-4 w-4 text-blue-600 rounded cursor-pointer"
-    />
-  )}
-        {notificationError && <small className="text-red-500">{notificationError}</small>}
+    
+        {!isApproved ? (
+          <input
+            type="checkbox"
+            disabled
+            className="form-checkbox h-4 w-4 text-gray-300 rounded cursor-not-allowed"
+          />
+        ) : isUpdating ? (
+          <Loader2 size={18} className="animate-spin text-gray-500" />
+        ) : (
+          <input
+            type="checkbox"
+            id="notification-switch"
+            checked={notificationPref}
+            onChange={handlePreferenceChange}
+            className="form-checkbox h-4 w-4 text-blue-600 rounded cursor-pointer"
+          />
+        )}
+       </div>
+
+       {/* 購買完成通知設定 */}
+       <div className="flex items-center gap-2">
+         <label htmlFor="purchase-complete-notification-switch" className={`flex items-center gap-1 cursor-pointer ${
+            isApproved ? 'text-gray-600' : 'text-gray-400'
+            }`}>
+          <Bell size={16} />
+           <span>購買完成通知</span>
+         </label>
+    
+        {!isApproved ? (
+          <input
+            type="checkbox"
+            disabled
+            className="form-checkbox h-4 w-4 text-gray-300 rounded cursor-not-allowed"
+          />
+        ) : isUpdating ? (
+          <Loader2 size={18} className="animate-spin text-gray-500" />
+        ) : (
+          <input
+            type="checkbox"
+            id="purchase-complete-notification-switch"
+            checked={purchaseCompleteNotificationPref}
+            onChange={handlePurchaseCompletePreferenceChange}
+            className="form-checkbox h-4 w-4 text-blue-600 rounded cursor-pointer"
+          />
+        )}
+       </div>
+
+       {!isApproved && <small className="text-amber-600">需要管理員審核後才能使用</small>}
+       {notificationError && <small className="text-red-500">{notificationError}</small>}
       </div>
 
       <button 
