@@ -158,8 +158,27 @@ async function sendPurchaseCompleteNotification(requirementData, originalRequest
 
     const requesterData = requesterDoc.data();
     
+    // --- 👇 核心修正 1：修復 if 判斷式 ---
     // Check if user wants purchase complete notifications
-    if (!requesterData.wantsPurchaseCompleteNotification) ;
+    if (!requesterData.wantsPurchaseCompleteNotification) {
+      logger.log(`Requester ${originalRequesterUid} has opted out of purchase complete notifications.`);
+      return;
+    }
+
+    // --- 👇 核心修正 2：定義遺失的變數 ---
+    const subject = `[採購完成] 您的申請「${requirementData.text}」已由 ${requirementData.purchaserName || '系統'} 完成購買`;
+    
+    const formattedAmount = (requirementData.purchaseAmount || 0).toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'TWD', // Assuming TWD, adjust if necessary
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+    
+    const purchaseDate = requirementData.purchaseDate 
+      ? new Date(requirementData.purchaseDate).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '未指定';
+    
     const emailBody = `
       您好 ${requesterData.displayName || ''},<br><br>
       您申請的採購項目已完成購買，詳情如下：<br><br>
@@ -520,90 +539,86 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
     const dataToUpdate = req.body; // e.g., { status, purchaseAmount, text, description, etc. }
     const requirementRef = db.collection('requirements').doc(id);
 
-    // Run the update in a transaction
-    await db.runTransaction(async (transaction) => {
+    // Run the update in a transaction and capture the result
+    const transactionResult = await db.runTransaction(async (transaction) => {
       const doc = await transaction.get(requirementRef);
       if (!doc.exists) {
-        // Use a custom error message to be caught later
         throw new Error('NOT_FOUND');
       }
 
       const docData = doc.data();
       const actionRequesterId = req.user.uid;
 
-      // --- 👇 核心修正：將 updatePayload 的宣告移到最前面 ---
       const updatePayload = { ...dataToUpdate };
 
       // Logic for marking as 'purchased'
       if (dataToUpdate.status === 'purchased') {
-        // ✨ **關鍵檢查**：只允許在 'pending' 狀態下購買
         if (docData.status !== 'pending') {
-          throw new Error('ALREADY_PURCHASED'); // Custom error for race condition
+          throw new Error('ALREADY_PURCHASED');
         }
-
-        // --- 處理報帳人邏輯 ---
-        // 如果前端沒有指定報帳人，則預設為購買人
-        if (!updatePayload.reimbursementerId) {
-          updatePayload.reimbursementerId = updatePayload.purchaserId;
-          updatePayload.reimbursementerName = updatePayload.purchaserName;
+        if (typeof dataToUpdate.purchaseAmount !== 'number' || dataToUpdate.purchaseAmount <= 0) {
+          throw new Error('INVALID_AMOUNT');
         }
-
-        // --- 👇 新增：處理購買備註 ---
-        if (dataToUpdate.purchaseNotes) {
-          updatePayload.purchaseNotes = sanitizePurchaseNotes(dataToUpdate.purchaseNotes);
-          if (updatePayload.purchaseNotes) { // Only add timestamp if notes are not empty
-            updatePayload.purchaseNotesCreatedAt = admin.firestore.FieldValue.serverTimestamp();
-            updatePayload.purchaseNotesCreatedBy = actionRequesterId;
-          }
+        updatePayload.purchaserId = actionRequesterId;
+        updatePayload.purchaserName = req.user.name || req.user.email;
+        updatePayload.purchaseDate = dataToUpdate.purchaseDate || new Date().toISOString();
+        updatePayload.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+        
+        if (dataToUpdate.reimbursementerId && dataToUpdate.reimbursementerName) {
+            updatePayload.reimbursementerId = dataToUpdate.reimbursementerId;
+            updatePayload.reimbursementerName = dataToUpdate.reimbursementerName;
+        } else {
+            updatePayload.reimbursementerId = updatePayload.purchaserId;
+            updatePayload.reimbursementerName = updatePayload.purchaserName;
         }
-        // --- 備註處理結束 ---
       }
+
       // Logic for reverting to 'pending'
-      else if (dataToUpdate.status === 'pending') {
-        // --- 👇 修正：權限檢查：原始購買人 或 目前的報帳代理人 才能撤銷 ---
-        if (docData.purchaserId !== actionRequesterId && docData.reimbursementerId !== actionRequesterId) {
+      if (dataToUpdate.status === 'pending') {
+        if (docData.status !== 'purchased') {
+          throw new Error('NOT_PURCHASED_YET');
+        }
+        if (docData.purchaserId !== actionRequesterId) {
           throw new Error('PERMISSION_DENIED');
         }
+        updatePayload.status = 'pending';
+        updatePayload.purchaseAmount = admin.firestore.FieldValue.delete();
+        updatePayload.purchaseDate = admin.firestore.FieldValue.delete();
+        updatePayload.purchaserName = admin.firestore.FieldValue.delete();
+        updatePayload.purchaserId = admin.firestore.FieldValue.delete();
+        updatePayload.reimbursementerId = admin.firestore.FieldValue.delete();
+        updatePayload.reimbursementerName = admin.firestore.FieldValue.delete();
+        updatePayload.updatedAt = admin.firestore.FieldValue.serverTimestamp();
       }
 
-      // Handle clearing fields when reverting
-      // --- 👇 修正：將報帳人欄位也加入清除列表 ---
-      const fieldsToClear = ['purchaseAmount', 'purchaseDate', 'purchaserName', 'purchaserId', 'reimbursementerId', 'reimbursementerName', 'purchaseNotes', 'purchaseNotesCreatedAt', 'purchaseNotesCreatedBy'];
-      for (const field of fieldsToClear) {
-        if (updatePayload[field] === null) {
-          updatePayload[field] = admin.firestore.FieldValue.delete();
-        }
+      // Sanitize purchaseNotes
+      if (updatePayload.purchaseNotes) {
+        updatePayload.purchaseNotes = sanitizePurchaseNotes(updatePayload.purchaseNotes);
       }
-
-      updatePayload.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+      
       transaction.update(requirementRef, updatePayload);
+      
+      // If status changes from 'pending' to 'purchased', prepare data for notification
+      if (docData.status === 'pending' && dataToUpdate.status === 'purchased') {
+        return { 
+          sendNotification: true, 
+          updatedData: { id, ...docData, ...updatePayload },
+          originalRequesterUid: docData.userId 
+        };
+      }
+
+      // If no notification is needed, return a standard object
+      return { sendNotification: false };
     });
 
-    // If transaction is successful, fetch the updated document and send it back
-    const updatedDocSnap = await requirementRef.get();
-    const responseData = { id: updatedDocSnap.id, ...updatedDocSnap.data() };
-    // Convert Timestamps for client-side consumption
-    responseData.createdAt = responseData.createdAt?.toDate().toISOString();
-    responseData.updatedAt = responseData.updatedAt?.toDate().toISOString();
-    if (responseData.purchaseDate && responseData.purchaseDate.toDate) {
-      responseData.purchaseDate = responseData.purchaseDate.toDate().toISOString();
+    // After the transaction, check if a notification should be sent
+    if (transactionResult?.sendNotification) {
+      sendPurchaseCompleteNotification(transactionResult.updatedData, transactionResult.originalRequesterUid)
+        .catch(err => logger.error("Failed to trigger purchase complete notification:", err));
     }
 
-    // --- 👇 新增：購買完成通知觸發邏輯 ---
-    // Check if status was changed from 'pending' to 'purchased' and trigger notification
-    if (dataToUpdate.status === 'purchased' && responseData.userId) {
-      // Trigger purchase complete notification asynchronously
-      sendPurchaseCompleteNotification(responseData, responseData.userId).catch(err => {
-        logger.error(`Failed to send purchase complete notification for requirement ${id}:`, err);
-      });
-      logger.log(`Purchase complete notification triggered for requirement ${id} to user ${responseData.userId}`);
-    }
-    // --- 購買完成通知觸發邏輯結束 ---
-
-    res.status(200).json(responseData);
-
+    res.status(200).json({ message: 'Requirement updated successfully' });
   } catch (error) {
-    logger.error('Error updating requirement:', error.message);
     if (error.message === 'NOT_FOUND') {
       return res.status(404).json({ message: '該採購需求不存在。' });
     }
@@ -948,73 +963,15 @@ export const createuserprofile = functions.auth.user().onCreate(async (user) => 
     displayName: displayName || 'N/A',
     status: 'pending', // 預設狀態為待審核
     roles: ['user'],   // 可選：預設角色
-    // 通知偏好設定 - 為確保向後相容性，設定預設值
-    wantsNewRequestNotification: false, // 預設不接收新需求通知
-    wantsPurchaseCompleteNotification: true, // 預設接收購買完成通知
+    
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
   try {
     await db.collection('users').doc(uid).set(userProfile);
-    functions.logger.log(`Successfully created profile for user ${uid} with notification preferences`);
+    functions.logger.log(`Successfully created profile for user ${uid}`);
   } catch (error) {
     functions.logger.error(`Error creating profile for user ${uid}:`, error);
-  }
-});
-
-// Migration function to add notification preferences to existing users
-// This is a one-time callable function to ensure backward compatibility
-export const migrateUserNotificationPreferences = onCall(async (request) => {
-  // Only allow admin users to run this migration
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-  }
-
-  try {
-    // Get the user's profile to check if they are admin
-    const userDoc = await db.collection('users').doc(request.auth.uid).get();
-    if (!userDoc.exists || !userDoc.data().roles?.includes('admin')) {
-      throw new HttpsError('permission-denied', 'Only admin users can run migration functions.');
-    }
-
-    // Get all users who don't have the new notification preference field
-    const usersSnapshot = await db.collection('users').get();
-    const batch = db.batch();
-    let updateCount = 0;
-
-    usersSnapshot.docs.forEach(doc => {
-      const userData = doc.data();
-      const updates = {};
-
-      // Add missing notification preferences with default values
-      if (userData.wantsPurchaseCompleteNotification === undefined) {
-        updates.wantsPurchaseCompleteNotification = true; // Default to true for existing users
-        updateCount++;
-      }
-
-      // Also ensure wantsNewRequestNotification exists (backward compatibility)
-      if (userData.wantsNewRequestNotification === undefined) {
-        updates.wantsNewRequestNotification = false; // Default to false for existing users
-      }
-
-      // Only update if there are changes needed
-      if (Object.keys(updates).length > 0) {
-        batch.update(doc.ref, updates);
-      }
-    });
-
-    if (updateCount > 0) {
-      await batch.commit();
-      logger.log(`Migration completed: Updated ${updateCount} users with notification preferences`);
-      return { success: true, updatedUsers: updateCount };
-    } else {
-      logger.log('Migration skipped: All users already have notification preferences');
-      return { success: true, updatedUsers: 0, message: 'All users already have notification preferences' };
-    }
-
-  } catch (error) {
-    logger.error('Error during user notification preferences migration:', error);
-    throw new HttpsError('internal', 'Migration failed: ' + error.message);
   }
 });
 
