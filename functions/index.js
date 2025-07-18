@@ -115,9 +115,32 @@ async function sendNewRequestNotification(requirementData) {
  * @param {string} originalRequesterUid The UID of the original requester.
  */
 async function sendPurchaseCompleteNotification(requirementData, originalRequesterUid) {
-  // Check if Gmail config is available
+  // Enhanced error handling: Check if Gmail config is available
   if (!GMAIL_CONFIG?.client_id || !GMAIL_CONFIG?.refresh_token || !GMAIL_CONFIG?.sender) {
-    logger.warn('Gmail configuration is missing. Skipping purchase complete notification.');
+    logger.warn('Gmail configuration is missing. Skipping purchase complete notification.', {
+      hasClientId: !!GMAIL_CONFIG?.client_id,
+      hasRefreshToken: !!GMAIL_CONFIG?.refresh_token,
+      hasSender: !!GMAIL_CONFIG?.sender,
+      requirementId: requirementData.id || 'unknown'
+    });
+    return;
+  }
+
+  // Enhanced error handling: Validate input parameters
+  if (!originalRequesterUid) {
+    logger.error('sendPurchaseCompleteNotification called with invalid originalRequesterUid', {
+      originalRequesterUid,
+      requirementId: requirementData.id || 'unknown'
+    });
+    return;
+  }
+
+  if (!requirementData || !requirementData.text) {
+    logger.error('sendPurchaseCompleteNotification called with invalid requirementData', {
+      hasRequirementData: !!requirementData,
+      hasText: !!(requirementData && requirementData.text),
+      requirementId: requirementData?.id || 'unknown'
+    });
     return;
   }
 
@@ -126,40 +149,17 @@ async function sendPurchaseCompleteNotification(requirementData, originalRequest
     const requesterDoc = await db.collection('users').doc(originalRequesterUid).get();
     
     if (!requesterDoc.exists) {
-      logger.warn(`Original requester ${originalRequesterUid} not found in Firestore. Skipping notification.`);
+      logger.warn(`Original requester ${originalRequesterUid} not found in Firestore. Skipping notification.`, {
+        originalRequesterUid,
+        requirementId: requirementData.id || 'unknown'
+      });
       return;
     }
 
     const requesterData = requesterDoc.data();
     
     // Check if user wants purchase complete notifications
-    if (!requesterData.wantsPurchaseCompleteNotification) {
-      logger.log(`User ${originalRequesterUid} has disabled purchase complete notifications. Skipping.`);
-      return;
-    }
-
-    // Check if user has a valid email address
-    if (!requesterData.email) {
-      logger.warn(`User ${originalRequesterUid} has no email address. Skipping notification.`);
-      return;
-    }
-
-    // 2. Format purchase date for display
-    const purchaseDate = requirementData.purchaseDate 
-      ? new Date(requirementData.purchaseDate).toLocaleDateString('zh-TW', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })
-      : '未指定';
-
-    // 3. Format purchase amount for display
-    const formattedAmount = typeof requirementData.purchaseAmount === 'number' 
-      ? `NT$ ${requirementData.purchaseAmount.toLocaleString('zh-TW')}`
-      : '未指定';
-
-    // 4. Create Email Content
-    const subject = `[採購完成] ${requirementData.text} 已完成購買`;
+    if (!requesterData.wantsPurchaseCompleteNotification) ;
     const emailBody = `
       您好 ${requesterData.displayName || ''},<br><br>
       您申請的採購項目已完成購買，詳情如下：<br><br>
