@@ -626,7 +626,7 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
       return res.status(409).json({ message: '此需求已被他人標記為已購買，頁面將會自動更新。' });
     }
     if (error.message === 'PERMISSION_DENIED') {
-      return res.status(403).json({ message: '權限不足，只有原始購買者或目前的報帳代理人才能撤銷此操作。' });
+      return res.status(403).json({ message: '權限不足，只有原始購買者才能撤銷此操作。' });
     }
     res.status(500).json({ message: '更新採購需求時發生錯誤', error: error.message });
   }

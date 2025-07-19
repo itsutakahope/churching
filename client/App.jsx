@@ -1,7 +1,7 @@
 import React, { useState, Suspense } from 'react';
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import LoginModal from './LoginModal.jsx';
-import UserProfile from './UserProfile.jsx';
+import ProfileMenu from './ProfileMenu.jsx'; 
 import { useAuth } from './AuthContext.jsx';
 import { LogIn, LayoutDashboard, HandCoins } from 'lucide-react';
 import './App.css';
@@ -38,22 +38,28 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   return (
-    <div className="bg-gray-100 min-h-screen p-1 sm:p-6">
+     <div className="bg-gray-100 min-h-screen p-1 sm:p-6">
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center">BQ GRACE CHURCH</h1>
-          {!currentUser && (
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center sm:justify-start gap-2 transition-colors w-full sm:w-auto"
-            >
-              <LogIn size={18} />
-              登入
-            </button>
-          )}
+        {/* --- 核心修改區域 --- */}
+        <header className="flex items-center gap-4 mb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">BQ GRACE CHURCH</h1>
+          
+          <div className="ml-auto">
+            {currentUser ? (
+              <ProfileMenu />
+            ) : (
+              <button
+                onClick={() => setIsLoginModalOpen(true)}
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+              >
+                <LogIn size={18} />
+                登入
+              </button>
+            )}
+          </div>
         </header>
 
-        <UserProfile />
+        {/* 不再需要 <UserProfile /> 元件 */}
 
         {currentUser && (
           <nav className="bg-white shadow-md rounded-lg p-2 mb-3 flex items-center gap-2">
@@ -67,6 +73,7 @@ function App() {
             </NavLink>
           </nav>
         )}
+
 
         <main>
           <Suspense fallback={<LoadingFallback />}>

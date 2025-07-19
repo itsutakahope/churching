@@ -1,0 +1,160 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from './AuthContext';
+import { LogOut, Edit2, Check, X, Bell, Loader2, ChevronDown } from 'lucide-react';
+
+const ProfileMenu = () => {
+  const { currentUser, logout, updateUserProfile, userProfile, updateUserPreferences } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [editError, setEditError] = useState('');
+  
+  const [notificationPref, setNotificationPref] = useState(false);
+  const [purchaseCompletePref, setPurchaseCompletePref] = useState(false);
+  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
+  const [prefsError, setPrefsError] = useState('');
+
+  const menuRef = useRef(null);
+
+  const isApproved = userProfile?.status === 'approved';
+
+  // 點擊外部關閉選單的 Effect
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setIsEditing(false); // 關閉時也取消編輯
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 當 userProfile 變動時，同步更新通知設定的狀態
+  useEffect(() => {
+    setNotificationPref(!!userProfile?.wantsNewRequestNotification);
+    setPurchaseCompletePref(!!userProfile?.wantsPurchaseCompleteNotification);
+  }, [userProfile]);
+
+  // 登出處理
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsOpen(false);
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
+  // 姓名編輯處理
+  const handleEditName = () => {
+    setDisplayName(currentUser?.displayName || '');
+    setIsEditing(true);
+    setEditError('');
+  };
+  const handleSaveName = async () => {
+    if (!displayName.trim()) {
+      setEditError('姓名不能為空。');
+      return;
+    }
+    try {
+      await updateUserProfile({ displayName: displayName.trim() });
+      setIsEditing(false);
+    } catch (err) {
+      setEditError('更新失敗，請稍後再試。');
+    }
+  };
+
+  // 通知偏好設定處理
+  const handlePreferenceChange = async (prefKey, isChecked) => {
+    setIsUpdatingPrefs(true);
+    setPrefsError('');
+    try {
+      await updateUserPreferences({ [prefKey]: isChecked });
+    } catch (err) {
+      setPrefsError('更新失敗，請刷新再試。');
+      // 如果失敗，恢復 UI 狀態
+      if (prefKey === 'wantsNewRequestNotification') setNotificationPref(!isChecked);
+      if (prefKey === 'wantsPurchaseCompleteNotification') setPurchaseCompletePref(!isChecked);
+    } finally {
+      setIsUpdatingPrefs(false);
+    }
+  };
+
+  if (!currentUser) return null;
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="flex items-center gap-2 text-base font-medium text-gray-700 hover:text-blue-600 p-2 rounded-lg transition-colors border border-gray-300"
+      >
+        <span>{currentUser.displayName || currentUser.email}</span>
+        <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border z-10">
+          <div className="p-4 border-b">
+            {isEditing ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  autoFocus
+                />
+                {editError && <small className="text-red-500">{editError}</small>}
+                <div className="flex gap-2">
+                  <button onClick={handleSaveName} className="flex-1 text-base bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">儲存</button>
+                  <button onClick={() => setIsEditing(false)} className="flex-1 text-base bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">取消</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <p className="font-semibold text-gray-800 truncate flex-1 text-lg">{currentUser.displayName || '未設定姓名'}</p>
+                <button onClick={handleEditName} className="text-gray-500 hover:text-blue-600 ml-2" title="編輯姓名">
+                  <Edit2 size={20} />
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 truncate mt-1">{currentUser.email}</p>
+          </div>
+
+          <div className="p-4 border-b">
+            <h4 className="text-base font-bold text-gray-500 uppercase mb-3">通知設定</h4>
+            <div className="space-y-3">
+              <label htmlFor="notif-new" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
+                <span className="text-sm text-gray-700">新需求通知</span>
+                {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
+                  <input type="checkbox" id="notif-new" disabled={!isApproved} checked={notificationPref} onChange={(e) => handlePreferenceChange('wantsNewRequestNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-blue-600"/>
+                }
+              </label>
+               <label htmlFor="notif-complete" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
+                <span className="text-sm text-gray-700">購買完成通知</span>
+                 {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
+                  <input type="checkbox" id="notif-complete" disabled={!isApproved} checked={purchaseCompletePref} onChange={(e) => handlePreferenceChange('wantsPurchaseCompleteNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-blue-600"/>
+                }
+              </label>
+            </div>
+             {!isApproved && <p className="text-xs text-amber-600 mt-2">需管理員審核後才能設定</p>}
+             {prefsError && <p className="text-xs text-red-500 mt-2">{prefsError}</p>}
+          </div>
+
+          <div className="p-2">
+            <button 
+              onClick={handleLogout}
+              className="w-full text-left flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 rounded-md px-3 py-2 transition-colors"
+            >
+              <LogOut size={16} />
+              登出
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProfileMenu;
