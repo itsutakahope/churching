@@ -984,8 +984,37 @@ useEffect(() => {
                         {request.comments?.length > 0 && (<div className="flex items-center gap-1"> <MessageCircle size={16} /> <span>{request.comments.length}</span> </div>)}
                       </div>
                       {request.requesterName && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-2"> <User size={16} /> <span>提出者：{request.requesterName}</span> </div>)}
-                      {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-4"> <Tag size={16} className="text-gray-500" /> <span>會計類別：{request.accountingCategory}</span> </div>)}
-                      {request.status === 'purchased' && request.purchaseAmount && ( <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4"> <div className="flex items-center gap-2 text-green-800"> <DollarSign size={16} /> <span className="font-medium">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div> <div className="text-sm text-green-600 mt-1"> 購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'} </div> {request.purchaserName && (<div className="text-sm text-green-600 mt-1"> 購買人：{request.purchaserName} </div>)} </div> )}
+                      {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-4"> 
+                        <Tag size={16} className="text-gray-500" /> 
+                        <span>會計類別：{request.accountingCategory}</span> 
+                        </div>
+                      )}
+
+                      {request.status === 'purchased' && request.purchaseAmount && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                          <div className="flex items-center gap-2 text-green-800">
+                            <DollarSign size={16} />
+                            <span className="font-medium">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span>
+                          </div>
+                          <div className="text-sm text-green-600 mt-1">
+                            購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}
+                          </div>
+                          {request.purchaserName && (
+                            <div className="text-sm text-green-600 mt-1">
+                              購買人：{request.purchaserName}
+                            </div>
+                          )}
+                          {request.purchaseNotes && (
+                            <div className="mt-2 pt-2 border-t border-green-200">
+                              <p className="text-xs text-green-700 font-medium">備註：</p>
+                              <p className="text-sm text-green-800 whitespace-pre-wrap break-words">
+                                <Linkify componentDecorator={componentDecorator}>{request.purchaseNotes}</Linkify>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
                       <div className="flex gap-2 mb-3">
                         <button onClick={() => openCommentModal(request)} className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> 留言 ({request.comments?.length || 0}) </button>
                         {request.status === 'pending' && (<button onClick={() => updateStatus(request.id, 'purchased')} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買 </button>)}
@@ -1611,11 +1640,12 @@ useEffect(() => {
                             <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div> 
                             {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)} 
                           </div>
-                           {/* 新增：在詳情中顯示備註 */}
-                           {request.purchaseNotes && (
+                           {/* 2. 在詳細資料彈窗中顯示備註 */}
+                          {request.purchaseNotes && (
                             <div className="mt-2 pt-2 border-t border-green-200">
                               <p className="text-xs text-green-700 font-medium">備註：</p>
-                              <p className="text-sm text-green-800 whitespace-pre-wrap">{request.purchaseNotes}</p>
+                              <p className="text-sm text-green-800 whitespace-pre-wrap break-words">
+                                <Linkify componentDecorator={componentDecorator}>{request.purchaseNotes}</Linkify></p>
                             </div>
                           )}
                         </div> 
