@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck} from 'lucide-react'; // 新增 CheckSquare icon
+import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck, ArrowRightLeft} from 'lucide-react'; // 新增 CheckSquare icon 和 ArrowRightLeft icon
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -7,6 +7,8 @@ import { firestore } from './firebaseConfig';
 import CategorySelector from './CategorySelector';
 import Linkify from 'react-linkify';
 import { generateVoucherPDF } from './pdfGenerator.js';
+import TransferReimbursementModal from './TransferReimbursementModal.jsx';
+import ToastNotification from './ToastNotification.jsx';
 
 // Simple Spinner Icon Component
 const SpinnerIcon = ({ className = "" }) => <Loader2 size={16} className={`animate-spin ${className}`} />;
@@ -123,6 +125,18 @@ const PurchaseRequestBoard = () => {
  const [selectedReimburserId, setSelectedReimburserId] = useState('');
  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
  // --- 狀態新增結束 ---
+
+ // --- 👇 新增：轉交報帳功能的狀態 ---
+ const [showTransferModal, setShowTransferModal] = useState(false);
+ const [selectedRequestForTransfer, setSelectedRequestForTransfer] = useState(null);
+ // --- 轉交狀態新增結束 ---
+
+ // --- 👇 新增：Toast 通知狀態 ---
+ const [toastMessage, setToastMessage] = useState('');
+ const [toastType, setToastType] = useState('info');
+ const [toastErrorType, setToastErrorType] = useState('');
+ const [showToast, setShowToast] = useState(false);
+ // --- Toast 狀態新增結束 ---
 
 
   const [formData, setFormData] = useState({
@@ -413,7 +427,38 @@ useEffect(() => {
         console.error("Error data:", error.response.data);
         console.error("Error status:", error.response.status);
     }
-    setSubmitError(error.response?.data?.message || error.message || '無法提交採購需求，請再試一次。');
+    
+    // 根據錯誤類型顯示不同的錯誤訊息和 Toast 通知
+    let errorMessage = '無法提交採購需求，請再試一次。';
+    let errorType = 'unknown';
+    
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      errorMessage = '請求超時，請檢查網路連線後重試。';
+      errorType = 'timeout';
+    } else if (error.response) {
+      const status = error.response.status;
+      const backendMessage = error.response.data?.message;
+      
+      if (status === 401) {
+        errorMessage = '登入已過期，請重新登入後再試。';
+        errorType = 'auth';
+      } else if (status === 403) {
+        errorMessage = backendMessage || '權限不足，無法提交採購需求。';
+        errorType = 'permission';
+      } else if (status >= 500) {
+        errorMessage = '伺服器暫時無法回應，請稍後再試。';
+        errorType = 'server';
+      } else {
+        errorMessage = backendMessage || errorMessage;
+        errorType = 'api';
+      }
+    } else if (error.request) {
+      errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
+      errorType = 'network';
+    }
+    
+    setSubmitError(errorMessage);
+    showToastNotification(errorMessage, 'error', errorType);
   } finally {
     setIsSubmittingRequest(false);
   }
@@ -513,13 +558,44 @@ useEffect(() => {
       await fetchRequests();
     } catch (error) {
       console.error("Error confirming purchase:", error);
+      
+      let errorMessage = '無法確認購買，請再試一次。';
+      let errorType = 'unknown';
+      
       if (error.response && error.response.status === 409) {
-        alert('這個已經買好囉。畫面將會自動為您更新。');
+        showToastNotification('此項目已被其他人購買，頁面將自動更新', 'warning');
         setShowPurchaseModal(false); 
         await fetchRequests();
-      } else {
-        setUpdateError(error.response?.data?.message || '無法確認購買，請再試一次。');
-      }    
+        return;
+      }
+      
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = '請求超時，請檢查網路連線後重試。';
+        errorType = 'timeout';
+      } else if (error.response) {
+        const status = error.response.status;
+        const backendMessage = error.response.data?.message;
+        
+        if (status === 401) {
+          errorMessage = '登入已過期，請重新登入後再試。';
+          errorType = 'auth';
+        } else if (status === 403) {
+          errorMessage = backendMessage || '權限不足，無法確認購買。';
+          errorType = 'permission';
+        } else if (status >= 500) {
+          errorMessage = '伺服器暫時無法回應，請稍後再試。';
+          errorType = 'server';
+        } else {
+          errorMessage = backendMessage || errorMessage;
+          errorType = 'api';
+        }
+      } else if (error.request) {
+        errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
+        errorType = 'network';
+      }
+      
+      setUpdateError(errorMessage);
+      showToastNotification(errorMessage, 'error', errorType);
     } finally {
       setIsUpdatingRequest(false);
     }
@@ -542,7 +618,40 @@ useEffect(() => {
         await fetchRequests();
       } catch (error) {
         console.error("Error deleting request:", error);
-        setUpdateError(error.response?.data?.message || '無法刪除採購需求，請再試一次。');
+        
+        let errorMessage = '無法刪除採購需求，請再試一次。';
+        let errorType = 'unknown';
+        
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          errorMessage = '請求超時，請檢查網路連線後重試。';
+          errorType = 'timeout';
+        } else if (error.response) {
+          const status = error.response.status;
+          const backendMessage = error.response.data?.message;
+          
+          if (status === 401) {
+            errorMessage = '登入已過期，請重新登入後再試。';
+            errorType = 'auth';
+          } else if (status === 403) {
+            errorMessage = backendMessage || '權限不足，無法刪除此採購需求。';
+            errorType = 'permission';
+          } else if (status === 404) {
+            errorMessage = '採購需求不存在或已被刪除。';
+            errorType = 'not_found';
+          } else if (status >= 500) {
+            errorMessage = '伺服器暫時無法回應，請稍後再試。';
+            errorType = 'server';
+          } else {
+            errorMessage = backendMessage || errorMessage;
+            errorType = 'api';
+          }
+        } else if (error.request) {
+          errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
+          errorType = 'network';
+        }
+        
+        setUpdateError(errorMessage);
+        showToastNotification(errorMessage, 'error', errorType);
       } finally {
         setIsDeletingRequest(false);
         setSelectedRequestId(null);
@@ -565,7 +674,37 @@ useEffect(() => {
       await fetchRequests();
     } catch (error) {
       console.error("Error adding comment:", error);
-      setUpdateError(error.response?.data?.message || '無法新增留言，請再試一次。');
+      
+      let errorMessage = '無法新增留言，請再試一次。';
+      let errorType = 'unknown';
+      
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = '請求超時，請檢查網路連線後重試。';
+        errorType = 'timeout';
+      } else if (error.response) {
+        const status = error.response.status;
+        const backendMessage = error.response.data?.message;
+        
+        if (status === 401) {
+          errorMessage = '登入已過期，請重新登入後再試。';
+          errorType = 'auth';
+        } else if (status === 403) {
+          errorMessage = backendMessage || '權限不足，無法新增留言。';
+          errorType = 'permission';
+        } else if (status >= 500) {
+          errorMessage = '伺服器暫時無法回應，請稍後再試。';
+          errorType = 'server';
+        } else {
+          errorMessage = backendMessage || errorMessage;
+          errorType = 'api';
+        }
+      } else if (error.request) {
+        errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
+        errorType = 'network';
+      }
+      
+      setUpdateError(errorMessage);
+      showToastNotification(errorMessage, 'error', errorType);
     } finally {
       setIsAddingComment(false);
     }
@@ -582,7 +721,40 @@ useEffect(() => {
         await fetchRequests(); 
       } catch (error) {
         console.error("Error deleting comment:", error);
-        setUpdateError(error.response?.data?.message || '無法刪除留言，請再試一次。');
+        
+        let errorMessage = '無法刪除留言，請再試一次。';
+        let errorType = 'unknown';
+        
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          errorMessage = '請求超時，請檢查網路連線後重試。';
+          errorType = 'timeout';
+        } else if (error.response) {
+          const status = error.response.status;
+          const backendMessage = error.response.data?.message;
+          
+          if (status === 401) {
+            errorMessage = '登入已過期，請重新登入後再試。';
+            errorType = 'auth';
+          } else if (status === 403) {
+            errorMessage = backendMessage || '權限不足，無法刪除此留言。';
+            errorType = 'permission';
+          } else if (status === 404) {
+            errorMessage = '留言不存在或已被刪除。';
+            errorType = 'not_found';
+          } else if (status >= 500) {
+            errorMessage = '伺服器暫時無法回應，請稍後再試。';
+            errorType = 'server';
+          } else {
+            errorMessage = backendMessage || errorMessage;
+            errorType = 'api';
+          }
+        } else if (error.request) {
+          errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
+          errorType = 'network';
+        }
+        
+        setUpdateError(errorMessage);
+        showToastNotification(errorMessage, 'error', errorType);
       }
     }
   };
@@ -600,6 +772,106 @@ useEffect(() => {
     setCurrentRequestForComment(null);
     setUpdateError(null);
   }, []);
+
+  // --- 👇 新增：轉交報帳功能的處理函式 ---
+  const handleOpenTransferModal = (request) => {
+    // 清除之前的錯誤狀態
+    setUpdateError(null);
+    setSelectedRequestForTransfer(request);
+    setShowTransferModal(true);
+  };
+
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+    setSelectedRequestForTransfer(null);
+    // 清除錯誤狀態
+    setUpdateError(null);
+  };
+
+  // --- 👇 新增：Toast 通知處理函式 ---
+  const showToastNotification = (message, type = 'info', errorType = '') => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastErrorType(errorType);
+    setShowToast(true);
+  };
+
+  const hideToastNotification = () => {
+    setShowToast(false);
+    setTimeout(() => {
+      setToastMessage('');
+      setToastType('info');
+      setToastErrorType('');
+    }, 300);
+  };
+
+  const handleTransferComplete = async (updatedRequirement) => {
+    try {
+      // 更新 requests 列表中的資料
+      setRequests(prevRequests => 
+        prevRequests.map(req => 
+          req.id === updatedRequirement.id ? updatedRequirement : req
+        )
+      );
+
+      // 如果是已購買狀態，也要更新 purchaseRecords
+      if (updatedRequirement.status === 'purchased') {
+        setPurchaseRecords(prevRecords => 
+          prevRecords.map(record => 
+            record.id === updatedRequirement.id 
+              ? {
+                  ...record,
+                  reimbursementerId: updatedRequirement.reimbursementerId,
+                  reimbursementerName: updatedRequirement.reimbursementerName
+                }
+              : record
+          )
+        );
+      }
+
+      // 如果詳情彈窗正在顯示同一個需求，也要更新它
+      if (selectedRequestForDetail && selectedRequestForDetail.id === updatedRequirement.id) {
+        setSelectedRequestForDetail(updatedRequirement);
+      }
+
+      // 顯示成功提示訊息
+      showToastNotification(
+        `報帳責任已成功轉交給「${updatedRequirement.reimbursementerName}」`,
+        'success'
+      );
+    } catch (error) {
+      console.error('處理轉交完成時發生錯誤:', error);
+      // 顯示錯誤提示訊息
+      showToastNotification(
+        '更新資料時發生錯誤，正在重新載入...',
+        'error',
+        'unknown'
+      );
+      // 如果更新失敗，重新載入資料以確保一致性
+      fetchRequests();
+    }
+  };
+
+  // 檢查當前使用者是否為指定需求的報帳負責人
+  const isCurrentUserReimburser = (request) => {
+    if (!currentUser || !request) {
+      console.log('isCurrentUserReimburser: 缺少 currentUser 或 request', { currentUser: !!currentUser, request: !!request });
+      return false;
+    }
+    
+    // 如果有明確指定的報帳負責人，檢查是否為當前使用者
+    if (request.reimbursementerId) {
+      const isReimburser = request.reimbursementerId === currentUser.uid;
+      console.log('有指定報帳負責人:', { isReimburser });
+      return isReimburser;
+    }
+    
+    // 如果沒有明確指定報帳負責人，則預設為購買者負責報帳
+    const isPurchaser = request.purchaserId === currentUser.uid;
+    console.log('預設購買者負責報帳:', { isPurchaser });
+    return isPurchaser;
+  };
+  // --- 轉交功能處理函式結束 ---
   
   const toggleCardExpansion = (id) => {
      setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
@@ -612,6 +884,7 @@ useEffect(() => {
         if (showModal) { setShowModal(false); setSubmitError(null); }
         if (showPurchaseModal) { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }
         if (showRecordsModal) setShowRecordsModal(false);
+        if (showTransferModal) handleCloseTransferModal();
       }
     };
     document.addEventListener('keydown', handleEscapeKey);
@@ -619,7 +892,7 @@ useEffect(() => {
       commenterNameInputRef.current.focus();
     }
     return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, closeCommentModal, commenterName, currentUser]);
+  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, showTransferModal, closeCommentModal, commenterName, currentUser]);
 
   const exportPurchaseRecordsToCSV = () => {
     if (filteredPurchaseRecords.length === 0) { alert("沒有可匯出的購買記錄。"); return; }
@@ -1015,11 +1288,51 @@ useEffect(() => {
                         </div>
                       )}
                       
-                      <div className="flex gap-2 mb-3">
-                        <button onClick={() => openCommentModal(request)} className="flex items-center gap-1 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> 留言 ({request.comments?.length || 0}) </button>
-                        {request.status === 'pending' && (<button onClick={() => updateStatus(request.id, 'purchased')} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買 </button>)}
-                        {request.status === 'purchased' && (<button onClick={() => updateStatus(request.id, 'pending')} className="flex items-center gap-1 px-3 py-1 text-orange-600 hover:bg-orange-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}撤銷購買 </button>)}
-                        <button onClick={() => deleteRequest(request.id)} className="flex items-center gap-1 px-3 py-1 text-red-600 hover:bg-red-50 rounded transition-colors text-sm ml-auto disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}刪除 </button>
+                      <div className="flex items-center gap-2 mb-3">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); openCommentModal(request); }} 
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors text-sm disabled:opacity-50"
+                          title={`留言 (${request.comments?.length || 0})`}
+                          disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}>
+                          <MessageCircle size={16} />
+                        </button>
+                        
+                        {request.status === 'pending' && (
+                          <button onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
+                            {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買
+                          </button>
+                        )}
+
+                        {request.status === 'purchased' && (
+                          <>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'pending'); }} 
+                              className="p-2 text-orange-600 hover:bg-orange-100 rounded-full transition-colors text-sm disabled:opacity-50" 
+                              title="撤銷購買"
+                              disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
+                              {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}
+                            </button>
+                            
+                            {isCurrentUserReimburser(request) && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
+                                className="p-2 text-purple-600 hover:bg-purple-100 rounded-full transition-colors text-sm disabled:opacity-50"
+                                title="轉交報帳責任"
+                                disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
+                              >
+                                <ArrowRightLeft size={16} />
+                              </button>
+                            )}
+                          </>
+                        )}
+                        
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }} 
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors text-sm ml-auto disabled:opacity-50"
+                          title="刪除"
+                          disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}>
+                          {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}
+                        </button>
                       </div>
                       {request.comments?.length > 0 && ( 
                         <div className="border-t pt-3 mt-3"> 
@@ -1566,6 +1879,27 @@ useEffect(() => {
                                   <UserCheck size={14} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
                                 )}
                               </span>
+                              {isCurrentUserReimburser(record) && (
+  <button
+    onClick={() => {
+      // 在「購買紀錄」列表中，我們只有簡化的 record 物件。
+      // 但「轉交」彈窗需要完整的 request 物件才能正確運作。
+      // 因此，我們需要從主資料 `requests` 陣列中，根據 ID 找到對應的完整物件。
+      const fullRequest = requests.find(r => r.id === record.id);
+      if (fullRequest) {
+        handleOpenTransferModal(fullRequest);
+      } else {
+        // 如果因故找不到，提供一個安全的備用方案。
+        console.error('Could not find the full request object for this record:', record.id);
+        alert('操作失敗：無法找到此紀錄的完整需求資料。');
+      }
+    }}
+    className="ml-2 p-1 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+    title="轉交報帳責任給其他人員"
+  >
+    <ArrowRightLeft size={16} />
+  </button>
+)}
                             </div>
                             {record.accountingCategory && (<div className="sm:col-span-2"><span className="text-gray-600">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
                           </div>
@@ -1639,6 +1973,10 @@ useEffect(() => {
                           <div className="text-sm text-green-700 grid grid-cols-2 gap-1">
                             <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div> 
                             {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)} 
+                            {/* 新增報帳負責人資訊 */}
+                            <div className="col-span-2 mt-1">
+                              報帳負責人：{request.reimbursementerName || request.purchaserName || '未指定'}
+                            </div>
                           </div>
                            {/* 2. 在詳細資料彈窗中顯示備註 */}
                           {request.purchaseNotes && (
@@ -1655,6 +1993,18 @@ useEffect(() => {
                         <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> 留言 ({request.comments?.length || 0}) </button>
                         {request.status === 'pending' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'purchased'); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white hover:bg-green-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買 </button>)}
                         {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} 撤銷購買 </button>)}
+                        {/* 轉交報帳按鈕 - 只對報帳負責人顯示且僅在已購買狀態下 */}
+                        {request.status === 'purchased' && isCurrentUserReimburser(request) && (
+                          <button 
+                            onClick={() => { setShowDetailModal(false); handleOpenTransferModal(request); }} 
+                            className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded transition-colors text-sm disabled:opacity-50" 
+                            disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}
+                            title="轉交報帳責任給其他人員"
+                          > 
+                            <ArrowRightLeft size={16} /> 
+                            轉交報帳 
+                          </button>
+                        )}
                         <button onClick={() => { setShowDetailModal(false); deleteRequest(request.id); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors text-sm ml-auto disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />} 刪除 </button>
                       </div>
 
@@ -1693,6 +2043,29 @@ useEffect(() => {
 
       {/* ... (Other modals JSX remains the same) ... */}
       {isCommentModalOpen && currentRequestForComment && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-gray-800"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div> )}
+
+      {/* 轉交報帳彈窗 */}
+      <TransferReimbursementModal
+        isOpen={showTransferModal}
+        onClose={handleCloseTransferModal}
+        currentRequest={selectedRequestForTransfer}
+        onTransferComplete={handleTransferComplete}
+      />
+
+      {/* Toast 通知 */}
+      <ToastNotification
+        message={toastMessage}
+        type={toastType}
+        errorType={toastErrorType}
+        isVisible={showToast}
+        onClose={hideToastNotification}
+        duration={5000}
+        showRetry={toastType === 'error' && ['network', 'timeout', 'server'].includes(toastErrorType)}
+        onRetry={() => {
+          hideToastNotification();
+          fetchRequests();
+        }}
+      />
     </>
   );
 };

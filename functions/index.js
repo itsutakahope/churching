@@ -632,6 +632,115 @@ app.put('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// PUT /api/requirements/:id/transfer (轉交報帳責任) - 受保護
+app.put('/api/requirements/:id/transfer', verifyFirebaseToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newReimbursementerId, newReimbursementerName } = req.body;
+    const currentUserId = req.user.uid;
+
+    // 驗證請求參數
+    if (!newReimbursementerId || !newReimbursementerName) {
+      return res.status(400).json({ 
+        message: '缺少必要參數：需要提供新報帳負責人的 ID 和姓名。',
+        code: 'INVALID_REQUEST_DATA'
+      });
+    }
+
+    const requirementRef = db.collection('requirements').doc(id);
+
+    // 使用 Firestore 交易確保資料一致性
+    const transactionResult = await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(requirementRef);
+      
+      if (!doc.exists) {
+        throw new Error('REQUIREMENT_NOT_FOUND');
+      }
+
+      const docData = doc.data();
+
+      // 權限驗證：確保只有目前報帳負責人可以執行轉交
+      if (docData.reimbursementerId !== currentUserId) {
+        throw new Error('PERMISSION_DENIED');
+      }
+
+      // 驗證目標使用者是否具有 reimbursementContact 角色
+      const targetUserDoc = await transaction.get(db.collection('users').doc(newReimbursementerId));
+      
+      if (!targetUserDoc.exists) {
+        throw new Error('INVALID_TARGET_USER');
+      }
+
+      const targetUserData = targetUserDoc.data();
+      const targetUserRoles = targetUserData.roles || [];
+      
+      if (!targetUserRoles.includes('reimbursementContact')) {
+        throw new Error('INVALID_TARGET_USER');
+      }
+
+      // 更新報帳負責人資訊
+      const updateData = {
+        reimbursementerId: newReimbursementerId,
+        reimbursementerName: newReimbursementerName,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      transaction.update(requirementRef, updateData);
+
+      return {
+        id,
+        ...docData,
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      };
+    });
+
+    logger.log(`報帳責任已成功轉交：需求 ${id} 從 ${currentUserId} 轉交給 ${newReimbursementerId}`);
+
+    res.status(200).json({
+      success: true,
+      message: '報帳責任已成功轉交',
+      updatedRequirement: transactionResult
+    });
+
+  } catch (error) {
+    logger.error('轉交報帳責任時發生錯誤:', error);
+
+    // 處理特定錯誤情況
+    if (error.message === 'REQUIREMENT_NOT_FOUND') {
+      return res.status(404).json({ 
+        success: false,
+        message: '找不到指定的採購需求。',
+        code: 'REQUIREMENT_NOT_FOUND'
+      });
+    }
+
+    if (error.message === 'PERMISSION_DENIED') {
+      return res.status(403).json({ 
+        success: false,
+        message: '權限不足：只有目前的報帳負責人才能執行此操作。',
+        code: 'PERMISSION_DENIED'
+      });
+    }
+
+    if (error.message === 'INVALID_TARGET_USER') {
+      return res.status(400).json({ 
+        success: false,
+        message: '選擇的使用者沒有報帳權限，請選擇其他人員。',
+        code: 'INVALID_TARGET_USER'
+      });
+    }
+
+    // 一般性錯誤
+    res.status(500).json({ 
+      success: false,
+      message: '轉交報帳責任時發生系統錯誤，請稍後再試。',
+      code: 'DATABASE_ERROR',
+      error: error.message 
+    });
+  }
+});
+
 // DELETE /api/requirements/:id (刪除一筆採購需求) - 受保護
 app.delete('/api/requirements/:id', verifyFirebaseToken, async (req, res) => {
   try {

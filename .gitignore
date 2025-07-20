@@ -51,3 +51,10 @@ TESTgemini.md
 devotion_report.md
 .runtimeconfig.json
 .kiro/
+# 測試覆蓋率報告
+coverage/
+*.lcov
+
+# 測試結果
+test-results/
+TEST_SUMMARY.md
