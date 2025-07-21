@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck, ArrowRightLeft} from 'lucide-react'; // 新增 CheckSquare icon 和 ArrowRightLeft icon
+import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck, ArrowRightLeft } from 'lucide-react'; // 新增 CheckSquare icon 和 ArrowRightLeft icon
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -22,11 +22,18 @@ const PurchaseRequestBoard = () => {
   const [purchaseRecords, setPurchaseRecords] = useState([]);
   const [selectedRecordIds, setSelectedRecordIds] = useState(new Set());
 
-   // --- 新增開始：視圖切換與詳情彈窗的狀態 ---
-   const [viewMode, setViewMode] = useState('grid'); // 'grid' 或 'list'
-   const [showDetailModal, setShowDetailModal] = useState(false);
-   const [selectedRequestForDetail, setSelectedRequestForDetail] = useState(null);
-   // --- 新增結束 ---
+  // --- 新增開始：主要採購請求的視圖切換與詳情彈窗狀態 ---
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' 或 'list'
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedRequestForDetail, setSelectedRequestForDetail] = useState(null);
+  // --- 新增結束 ---
+
+  // --- 新增開始：購買紀錄視窗的視圖切換與詳情彈窗狀態 ---
+  const [recordsViewMode, setRecordsViewMode] = useState('grid'); // 'grid' 或 'list'
+  const [showRecordDetailModal, setShowRecordDetailModal] = useState(false);
+  const [selectedRecordForDetail, setSelectedRecordForDetail] = useState(null);
+  const [shouldRestoreRecordsModal, setShouldRestoreRecordsModal] = useState(false);
+  // --- 新增結束 ---
 
   const handleRecordSelection = (recordId) => {
     setSelectedRecordIds(prev => {
@@ -47,12 +54,35 @@ const PurchaseRequestBoard = () => {
   };
   // --- 新增結束 ---
 
+  // --- 新增開始：打開購買紀錄詳情彈窗的處理函式 ---
+  const handleShowRecordDetails = (record) => {
+    setSelectedRecordForDetail(record);
+    setShowRecordDetailModal(true);
+    // 如果購買紀錄視窗目前是開啟的，記住需要恢復它
+    if (showRecordsModal) {
+      setShouldRestoreRecordsModal(true);
+      setShowRecordsModal(false);
+    }
+  };
+
+  // --- 新增開始：關閉購買紀錄詳情彈窗的處理函式 ---
+  const handleCloseRecordDetailModal = () => {
+    setShowRecordDetailModal(false);
+    setSelectedRecordForDetail(null);
+    // 如果需要恢復購買紀錄視窗，重新顯示它
+    if (shouldRestoreRecordsModal) {
+      setShowRecordsModal(true);
+      setShouldRestoreRecordsModal(false);
+    }
+  };
+  // --- 新增結束 ---
+
   // --- 👇 新增：打開 "新增需求" 彈窗的處理函式 ---
   const handleOpenAddModal = () => {
     setSubmitError(null);
-    setFormData({ 
-      title: '', 
-      description: '', 
+    setFormData({
+      title: '',
+      description: '',
       requester: currentUser?.displayName || '',
       accountingCategory: '',
       priority: 'general',
@@ -72,15 +102,15 @@ const PurchaseRequestBoard = () => {
       return;
     }
     const recordsToExport = purchaseRecords.filter(r => selectedRecordIds.has(r.id));
-    generateVoucherPDF(recordsToExport, currentUser); 
+    generateVoucherPDF(recordsToExport, currentUser);
   };
 
   const componentDecorator = (href, text, key) => (
-    <a 
-      href={href} 
-      key={key} 
-      target="_blank" 
-      rel="noopener noreferrer" 
+    <a
+      href={href}
+      key={key}
+      target="_blank"
+      rel="noopener noreferrer"
       className="text-blue-600 hover:underline hover:text-blue-800"
     >
       {text}
@@ -119,24 +149,24 @@ const PurchaseRequestBoard = () => {
   const [filterPurchaserUid, setFilterPurchaserUid] = useState('');
   const [filterReimburserUid, setFilterReimburserUid] = useState(''); // <-- 1. 新增 state
 
- // --- 👇 新增：用於確認購買彈窗的狀態 ---
- const [isDifferentReimburser, setIsDifferentReimburser] = useState(false);
- const [reimbursementContacts, setReimbursementContacts] = useState([]);
- const [selectedReimburserId, setSelectedReimburserId] = useState('');
- const [isLoadingContacts, setIsLoadingContacts] = useState(false);
- // --- 狀態新增結束 ---
+  // --- 👇 新增：用於確認購買彈窗的狀態 ---
+  const [isDifferentReimburser, setIsDifferentReimburser] = useState(false);
+  const [reimbursementContacts, setReimbursementContacts] = useState([]);
+  const [selectedReimburserId, setSelectedReimburserId] = useState('');
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
+  // --- 狀態新增結束 ---
 
- // --- 👇 新增：轉交報帳功能的狀態 ---
- const [showTransferModal, setShowTransferModal] = useState(false);
- const [selectedRequestForTransfer, setSelectedRequestForTransfer] = useState(null);
- // --- 轉交狀態新增結束 ---
+  // --- 👇 新增：轉交報帳功能的狀態 ---
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [selectedRequestForTransfer, setSelectedRequestForTransfer] = useState(null);
+  // --- 轉交狀態新增結束 ---
 
- // --- 👇 新增：Toast 通知狀態 ---
- const [toastMessage, setToastMessage] = useState('');
- const [toastType, setToastType] = useState('info');
- const [toastErrorType, setToastErrorType] = useState('');
- const [showToast, setShowToast] = useState(false);
- // --- Toast 狀態新增結束 ---
+  // --- 👇 新增：Toast 通知狀態 ---
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
+  const [toastErrorType, setToastErrorType] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  // --- Toast 狀態新增結束 ---
 
 
   const [formData, setFormData] = useState({
@@ -149,8 +179,8 @@ const PurchaseRequestBoard = () => {
     purchaseAmount: '',       // <-- 新增：購買金額
   });
 
-   // --- 2. 修改此 useEffect，讓它在打開紀錄視窗時，能同時獲取兩份人員列表 ---
-   useEffect(() => {
+  // --- 2. 修改此 useEffect，讓它在打開紀錄視窗時，能同時獲取兩份人員列表 ---
+  useEffect(() => {
     const fetchModalData = async () => {
       if (showRecordsModal && currentUser) {
         try {
@@ -205,8 +235,8 @@ const PurchaseRequestBoard = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
-    // --- 修改結束 ---
+
+      // --- 修改結束 ---
 
       if (Array.isArray(response.data)) {
         setRequests(response.data);
@@ -276,67 +306,67 @@ const PurchaseRequestBoard = () => {
   useEffect(() => {
     setIsLoadingRequests(true);
     const q = query(collection(firestore, "requirements"));
-    const unsubscribe = onSnapshot(q, 
-        () => {
-            console.log("Firestore listener: Detected change in requirements, re-fetching data...");
-            fetchRequests();
-        },
-        (error) => {
-            console.error("Real-time listener failed: ", error);
-            setFetchError("無法建立即時連線，資料可能不會自動更新。");
-            setIsLoadingRequests(false);
-        }
+    const unsubscribe = onSnapshot(q,
+      () => {
+        console.log("Firestore listener: Detected change in requirements, re-fetching data...");
+        fetchRequests();
+      },
+      (error) => {
+        console.error("Real-time listener failed: ", error);
+        setFetchError("無法建立即時連線，資料可能不會自動更新。");
+        setIsLoadingRequests(false);
+      }
     );
     return () => unsubscribe();
-}, [fetchRequests]);
+  }, [fetchRequests]);
 
-useEffect(() => {
-  const fetchReimbursementContacts = async () => {
-    if (!currentUser) return;
-    setIsLoadingContacts(true);
-    try {
-      const token = await currentUser.getIdToken();
-      const response = await axios.get('/api/users/reimbursement-contacts', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setReimbursementContacts(response.data);
-    } catch (error) {
-      console.error('Error fetching reimbursement contacts:', error);
-      // 根據哪個彈窗開啟，來決定在哪裡顯示錯誤
-      if (showPurchaseModal) setUpdateError('無法載入可報帳人員列表。');
-      if (showModal) setSubmitError('無法載入可報帳人員列表。');
-    } finally {
-      setIsLoadingContacts(false);
-    }
-  };
+  useEffect(() => {
+    const fetchReimbursementContacts = async () => {
+      if (!currentUser) return;
+      setIsLoadingContacts(true);
+      try {
+        const token = await currentUser.getIdToken();
+        const response = await axios.get('/api/users/reimbursement-contacts', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setReimbursementContacts(response.data);
+      } catch (error) {
+        console.error('Error fetching reimbursement contacts:', error);
+        // 根據哪個彈窗開啟，來決定在哪裡顯示錯誤
+        if (showPurchaseModal) setUpdateError('無法載入可報帳人員列表。');
+        if (showModal) setSubmitError('無法載入可報帳人員列表。');
+      } finally {
+        setIsLoadingContacts(false);
+      }
+    };
 
-  const shouldFetch = showPurchaseModal || (showModal && formData.isAlreadyPurchased);
+    const shouldFetch = showPurchaseModal || (showModal && formData.isAlreadyPurchased);
 
-  if (shouldFetch) {
-    fetchReimbursementContacts();
-    // 核心邏輯：根據登入者是否有報帳權限，來決定UI的預設狀態
-    if (!isReimburser) {
-      // 如果當前用戶沒有報帳權限，強制他必須指定代理人
-      setIsDifferentReimburser(true);
-    } else {
-      // 只有在 "標記已購買" 彈窗開啟時，才重設為 false
-      // 在 "新增" 彈窗中，由使用者手動控制
+    if (shouldFetch) {
+      fetchReimbursementContacts();
+      // 核心邏輯：根據登入者是否有報帳權限，來決定UI的預設狀態
+      if (!isReimburser) {
+        // 如果當前用戶沒有報帳權限，強制他必須指定代理人
+        setIsDifferentReimburser(true);
+      } else {
+        // 只有在 "標記已購買" 彈窗開啟時，才重設為 false
+        // 在 "新增" 彈窗中，由使用者手動控制
+        if (showPurchaseModal) {
+          setIsDifferentReimburser(false);
+        }
+      }
+      // 清空上一次的選擇
       if (showPurchaseModal) {
-         setIsDifferentReimburser(false);
+        setSelectedReimburserId('');
       }
     }
-    // 清空上一次的選擇
-    if (showPurchaseModal) {
+
+    // 當在 "新增" 彈窗中取消勾選 "我已購買"，也要重設狀態
+    if (showModal && !formData.isAlreadyPurchased) {
+      setIsDifferentReimburser(false);
       setSelectedReimburserId('');
     }
-  }
-
-  // 當在 "新增" 彈窗中取消勾選 "我已購買"，也要重設狀態
-  if (showModal && !formData.isAlreadyPurchased) {
-    setIsDifferentReimburser(false);
-    setSelectedReimburserId('');
-  }
-}, [showPurchaseModal, showModal, formData.isAlreadyPurchased, currentUser, isReimburser]);
+  }, [showPurchaseModal, showModal, formData.isAlreadyPurchased, currentUser, isReimburser]);
 
 
   const handleSubmit = async () => {
@@ -363,7 +393,7 @@ useEffect(() => {
     setSubmitError(null);
     try {
       const token = await currentUser.getIdToken();
-      
+
       // 基本的 payload
       const payload = {
         text: formData.title.trim(),
@@ -389,87 +419,87 @@ useEffect(() => {
           }
         }
       }
-      
+
       // 無論是哪種情況，都發送到同一個 endpoint
       // ▼▼▼ 核心修改開始 ▼▼▼
 
-    // 1. axios.post 現在會接收後端回傳的新資料
-    const response = await axios.post('/api/requirements', payload, { headers: { 'Authorization': `Bearer ${token}` } });
-    const newRequirement = response.data; // 這就是後端回傳的、格式正確的單筆新資料
+      // 1. axios.post 現在會接收後端回傳的新資料
+      const response = await axios.post('/api/requirements', payload, { headers: { 'Authorization': `Bearer ${token}` } });
+      const newRequirement = response.data; // 這就是後端回傳的、格式正確的單筆新資料
 
-    // 2. 手動更新前端狀態，將新資料加到列表最前面
-    setRequests(prevRequests => [newRequirement, ...prevRequests]);
-    
-    // 如果是已購買狀態，也要同步更新 purchaseRecords
-    if (newRequirement.status === 'purchased') {
-      const newRecord = {
-        id: newRequirement.id,
-        title: newRequirement.title || newRequirement.text,
-        requester: newRequirement.requesterName,
-        purchaseAmount: newRequirement.purchaseAmount,
-        requestDate: newRequirement.createdAt,
-        purchaseDate: newRequirement.purchaseDate,
-        purchaserName: newRequirement.purchaserName,
-        accountingCategory: newRequirement.accountingCategory
-      };
-      setPurchaseRecords(prevRecords => [newRecord, ...prevRecords]);
-    }
+      // 2. 手動更新前端狀態，將新資料加到列表最前面
+      setRequests(prevRequests => [newRequirement, ...prevRequests]);
 
-    // 3. 不再呼叫 fetchRequests()，直接處理 UI
-    setFormData({ title: '', description: '', requester: currentUser?.displayName || '', accountingCategory: '', priority: 'general', isAlreadyPurchased: false, purchaseAmount: '' });
-    setShowModal(false);
-    // ▲▲▲ 核心修改結束 ▲▲▲
+      // 如果是已購買狀態，也要同步更新 purchaseRecords
+      if (newRequirement.status === 'purchased') {
+        const newRecord = {
+          id: newRequirement.id,
+          title: newRequirement.title || newRequirement.text,
+          requester: newRequirement.requesterName,
+          purchaseAmount: newRequirement.purchaseAmount,
+          requestDate: newRequirement.createdAt,
+          purchaseDate: newRequirement.purchaseDate,
+          purchaserName: newRequirement.purchaserName,
+          accountingCategory: newRequirement.accountingCategory
+        };
+        setPurchaseRecords(prevRecords => [newRecord, ...prevRecords]);
+      }
 
-  } catch (error) {
-    console.error("Error submitting request:", error);
-    // 讓錯誤日誌更具體
-    if (error.response) {
+      // 3. 不再呼叫 fetchRequests()，直接處理 UI
+      setFormData({ title: '', description: '', requester: currentUser?.displayName || '', accountingCategory: '', priority: 'general', isAlreadyPurchased: false, purchaseAmount: '' });
+      setShowModal(false);
+      // ▲▲▲ 核心修改結束 ▲▲▲
+
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      // 讓錯誤日誌更具體
+      if (error.response) {
         console.error("Error data:", error.response.data);
         console.error("Error status:", error.response.status);
-    }
-    
-    // 根據錯誤類型顯示不同的錯誤訊息和 Toast 通知
-    let errorMessage = '無法提交採購需求，請再試一次。';
-    let errorType = 'unknown';
-    
-    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-      errorMessage = '請求超時，請檢查網路連線後重試。';
-      errorType = 'timeout';
-    } else if (error.response) {
-      const status = error.response.status;
-      const backendMessage = error.response.data?.message;
-      
-      if (status === 401) {
-        errorMessage = '登入已過期，請重新登入後再試。';
-        errorType = 'auth';
-      } else if (status === 403) {
-        errorMessage = backendMessage || '權限不足，無法提交採購需求。';
-        errorType = 'permission';
-      } else if (status >= 500) {
-        errorMessage = '伺服器暫時無法回應，請稍後再試。';
-        errorType = 'server';
-      } else {
-        errorMessage = backendMessage || errorMessage;
-        errorType = 'api';
       }
-    } else if (error.request) {
-      errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
-      errorType = 'network';
+
+      // 根據錯誤類型顯示不同的錯誤訊息和 Toast 通知
+      let errorMessage = '無法提交採購需求，請再試一次。';
+      let errorType = 'unknown';
+
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = '請求超時，請檢查網路連線後重試。';
+        errorType = 'timeout';
+      } else if (error.response) {
+        const status = error.response.status;
+        const backendMessage = error.response.data?.message;
+
+        if (status === 401) {
+          errorMessage = '登入已過期，請重新登入後再試。';
+          errorType = 'auth';
+        } else if (status === 403) {
+          errorMessage = backendMessage || '權限不足，無法提交採購需求。';
+          errorType = 'permission';
+        } else if (status >= 500) {
+          errorMessage = '伺服器暫時無法回應，請稍後再試。';
+          errorType = 'server';
+        } else {
+          errorMessage = backendMessage || errorMessage;
+          errorType = 'api';
+        }
+      } else if (error.request) {
+        errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
+        errorType = 'network';
+      }
+
+      setSubmitError(errorMessage);
+      showToastNotification(errorMessage, 'error', errorType);
+    } finally {
+      setIsSubmittingRequest(false);
     }
-    
-    setSubmitError(errorMessage);
-    showToastNotification(errorMessage, 'error', errorType);
-  } finally {
-    setIsSubmittingRequest(false);
-  }
   };
 
   const updateStatus = async (id, newStatus) => {
     setSelectedRequestId(id);
     setNewStatusForUpdate(newStatus);
     if (newStatus === 'purchased') {
-      setUpdateError(null); 
-      setPurchaseAmount(''); 
+      setUpdateError(null);
+      setPurchaseAmount('');
       setPurchaserNameInput(currentUser?.displayName || '');
       setPurchaseNotes(''); // 清空舊備註
       setNotesCharCount(0); // 重設字數
@@ -480,45 +510,45 @@ useEffect(() => {
       setSelectedReimburserId('');
       setReimbursementContacts([]);
       setShowPurchaseModal(true);
-    } else { 
+    } else {
       const confirmed = window.confirm("您確定要撤銷這次的購買紀錄嗎？相關的購買金額與日期將會被清除。");
-      if (confirmed) { 
+      if (confirmed) {
         if (!currentUser) {
           alert("請登入以更新狀態。");
           setUpdateError("請登入以更新狀態。");
-          setSelectedRequestId(null); 
-          setNewStatusForUpdate(null);  
+          setSelectedRequestId(null);
+          setNewStatusForUpdate(null);
           return;
         }
-       setIsUpdatingRequest(true);
-       setUpdateError(null);
-       try {
-        const token = await currentUser.getIdToken();
-        const payload = {
-          status: 'pending',
-          purchaseAmount: null,
-          purchaseDate: null,
-          purchaserName: null,
-          purchaserId: null,
-          reimbursementerId: null, // <-- 新增：一併清除報帳人
-          reimbursementerName: null, // <-- 新增：一併清除報帳人
-        };
-        await axios.put(`/api/requirements/${id}`, payload, { headers: { 'Authorization': `Bearer ${token}` } });
-        await fetchRequests();
-      } catch (error) {
-        console.error("Error reverting status:", error);
-        setUpdateError(error.response?.data?.message || '無法還原狀態，請再試一次。');
-      } finally {
-        setIsUpdatingRequest(false);
+        setIsUpdatingRequest(true);
+        setUpdateError(null);
+        try {
+          const token = await currentUser.getIdToken();
+          const payload = {
+            status: 'pending',
+            purchaseAmount: null,
+            purchaseDate: null,
+            purchaserName: null,
+            purchaserId: null,
+            reimbursementerId: null, // <-- 新增：一併清除報帳人
+            reimbursementerName: null, // <-- 新增：一併清除報帳人
+          };
+          await axios.put(`/api/requirements/${id}`, payload, { headers: { 'Authorization': `Bearer ${token}` } });
+          await fetchRequests();
+        } catch (error) {
+          console.error("Error reverting status:", error);
+          setUpdateError(error.response?.data?.message || '無法還原狀態，請再試一次。');
+        } finally {
+          setIsUpdatingRequest(false);
+          setSelectedRequestId(null);
+          setNewStatusForUpdate(null);
+        }
+      } else {
         setSelectedRequestId(null);
         setNewStatusForUpdate(null);
       }
-    } else {
-      setSelectedRequestId(null);
-      setNewStatusForUpdate(null);
     }
-  }
-};
+  };
 
   const confirmPurchase = async () => {
     if (!purchaseAmount || parseFloat(purchaseAmount) <= 0) { alert('請輸入有效的購買金額'); return; }
@@ -542,8 +572,8 @@ useEffect(() => {
         purchaseNotes: purchaseNotes.trim(), // 新增 purchaseNotes
       };
 
-       // --- 👇 新增：如果指定了不同的報帳人，則加入 payload ---
-       if (isDifferentReimburser && selectedReimburserId) {
+      // --- 👇 新增：如果指定了不同的報帳人，則加入 payload ---
+      if (isDifferentReimburser && selectedReimburserId) {
         const selectedContact = reimbursementContacts.find(c => c.uid === selectedReimburserId);
         if (selectedContact) {
           payload.reimbursementerId = selectedContact.uid;
@@ -558,24 +588,24 @@ useEffect(() => {
       await fetchRequests();
     } catch (error) {
       console.error("Error confirming purchase:", error);
-      
+
       let errorMessage = '無法確認購買，請再試一次。';
       let errorType = 'unknown';
-      
+
       if (error.response && error.response.status === 409) {
         showToastNotification('此項目已被其他人購買，頁面將自動更新', 'warning');
-        setShowPurchaseModal(false); 
+        setShowPurchaseModal(false);
         await fetchRequests();
         return;
       }
-      
+
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         errorMessage = '請求超時，請檢查網路連線後重試。';
         errorType = 'timeout';
       } else if (error.response) {
         const status = error.response.status;
         const backendMessage = error.response.data?.message;
-        
+
         if (status === 401) {
           errorMessage = '登入已過期，請重新登入後再試。';
           errorType = 'auth';
@@ -593,7 +623,7 @@ useEffect(() => {
         errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
         errorType = 'network';
       }
-      
+
       setUpdateError(errorMessage);
       showToastNotification(errorMessage, 'error', errorType);
     } finally {
@@ -610,7 +640,7 @@ useEffect(() => {
         return;
       }
       setIsDeletingRequest(true);
-      setSelectedRequestId(id); 
+      setSelectedRequestId(id);
       setUpdateError(null);
       try {
         const token = await currentUser.getIdToken();
@@ -618,17 +648,17 @@ useEffect(() => {
         await fetchRequests();
       } catch (error) {
         console.error("Error deleting request:", error);
-        
+
         let errorMessage = '無法刪除採購需求，請再試一次。';
         let errorType = 'unknown';
-        
+
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
           errorMessage = '請求超時，請檢查網路連線後重試。';
           errorType = 'timeout';
         } else if (error.response) {
           const status = error.response.status;
           const backendMessage = error.response.data?.message;
-          
+
           if (status === 401) {
             errorMessage = '登入已過期，請重新登入後再試。';
             errorType = 'auth';
@@ -649,7 +679,7 @@ useEffect(() => {
           errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
           errorType = 'network';
         }
-        
+
         setUpdateError(errorMessage);
         showToastNotification(errorMessage, 'error', errorType);
       } finally {
@@ -674,17 +704,17 @@ useEffect(() => {
       await fetchRequests();
     } catch (error) {
       console.error("Error adding comment:", error);
-      
+
       let errorMessage = '無法新增留言，請再試一次。';
       let errorType = 'unknown';
-      
+
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
         errorMessage = '請求超時，請檢查網路連線後重試。';
         errorType = 'timeout';
       } else if (error.response) {
         const status = error.response.status;
         const backendMessage = error.response.data?.message;
-        
+
         if (status === 401) {
           errorMessage = '登入已過期，請重新登入後再試。';
           errorType = 'auth';
@@ -702,7 +732,7 @@ useEffect(() => {
         errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
         errorType = 'network';
       }
-      
+
       setUpdateError(errorMessage);
       showToastNotification(errorMessage, 'error', errorType);
     } finally {
@@ -718,20 +748,20 @@ useEffect(() => {
       try {
         const token = await currentUser.getIdToken();
         await axios.delete(`/api/requirements/${requestId}/comments/${commentId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-        await fetchRequests(); 
+        await fetchRequests();
       } catch (error) {
         console.error("Error deleting comment:", error);
-        
+
         let errorMessage = '無法刪除留言，請再試一次。';
         let errorType = 'unknown';
-        
+
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
           errorMessage = '請求超時，請檢查網路連線後重試。';
           errorType = 'timeout';
         } else if (error.response) {
           const status = error.response.status;
           const backendMessage = error.response.data?.message;
-          
+
           if (status === 401) {
             errorMessage = '登入已過期，請重新登入後再試。';
             errorType = 'auth';
@@ -752,7 +782,7 @@ useEffect(() => {
           errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
           errorType = 'network';
         }
-        
+
         setUpdateError(errorMessage);
         showToastNotification(errorMessage, 'error', errorType);
       }
@@ -808,22 +838,22 @@ useEffect(() => {
   const handleTransferComplete = async (updatedRequirement) => {
     try {
       // 更新 requests 列表中的資料
-      setRequests(prevRequests => 
-        prevRequests.map(req => 
+      setRequests(prevRequests =>
+        prevRequests.map(req =>
           req.id === updatedRequirement.id ? updatedRequirement : req
         )
       );
 
       // 如果是已購買狀態，也要更新 purchaseRecords
       if (updatedRequirement.status === 'purchased') {
-        setPurchaseRecords(prevRecords => 
-          prevRecords.map(record => 
-            record.id === updatedRequirement.id 
+        setPurchaseRecords(prevRecords =>
+          prevRecords.map(record =>
+            record.id === updatedRequirement.id
               ? {
-                  ...record,
-                  reimbursementerId: updatedRequirement.reimbursementerId,
-                  reimbursementerName: updatedRequirement.reimbursementerName
-                }
+                ...record,
+                reimbursementerId: updatedRequirement.reimbursementerId,
+                reimbursementerName: updatedRequirement.reimbursementerName
+              }
               : record
           )
         );
@@ -858,23 +888,23 @@ useEffect(() => {
       console.log('isCurrentUserReimburser: 缺少 currentUser 或 request', { currentUser: !!currentUser, request: !!request });
       return false;
     }
-    
+
     // 如果有明確指定的報帳負責人，檢查是否為當前使用者
     if (request.reimbursementerId) {
       const isReimburser = request.reimbursementerId === currentUser.uid;
       console.log('有指定報帳負責人:', { isReimburser });
       return isReimburser;
     }
-    
+
     // 如果沒有明確指定報帳負責人，則預設為購買者負責報帳
     const isPurchaser = request.purchaserId === currentUser.uid;
     console.log('預設購買者負責報帳:', { isPurchaser });
     return isPurchaser;
   };
   // --- 轉交功能處理函式結束 ---
-  
+
   const toggleCardExpansion = (id) => {
-     setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
+    setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   useEffect(() => {
@@ -884,6 +914,8 @@ useEffect(() => {
         if (showModal) { setShowModal(false); setSubmitError(null); }
         if (showPurchaseModal) { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }
         if (showRecordsModal) setShowRecordsModal(false);
+        if (showRecordDetailModal) handleCloseRecordDetailModal();
+        if (showDetailModal) setShowDetailModal(false);
         if (showTransferModal) handleCloseTransferModal();
       }
     };
@@ -892,7 +924,7 @@ useEffect(() => {
       commenterNameInputRef.current.focus();
     }
     return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, showTransferModal, closeCommentModal, commenterName, currentUser]);
+  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, showRecordDetailModal, showDetailModal, showTransferModal, closeCommentModal, commenterName, currentUser]);
 
   const exportPurchaseRecordsToCSV = () => {
     if (filteredPurchaseRecords.length === 0) { alert("沒有可匯出的購買記錄。"); return; }
@@ -920,10 +952,10 @@ useEffect(() => {
   };
 
   const filteredRequests = useMemo(() => requests.filter(req => filter === 'all' || req.status === filter), [requests, filter]);
-  
+
   const sortedRequests = useMemo(() => {
     const priorityValues = { 'urgent': 2, 'general': 1 };
-    
+
     return [...filteredRequests].sort((a, b) => {
       switch (sortBy) {
         case 'newest':
@@ -981,10 +1013,10 @@ useEffect(() => {
         ? record.purchaserId === filterPurchaserUid
         : true;
 
-              // --- 👇 核心修改：加入對請款人的篩選邏輯 ---
+      // --- 👇 核心修改：加入對請款人的篩選邏輯 ---
       const matchesReimburser = filterReimburserUid
-      ? record.reimbursementerId === filterReimburserUid
-      : true;
+        ? record.reimbursementerId === filterReimburserUid
+        : true;
 
       if (!record.purchaseDate) return false;
 
@@ -993,13 +1025,13 @@ useEffect(() => {
         rDate = new Date(record.purchaseDate);
         if (isNaN(rDate.getTime())) rDate = null;
       } catch (e) { rDate = null; }
-      
+
       if (!rDate) return false;
 
       const matchesStartDate = sDate ? rDate >= sDate : true;
       const matchesEndDate = eDate ? rDate <= eDate : true;
 
-      return matchesPurchaser && matchesStartDate && matchesEndDate;
+      return matchesPurchaser && matchesReimburser && matchesStartDate && matchesEndDate;
     });
   }, [purchaseRecords, filterPurchaserUid, filterReimburserUid, filterStartDate, filterEndDate]);
 
@@ -1023,7 +1055,7 @@ useEffect(() => {
     }
     const filteredIds = new Set(filteredPurchaseRecords.map(r => r.id));
     const selectedInFilterCount = [...selectedRecordIds].filter(id => filteredIds.has(id)).length;
-    
+
     const allSelected = selectedInFilterCount === filteredPurchaseRecords.length;
     const someSelected = selectedInFilterCount > 0 && !allSelected;
 
@@ -1036,15 +1068,15 @@ useEffect(() => {
     if (selectedRecordIds.size === 0) {
       return { count: 0, totalAmount: 0 };
     }
-    
+
     // 從所有購買紀錄中，篩選出 ID 存在於 selectedRecordIds 中的項目
     const selectedRecords = purchaseRecords.filter(record => selectedRecordIds.has(record.id));
-    
+
     // 使用 reduce 計算總金額
     const totalAmount = selectedRecords.reduce((sum, record) => {
       return sum + (record.purchaseAmount || 0);
     }, 0);
-    
+
     // 返回包含筆數和總金額的物件
     return {
       count: selectedRecords.length, // 使用篩選後陣列的長度更準確
@@ -1067,68 +1099,72 @@ useEffect(() => {
         {/* ... (Header and filter UI remains the same) ... */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-900 text-center">Purchase Board</h1>
-         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          {/* --- 修改/新增開始 --- */}
-<div className="relative flex-1 group">
-  <button
-    onClick={() => setShowRecordsModal(true)}
-    disabled={!currentUser}
-    className="w-full whitespace-nowrap bg-green-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600"
-    title={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
-  >
-    <Receipt size={20} />
-    購買記錄
-  </button>
-  {!currentUser && (
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-      請先登入才能使用此功能
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
-    </div>
-  )}
-</div>
-{/* --- 修改/新增結束 --- */}
-          {/* --- 修改/新增開始 (主操作區按鈕) --- */}
-<div className="relative flex-1 group">
-  <button
-    onClick={() => {
-      setSubmitError(null);
-      setFormData({ 
-        title: '', 
-        description: '', 
-        requester: currentUser?.displayName || '',
-        accountingCategory: '',
-        priority: 'general',
-        isAlreadyPurchased: false,
-        purchaseAmount: ''
-      });
-      setShowModal(true);
-    }}
-    disabled={!currentUser}
-    className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-blue-600"
-    title={currentUser ? "新增一筆採購需求" : "請先登入以新增需求"}
-  >
-    <Plus size={20} />
-    新增需求
-  </button>
-  {!currentUser && (
-    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-      請先登入才能使用此功能
-      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
-    </div>
-  )}
-</div>
-{/* --- 修改/新增結束 --- */}
-         </div>
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            {/* --- 修改/新增開始 --- */}
+            <div className="relative flex-1 group">
+              <button
+                onClick={() => setShowRecordsModal(true)}
+                disabled={!currentUser}
+                className="w-full whitespace-nowrap bg-green-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                title={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
+                aria-label={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
+              >
+                <Receipt size={20} aria-hidden="true" />
+                購買記錄
+              </button>
+              {!currentUser && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  請先登入才能使用此功能
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                </div>
+              )}
+            </div>
+            {/* --- 修改/新增結束 --- */}
+            {/* --- 修改/新增開始 (主操作區按鈕) --- */}
+            <div className="relative flex-1 group">
+              <button
+                onClick={() => {
+                  setSubmitError(null);
+                  setFormData({
+                    title: '',
+                    description: '',
+                    requester: currentUser?.displayName || '',
+                    accountingCategory: '',
+                    priority: 'general',
+                    isAlreadyPurchased: false,
+                    purchaseAmount: ''
+                  });
+                  setShowModal(true);
+                }}
+                disabled={!currentUser}
+                className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                title={currentUser ? "新增一筆採購需求" : "請先登入以新增需求"}
+                aria-label={currentUser ? "新增一筆採購需求" : "請先登入以新增需求"}
+              >
+                <Plus size={20} aria-hidden="true" />
+                新增需求
+              </button>
+              {!currentUser && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  請先登入才能使用此功能
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                </div>
+              )}
+            </div>
+            {/* --- 修改/新增結束 --- */}
+          </div>
         </div>
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center md:justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-gray-700 font-medium shrink-0">篩選：</span>
-            <div className="flex-grow grid grid-cols-3 gap-2">
+            <span className="text-gray-700 font-medium shrink-0" id="filter-label">篩選：</span>
+            <div className="flex-grow grid grid-cols-3 gap-2" role="group" aria-labelledby="filter-label">
               {['all', 'pending', 'purchased'].map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-2 rounded-full text-sm transition-colors text-center ${filter === f ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                  className={`px-3 py-2 rounded-full text-sm transition-colors text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${filter === f ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                  aria-pressed={filter === f}
+                  aria-label={`篩選${f === 'all' ? '全部' : statusLabels[f]?.text || f}採購需求`}
                 >
                   {f === 'all' ? '全部' : statusLabels[f]?.text || f}
                 </button>
@@ -1136,11 +1172,13 @@ useEffect(() => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-700 font-medium shrink-0">排序：</span>
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)} 
+            <label htmlFor="sort-select" className="text-gray-700 font-medium shrink-0">排序：</label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              aria-label="選擇採購需求排序方式"
             >
               <option value="newest">最新建立</option>
               <option value="oldest">最舊建立</option>
@@ -1148,78 +1186,88 @@ useEffect(() => {
               <option value="priority_asc">一般優先</option>
             </select>
           </div>
-           {/* --- 新增開始：視圖切換器 --- */}
-           <div className="flex items-center gap-2">
-            <span className="text-gray-700 font-medium shrink-0">檢視：</span>
-            <div className="flex items-center rounded-lg bg-gray-200 p-1">
-              <button 
+          {/* --- 新增開始：視圖切換器 --- */}
+          <div className="flex items-center gap-2">
+            <span className="text-gray-700 font-medium shrink-0" id="view-mode-label">檢視：</span>
+            <div className="flex items-center rounded-lg bg-gray-200 p-1" role="tablist" aria-labelledby="view-mode-label">
+              <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
                 title="列表模式"
+                role="tab"
+                aria-selected={viewMode === 'list'}
+                aria-controls="requests-content"
+                aria-label="切換到列表檢視模式"
               >
-                <List size={20} />
+                <List size={20} aria-hidden="true" />
+                <span className="sr-only">列表模式</span>
               </button>
-              <button 
+              <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'grid' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
                 title="網格模式"
+                role="tab"
+                aria-selected={viewMode === 'grid'}
+                aria-controls="requests-content"
+                aria-label="切換到網格檢視模式"
               >
-                <LayoutGrid size={20} />
+                <LayoutGrid size={20} aria-hidden="true" />
+                <span className="sr-only">網格模式</span>
               </button>
             </div>
           </div>
           {/* --- 新增結束 --- */}
         </div>
       </div>
-      
+
       {/* ... (Error, Loading, and Empty states JSX remains the same) ... */}
       {generalErrorForDisplay && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-md" role="alert">
-            <p className="font-bold">發生錯誤</p>
-            <p>{generalErrorForDisplay}</p>
-          </div>
-        )}
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-md" role="alert">
+          <p className="font-bold">發生錯誤</p>
+          <p>{generalErrorForDisplay}</p>
+        </div>
+      )}
 
-        {isLoadingRequests && (
-          <div className="text-center py-10">
-            <SpinnerIcon className="text-blue-500 h-12 w-12 mx-auto" />
-            <p className="text-xl mt-4 text-gray-700">載入需求中...</p>
-          </div>
-        )}
+      {isLoadingRequests && (
+        <div className="text-center py-10">
+          <SpinnerIcon className="text-blue-500 h-12 w-12 mx-auto" />
+          <p className="text-xl mt-4 text-gray-700">載入需求中...</p>
+        </div>
+      )}
 
-        {!isLoadingRequests && fetchError && requests.length === 0 && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-6 my-6 rounded-md shadow text-center">
-            <div className="flex flex-col items-center">
-                <svg className="fill-current h-16 w-16 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8v2h2v-2H9z"/></svg>
-                <p className="text-xl font-semibold text-red-700">錯誤：無法載入採購需求</p>
-                <p className="text-md text-red-600 mt-1 mb-4">{fetchError}</p>
-                <button
-                  onClick={fetchRequests}
-                  className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center gap-2"
-                >
-                  <RotateCcw size={16} />
-                  重新嘗試
-                </button>
-            </div>
+      {!isLoadingRequests && fetchError && requests.length === 0 && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-6 my-6 rounded-md shadow text-center">
+          <div className="flex flex-col items-center">
+            <svg className="fill-current h-16 w-16 text-red-500 mb-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8v2h2v-2H9z" /></svg>
+            <p className="text-xl font-semibold text-red-700">錯誤：無法載入採購需求</p>
+            <p className="text-md text-red-600 mt-1 mb-4">{fetchError}</p>
+            <button
+              onClick={fetchRequests}
+              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center gap-2"
+            >
+              <RotateCcw size={16} />
+              重新嘗試
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {!isLoadingRequests && !fetchError && requests.length === 0 && (
-          <div className="text-center py-10">
-            <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            </svg>
-            <h3 className="mt-2 text-xl font-medium text-gray-900">目前沒有任何採購需求</h3>
-            <p className="mt-1 text-base text-gray-500">點擊「新增需求」按鈕來建立您的第一個採購單吧！</p>
-          </div>
-        )}
+      {!isLoadingRequests && !fetchError && requests.length === 0 && (
+        <div className="text-center py-10">
+          <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          </svg>
+          <h3 className="mt-2 text-xl font-medium text-gray-900">目前沒有任何採購需求</h3>
+          <p className="mt-1 text-base text-gray-500">點擊「新增需求」按鈕來建立您的第一個採購單吧！</p>
+        </div>
+      )}
 
       {/* ... (Request cards grid JSX remains the same) ... */}
-       {/* --- 修改開始：根據 viewMode 條件渲染 --- */}
-       {requests.length > 0 && (
-        <>
+      {/* --- 修改開始：根據 viewMode 條件渲染 --- */}
+      {requests.length > 0 && (
+        <div id="requests-content" role="tabpanel" aria-label="採購需求內容">
           {viewMode === 'grid' && (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="網格檢視採購需求">
               {sortedRequests.map((request) => {
                 const isExpanded = !!expandedCards[request.id];
                 const isLongText = request.description && request.description.length > 50;
@@ -1257,10 +1305,10 @@ useEffect(() => {
                         {request.comments?.length > 0 && (<div className="flex items-center gap-1"> <MessageCircle size={16} /> <span>{request.comments.length}</span> </div>)}
                       </div>
                       {request.requesterName && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-2"> <User size={16} /> <span>提出者：{request.requesterName}</span> </div>)}
-                      {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-4"> 
-                        <Tag size={16} className="text-gray-500" /> 
-                        <span>會計類別：{request.accountingCategory}</span> 
-                        </div>
+                      {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-4">
+                        <Tag size={16} className="text-gray-500" />
+                        <span>會計類別：{request.accountingCategory}</span>
+                      </div>
                       )}
 
                       {request.status === 'purchased' && request.purchaseAmount && (
@@ -1287,16 +1335,16 @@ useEffect(() => {
                           )}
                         </div>
                       )}
-                      
+
                       <div className="flex items-center gap-2 mb-3">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); openCommentModal(request); }} 
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openCommentModal(request); }}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors text-sm disabled:opacity-50"
                           title={`留言 (${request.comments?.length || 0})`}
                           disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}>
                           <MessageCircle size={16} />
                         </button>
-                        
+
                         {request.status === 'pending' && (
                           <button onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
                             {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買
@@ -1305,14 +1353,14 @@ useEffect(() => {
 
                         {request.status === 'purchased' && (
                           <>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'pending'); }} 
-                              className="p-2 text-orange-600 hover:bg-orange-100 rounded-full transition-colors text-sm disabled:opacity-50" 
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'pending'); }}
+                              className="p-2 text-orange-600 hover:bg-orange-100 rounded-full transition-colors text-sm disabled:opacity-50"
                               title="撤銷購買"
                               disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
                               {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}
                             </button>
-                            
+
                             {isCurrentUserReimburser(request) && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
@@ -1325,50 +1373,56 @@ useEffect(() => {
                             )}
                           </>
                         )}
-                        
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }} 
+
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }}
                           className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors text-sm ml-auto disabled:opacity-50"
                           title="刪除"
                           disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}>
                           {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}
                         </button>
                       </div>
-                      {request.comments?.length > 0 && ( 
-                        <div className="border-t pt-3 mt-3"> 
-                         <h4 className="text-sm font-semibold text-gray-700 mb-2">留言列表：</h4> 
-                         <div className="space-y-2 max-h-32 overflow-y-auto"> {request.comments.map((comment) => ( 
-                          <div key={comment.id} className="bg-gray-50 rounded p-2 group relative"> 
-                          <div className="flex justify-between items-start mb-1"> 
-                            <div> 
-                              <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span> 
-                              <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span> 
-                              </div> 
-                              {currentUser && comment.userId === currentUser.uid && (<button onClick={() => handleDeleteComment(request.id, comment.id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button> )} </div> 
+                      {request.comments?.length > 0 && (
+                        <div className="border-t pt-3 mt-3">
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2">留言列表：</h4>
+                          <div className="space-y-2 max-h-32 overflow-y-auto"> {request.comments.map((comment) => (
+                            <div key={comment.id} className="bg-gray-50 rounded p-2 group relative">
+                              <div className="flex justify-between items-start mb-1">
+                                <div>
+                                  <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span>
+                                  <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                                </div>
+                                {currentUser && comment.userId === currentUser.uid && (<button onClick={() => handleDeleteComment(request.id, comment.id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button>)} </div>
                               <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
                                 <Linkify componentDecorator={componentDecorator}>
                                   {comment.text}
                                 </Linkify>
                               </p>
-                              </div> ))} </div> </div> )}
+                            </div>))} </div> </div>)}
                     </div>
                   </div>
-                )})}
+                )
+              })}
             </div>
           )}
 
           {viewMode === 'list' && (
-            <div className="space-y-3">
+            <div className="space-y-3" aria-label="列表檢視採購需求">
               {sortedRequests.map(request => {
-                 const isUrgent = request.priority === 'urgent';
-                 return (
-                  <button 
-                    key={request.id} 
+                const isUrgent = request.priority === 'urgent';
+                return (
+                  <button
+                    key={request.id}
                     onClick={() => handleShowDetails(request)}
                     className={`w-full text-left bg-white rounded-lg shadow-sm border p-4 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-4 ${isUrgent ? 'border-red-400' : 'border-gray-200'}`}
+                    aria-label={`查看採購需求詳情: ${request.title || request.text}${isUrgent ? ' (緊急)' : ''}`}
+                    aria-describedby={`request-status-${request.id} request-date-${request.id}`}
                   >
                     <div className="flex-shrink-0">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium w-20 justify-center ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                      <span
+                        id={`request-status-${request.id}`}
+                        className={`inline-flex px-3 py-1 rounded-full text-sm font-medium w-20 justify-center ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}
+                      >
                         {statusLabels[request.status]?.text || request.status}
                       </span>
                     </div>
@@ -1378,293 +1432,296 @@ useEffect(() => {
                     <div className="flex-shrink-0 flex items-center gap-4 text-sm text-gray-500">
                       {isUrgent && (
                         <span className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
-                          <AlertTriangle size={14} />
+                          <AlertTriangle size={14} aria-hidden="true" />
                           {priorityLabels.urgent.text}
                         </span>
                       )}
-                      <div className="flex items-center gap-1.5">
-                        <Calendar size={16} />
+                      <div className="flex items-center gap-1.5" id={`request-date-${request.id}`}>
+                        <Calendar size={16} aria-hidden="true" />
                         <span>{new Date(request.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </button>
-                 )
+                )
               })}
             </div>
           )}
-        </>
+        </div>
       )}
       {/* --- 修改結束 --- */}
 
-      
-{/* Modals */}
-{showModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
-      {/* --- 固定標頭 --- */}
-      <div className="bg-blue-500 text-white p-4 rounded-t-lg flex justify-between items-center flex-shrink-0">
-        <h2 className="text-lg font-semibold">新增採購需求</h2>
-        <button onClick={() => {setShowModal(false); setSubmitError(null);}} className="text-white hover:bg-blue-600 p-1 rounded-full transition-colors">
-          <X size={20} />
-        </button>
-      </div>
 
-      {/* --- 可滾動的內容區域 --- */}
-      <div className="p-6 space-y-2 overflow-y-auto">
-        {submitError && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <strong className="font-bold">提交錯誤!</strong>
-            <span className="block sm:inline"> {submitError}</span>
-          </div>
-        )}
-        <div>
-          <label htmlFor="formTitle" className="block text-sm font-medium text-gray-700 mb-2">
-            需求標題*
-          </label>
-          <input
-            id="formTitle"
-            type="text"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="請輸入標題..."
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="formPriority" className="block text-sm font-medium text-gray-700 mb-2">
-            緊急程度
-          </label>
-          <select
-            id="formPriority"
-            value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="general">一般</option>
-            <option value="urgent">緊急</option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="formDescription" className="block text-sm font-medium text-gray-700 mb-2">
-            詳細描述
-          </label>
-          <textarea
-            id="formDescription"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="請描述需求的詳細內容：數量、去哪買、可貼連結..."
-            rows="2"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </div>
-        <div>
-          <label htmlFor="formRequester" className="block text-sm font-medium text-gray-700 mb-2">
-            提出者姓名
-          </label>
-          <input
-            id="formRequester"
-            type="text"
-            value={currentUser?.displayName || formData.requester}
-            onChange={(e) => !currentUser?.displayName && setFormData({ ...formData, requester: e.target.value })}
-            placeholder="您的姓名"
-            className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`}
-            readOnly={!!currentUser?.displayName}
-          />
-        </div>
-        <CategorySelector
-          value={formData.accountingCategory}
-          onChange={(selectedValue) => setFormData({ ...formData, accountingCategory: selectedValue })}
-        />
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="flex items-center">
-            <input
-              id="isAlreadyPurchased"
-              type="checkbox"
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              checked={formData.isAlreadyPurchased}
-              onChange={(e) => {
-                const isChecked = e.target.checked;
-                setFormData({ ...formData, isAlreadyPurchased: isChecked, purchaseAmount: '' });
-                // 如果取消勾選，也要重設報帳人狀態
-                if (!isChecked) {
-                    setIsDifferentReimburser(false);
-                    setSelectedReimburserId('');
-                }
-            }}
-            />
-            <label htmlFor="isAlreadyPurchased" className="ml-3 block text-sm font-medium text-gray-800">
-              我已購買此項目 (直接登記為「已購買」)
-            </label>
-          </div>
-          {formData.isAlreadyPurchased && (
-            <div className="mt-4 pl-2 border-l-2 border-gray-200">
-              <div className="mb-4">
-                <label htmlFor="formPurchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                  購買總金額 (NT$)*
+      {/* Modals */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+            {/* --- 固定標頭 --- */}
+            <div className="bg-blue-500 text-white p-4 rounded-t-lg flex justify-between items-center flex-shrink-0">
+              <h2 className="text-lg font-semibold">新增採購需求</h2>
+              <button
+                onClick={() => { setShowModal(false); setSubmitError(null); }}
+                className="text-white hover:bg-blue-600 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-500"
+                aria-label="關閉新增需求對話框"
+              >
+                <X size={20} aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* --- 可滾動的內容區域 --- */}
+            <div className="p-6 space-y-2 overflow-y-auto">
+              {submitError && (
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded relative" role="alert">
+                  <strong className="font-bold">提交錯誤!</strong>
+                  <span className="block sm:inline"> {submitError}</span>
+                </div>
+              )}
+              <div>
+                <label htmlFor="formTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                  需求標題*
                 </label>
                 <input
-                  id="formPurchaseAmount"
-                  type="number"
-                  value={formData.purchaseAmount}
-                  onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })}
-                  placeholder="請輸入購買總金額或代墊金額..."
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  id="formTitle"
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="請輸入標題..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
-
-              {/* --- 👇 新增：報帳代理人區塊 --- */}
-              <div className="mb-2 pt-4 border-t border-gray-200">
+              <div>
+                <label htmlFor="formPriority" className="block text-sm font-medium text-gray-700 mb-2">
+                  緊急程度
+                </label>
+                <select
+                  id="formPriority"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="general">一般</option>
+                  <option value="urgent">緊急</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="formDescription" className="block text-sm font-medium text-gray-700 mb-2">
+                  詳細描述
+                </label>
+                <textarea
+                  id="formDescription"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="請描述需求的詳細內容：數量、去哪買、可貼連結..."
+                  rows="2"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="formRequester" className="block text-sm font-medium text-gray-700 mb-2">
+                  提出者姓名
+                </label>
+                <input
+                  id="formRequester"
+                  type="text"
+                  value={currentUser?.displayName || formData.requester}
+                  onChange={(e) => !currentUser?.displayName && setFormData({ ...formData, requester: e.target.value })}
+                  placeholder="您的姓名"
+                  className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`}
+                  readOnly={!!currentUser?.displayName}
+                />
+              </div>
+              <CategorySelector
+                value={formData.accountingCategory}
+                onChange={(selectedValue) => setFormData({ ...formData, accountingCategory: selectedValue })}
+              />
+              <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center">
                   <input
-                    id="isDifferentReimburser_add"
+                    id="isAlreadyPurchased"
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-70"
-                    checked={isDifferentReimburser}
-                    onChange={(e) => setIsDifferentReimburser(e.target.checked)}
-                    disabled={!isReimburser}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    checked={formData.isAlreadyPurchased}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      setFormData({ ...formData, isAlreadyPurchased: isChecked, purchaseAmount: '' });
+                      // 如果取消勾選，也要重設報帳人狀態
+                      if (!isChecked) {
+                        setIsDifferentReimburser(false);
+                        setSelectedReimburserId('');
+                      }
+                    }}
                   />
-                  <label htmlFor="isDifferentReimburser_add" className="ml-3 block text-sm font-medium text-gray-800">
-                    指定他人請款 (非本人報帳)
+                  <label htmlFor="isAlreadyPurchased" className="ml-3 block text-sm font-medium text-gray-800">
+                    我已購買此項目 (直接登記為「已購買」)
                   </label>
                 </div>
-
-                {!isReimburser && (
-                  <p className="text-xs text-orange-600 mt-2 p-2 bg-orange-50 rounded-md">您的帳號無請款權限，請務必指定一位報帳代理人。</p>
-                )}
-                
-                {isDifferentReimburser && (
-                  <div className="mt-4">
-                    <label htmlFor="reimburserSelect_add" className="block text-sm font-medium text-gray-700 mb-2">
-                      報帳請款人*
-                    </label>
-                    {isLoadingContacts ? (
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <SpinnerIcon />
-                        <span>正在載入人員列表...</span>
-                      </div>
-                    ) : (
-                      <select
-                        id="reimburserSelect_add"
-                        value={selectedReimburserId}
-                        onChange={(e) => setSelectedReimburserId(e.target.value)}
+                {formData.isAlreadyPurchased && (
+                  <div className="mt-4 pl-2 border-l-2 border-gray-200">
+                    <div className="mb-4">
+                      <label htmlFor="formPurchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                        購買總金額 (NT$)*
+                      </label>
+                      <input
+                        id="formPurchaseAmount"
+                        type="number"
+                        value={formData.purchaseAmount}
+                        onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })}
+                        placeholder="請輸入購買總金額或代墊金額..."
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      >
-                        <option value="" disabled>請選擇一位報帳請款人...</option>
-                        {reimbursementContacts.map(contact => (
-                          <option key={contact.uid} value={contact.uid}>
-                            {contact.displayName}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                        required
+                      />
+                    </div>
+
+                    {/* --- 👇 新增：報帳代理人區塊 --- */}
+                    <div className="mb-2 pt-4 border-t border-gray-200">
+                      <div className="flex items-center">
+                        <input
+                          id="isDifferentReimburser_add"
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-70"
+                          checked={isDifferentReimburser}
+                          onChange={(e) => setIsDifferentReimburser(e.target.checked)}
+                          disabled={!isReimburser}
+                        />
+                        <label htmlFor="isDifferentReimburser_add" className="ml-3 block text-sm font-medium text-gray-800">
+                          指定他人請款 (非本人報帳)
+                        </label>
+                      </div>
+
+                      {!isReimburser && (
+                        <p className="text-xs text-orange-600 mt-2 p-2 bg-orange-50 rounded-md">您的帳號無請款權限，請務必指定一位報帳代理人。</p>
+                      )}
+
+                      {isDifferentReimburser && (
+                        <div className="mt-4">
+                          <label htmlFor="reimburserSelect_add" className="block text-sm font-medium text-gray-700 mb-2">
+                            報帳請款人*
+                          </label>
+                          {isLoadingContacts ? (
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <SpinnerIcon />
+                              <span>正在載入人員列表...</span>
+                            </div>
+                          ) : (
+                            <select
+                              id="reimburserSelect_add"
+                              value={selectedReimburserId}
+                              onChange={(e) => setSelectedReimburserId(e.target.value)}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            >
+                              <option value="" disabled>請選擇一位報帳請款人...</option>
+                              {reimbursementContacts.map(contact => (
+                                <option key={contact.uid} value={contact.uid}>
+                                  {contact.displayName}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {/* --- 新增區塊結束 --- */}
                   </div>
                 )}
               </div>
-              {/* --- 新增區塊結束 --- */}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* --- 固定頁腳 (按鈕區) --- */}
-      <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200">
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => { setShowModal(false); setSubmitError(null); }}
-            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
-            disabled={isSubmittingRequest}
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            disabled={isSubmittingRequest || (formData.isAlreadyPurchased && isLoadingContacts)}
-          >
-            {isSubmittingRequest && <SpinnerIcon />}
-            {isSubmittingRequest ? '提交中...' : '提交需求'}
-          </button>
+            {/* --- 固定頁腳 (按鈕區) --- */}
+            <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setShowModal(false); setSubmitError(null); }}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+                  disabled={isSubmittingRequest}
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  disabled={isSubmittingRequest || (formData.isAlreadyPurchased && isLoadingContacts)}
+                >
+                  {isSubmittingRequest && <SpinnerIcon />}
+                  {isSubmittingRequest ? '提交中...' : '提交需求'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
-        
-        
-{showPurchaseModal && ( 
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"> 
-  <div className="bg-white rounded-lg shadow-xl w-full max-w-md"> 
-    <div className="bg-green-500 text-white p-4 rounded-t-lg flex justify-between items-center"> 
-      <h2 className="text-lg font-semibold">
-        確認購買
-      </h2> 
-      <button onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }} className="text-white hover:bg-green-600 p-1 rounded-full transition-colors"> <X size={20} /> 
-      </button> 
-      </div> 
-      <div className="p-6"> {updateError && <p 
-           className="text-red-500 text-sm mb-3 bg-red-100 p-2 rounded text-center">{updateError}</p>} <p 
-           className="text-gray-700 mb-4"> 
-           請輸入購買金額與購買人以完成採購： </p> 
-      <div className="mb-4"> 
-        <label htmlFor="purchaseAmount" className="block text-sm font-medium text-gray-700 mb-2"> 
-          購買金額 (NT$)* 
-        </label> 
-      <input id="purchaseAmount" 
-             type="number" 
-             value={purchaseAmount} 
-             onChange={(e) => setPurchaseAmount(e.target.value)} 
-             placeholder="請輸入金額..." min="0" step="1" 
-             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" /> 
-             </div> 
-             <div className="mb-4"> 
-              <label htmlFor="purchaserName" 
-                     className="block text-sm font-medium text-gray-700 mb-2"> 
-                     購買人* 
-              </label> 
-              <input id="purchaserName" 
-                type="text" 
-                value={purchaserNameInput} 
-                readOnly
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none bg-gray-100 cursor-not-allowed" 
-         /> 
+      )}
+
+
+      {showPurchaseModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="bg-green-500 text-white p-4 rounded-t-lg flex justify-between items-center">
+              <h2 className="text-lg font-semibold">
+                確認購買
+              </h2>
+              <button onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }} className="text-white hover:bg-green-600 p-1 rounded-full transition-colors"> <X size={20} />
+              </button>
+            </div>
+            <div className="p-6"> {updateError && <p
+              className="text-red-500 text-sm mb-3 bg-red-100 p-2 rounded text-center">{updateError}</p>} <p
+                className="text-gray-700 mb-4">
+                請輸入購買金額與購買人以完成採購： </p>
+              <div className="mb-4">
+                <label htmlFor="purchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                  購買金額 (NT$)*
+                </label>
+                <input id="purchaseAmount"
+                  type="number"
+                  value={purchaseAmount}
+                  onChange={(e) => setPurchaseAmount(e.target.value)}
+                  placeholder="請輸入金額..." min="0" step="1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="purchaserName"
+                  className="block text-sm font-medium text-gray-700 mb-2">
+                  購買人*
+                </label>
+                <input id="purchaserName"
+                  type="text"
+                  value={purchaserNameInput}
+                  readOnly
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none bg-gray-100 cursor-not-allowed"
+                />
               </div>
 
               {/* 3. 新增購買備註欄位 */}
-      <div className="mb-6">
-        <label htmlFor="purchaseNotes" className="block text-sm font-medium text-gray-700 mb-2">
-          購買備註（選填）
-        </label>
-        <textarea
-          id="purchaseNotes"
-          value={purchaseNotes}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value.length <= MAX_NOTES_LENGTH) {
-              setPurchaseNotes(value);
-              setNotesCharCount(value.length);
-            }
-          }}
-          placeholder="例如：到貨時間、到貨後放置位置或廠商聯絡方式"
-          rows={4}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
-        />
-        <div className="flex justify-between items-center mt-1">
-          <p className="text-xs text-gray-500">
-            可記錄重要採購資訊
-          </p>
-          <span className={`text-xs ${
-            notesCharCount > MAX_NOTES_LENGTH * 0.9 
-              ? 'text-red-500' 
-              : 'text-gray-400'
-          }`}>
-            {notesCharCount}/{MAX_NOTES_LENGTH}
-          </span>
-        </div>
-      </div>
+              <div className="mb-6">
+                <label htmlFor="purchaseNotes" className="block text-sm font-medium text-gray-700 mb-2">
+                  購買備註（選填）
+                </label>
+                <textarea
+                  id="purchaseNotes"
+                  value={purchaseNotes}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= MAX_NOTES_LENGTH) {
+                      setPurchaseNotes(value);
+                      setNotesCharCount(value.length);
+                    }
+                  }}
+                  placeholder="例如：到貨時間、到貨後放置位置或廠商聯絡方式"
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
+                />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-500">
+                    可記錄重要採購資訊
+                  </p>
+                  <span className={`text-xs ${notesCharCount > MAX_NOTES_LENGTH * 0.9
+                    ? 'text-red-500'
+                    : 'text-gray-400'
+                    }`}>
+                    {notesCharCount}/{MAX_NOTES_LENGTH}
+                  </span>
+                </div>
+              </div>
 
               {/* --- 👇 新增：報帳代理人區塊 --- */}
               <div className="mb-6 pt-4 border-t border-gray-200">
@@ -1685,7 +1742,7 @@ useEffect(() => {
                 {!isReimburser && (
                   <p className="text-xs text-orange-600 mt-2 p-2 bg-orange-50 rounded-md">您的帳號無請款權限，請務必指定一位報帳代理人。</p>
                 )}
-                
+
                 {isDifferentReimburser && (
                   <div className="mt-4">
                     <label htmlFor="reimburserSelect" className="block text-sm font-medium text-gray-700 mb-2">
@@ -1716,24 +1773,24 @@ useEffect(() => {
               </div>
               {/* --- 新增區塊結束 --- */}
 
-              <div className="flex gap-3"> 
-                <button type="button" 
-                        onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }} 
-                        className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors" 
-                        disabled={isUpdatingRequest}> 
-                        取消 
-                </button> 
-                <button 
-                type="button" 
-                onClick={confirmPurchase} 
-                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2" 
-                disabled={isUpdatingRequest || (isDifferentReimburser && !selectedReimburserId) || isLoadingContacts}> 
-                {isUpdatingRequest && <SpinnerIcon />} {isUpdatingRequest ? '處理中...' : '確認購買'} 
-                </button> 
-          </div> 
-       </div> 
-    </div> 
-</div> )}
+              <div className="flex gap-3">
+                <button type="button"
+                  onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+                  disabled={isUpdatingRequest}>
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmPurchase}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  disabled={isUpdatingRequest || (isDifferentReimburser && !selectedReimburserId) || isLoadingContacts}>
+                  {isUpdatingRequest && <SpinnerIcon />} {isUpdatingRequest ? '處理中...' : '確認購買'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>)}
 
 
       {/* --- 修改/新增開始: 更新購買紀錄彈出視窗的 JSX --- */}
@@ -1755,7 +1812,7 @@ useEffect(() => {
                   <Download size={18} />
                   匯出篩選結果 CSV
                 </button>
-                </div>
+              </div>
               <div> {/* 將關閉按鈕移到這個新的 div 內 */}
                 <button onClick={() => setShowRecordsModal(false)} className="text-white hover:bg-green-600 p-1 rounded-full transition-colors" title="關閉">
                   <X size={30} />
@@ -1770,10 +1827,10 @@ useEffect(() => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
                     <label htmlFor="filterPurchaser" className="block text-sm font-medium text-gray-700 mb-1">購買人</label>
-                    <select 
-                      id="filterPurchaser" 
-                      value={filterPurchaserUid} 
-                      onChange={(e) => setFilterPurchaserUid(e.target.value)} 
+                    <select
+                      id="filterPurchaser"
+                      value={filterPurchaserUid}
+                      onChange={(e) => setFilterPurchaserUid(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <option value="">所有購買人</option>
@@ -1784,10 +1841,10 @@ useEffect(() => {
                   </div>
                   <div>
                     <label htmlFor="filterReimburser" className="block text-sm font-medium text-gray-700 mb-1">請款人</label>
-                    <select 
-                      id="filterReimburser" 
-                      value={filterReimburserUid} 
-                      onChange={(e) => setFilterReimburserUid(e.target.value)} 
+                    <select
+                      id="filterReimburser"
+                      value={filterReimburserUid}
+                      onChange={(e) => setFilterReimburserUid(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <option value="">所有請款人</option>
@@ -1807,7 +1864,44 @@ useEffect(() => {
                 </div>
                 {/* --- 修改結束 --- */}
               </div>
-              
+
+              {/* --- 新增開始：視圖切換器 --- */}
+              <div className="flex justify-end mb-4">
+                <div className="flex bg-gray-100 rounded-lg p-1" role="tablist" aria-label="購買紀錄視圖模式">
+                  <button
+                    onClick={() => setRecordsViewMode('grid')}
+                    className={`flex items-center justify-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${recordsViewMode === 'grid'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    title="網格視圖"
+                    role="tab"
+                    aria-selected={recordsViewMode === 'grid'}
+                    aria-controls="records-content"
+                    aria-label="切換到網格檢視模式"
+                  >
+                    <LayoutGrid size={16} aria-hidden="true" />
+                    <span className="sr-only">網格模式</span>
+                  </button>
+                  <button
+                    onClick={() => setRecordsViewMode('list')}
+                    className={`flex items-center justify-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${recordsViewMode === 'list'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    title="列表視圖"
+                    role="tab"
+                    aria-selected={recordsViewMode === 'list'}
+                    aria-controls="records-content"
+                    aria-label="切換到列表檢視模式"
+                  >
+                    <List size={16} aria-hidden="true" />
+                    <span className="sr-only">列表模式</span>
+                  </button>
+                </div>
+              </div>
+              {/* --- 新增結束 --- */}
+
               {filteredPurchaseRecords.length === 0 ? (
                 <div className="text-center py-8">
                   <Receipt size={48} className="mx-auto text-gray-400 mb-4" />
@@ -1816,7 +1910,7 @@ useEffect(() => {
               ) : (
                 <>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                  <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <label htmlFor="select-all-records" className="text-sm font-medium text-gray-700">全選</label>
                         <input id="select-all-records" type="checkbox" className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ref={selectAllCheckboxRef} checked={isAllSelected} onChange={handleSelectAll} />
@@ -1844,77 +1938,227 @@ useEffect(() => {
                       </>
                     )}
                   </div>
-                  
-                  <div className="space-y-4">
-                    {/* ... (Record mapping logic remains the same) ... */}
-                    {filteredPurchaseRecords.map((record) => (
-                      <div key={record.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex items-start gap-4">
-                        <div className="flex-shrink-0 pt-1">
-                          <input
-                            type="checkbox"
-                            className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            checked={selectedRecordIds.has(record.id)}
-                            onChange={() => handleRecordSelection(record.id)}
-                            aria-labelledby={`record-title-${record.id}`}
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <div className="flex justify-between items-start mb-3">
-                            <h3 id={`record-title-${record.id}`} className="text-lg font-semibold text-gray-900">{record.title}</h3>
-                            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                              已購買
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <div><span className="text-gray-600">提出者：</span><span className="font-medium">{record.requester}</span></div>
-                            <div><span className="text-gray-600">購買金額：</span><span className="font-medium text-green-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></div>
-                            <div><span className="text-gray-600">需求日期：</span><span className="font-medium">{record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span></div>
-                            <div><span className="text-gray-600">購買日期：</span><span className="font-medium">{record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span></div>
-                            {record.purchaserName && (<div className="sm:col-span-2"><span className="text-gray-600">購買人：</span><span className="font-medium">{record.purchaserName}</span></div>)}
-                            {/* --- 👇 修改：顯示請款人 --- */}
-                            <div className="flex items-center gap-1">
-                              <span className="text-gray-600">請款人：</span>
-                              <span className="font-medium flex items-center gap-1">{record.reimbursementerName || record.purchaserName}
-                                {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
-                                  <UserCheck size={14} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
-                                )}
-                              </span>
-                              {isCurrentUserReimburser(record) && (
-  <button
-    onClick={() => {
-      // 在「購買紀錄」列表中，我們只有簡化的 record 物件。
-      // 但「轉交」彈窗需要完整的 request 物件才能正確運作。
-      // 因此，我們需要從主資料 `requests` 陣列中，根據 ID 找到對應的完整物件。
-      const fullRequest = requests.find(r => r.id === record.id);
-      if (fullRequest) {
-        handleOpenTransferModal(fullRequest);
-      } else {
-        // 如果因故找不到，提供一個安全的備用方案。
-        console.error('Could not find the full request object for this record:', record.id);
-        alert('操作失敗：無法找到此紀錄的完整需求資料。');
-      }
-    }}
-    className="ml-2 p-1 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-    title="轉交報帳責任給其他人員"
-  >
-    <ArrowRightLeft size={16} />
-  </button>
-)}
+
+                  {/* --- 新增開始：根據視圖模式條件渲染 --- */}
+                  <div id="records-content" role="tabpanel" aria-label="購買紀錄內容">
+                    {recordsViewMode === 'grid' && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" aria-label="網格視圖購買紀錄">
+                        {filteredPurchaseRecords.map((record) => (
+                          <div key={record.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+                            <div className="flex items-start gap-3 mb-3">
+                              <input
+                                type="checkbox"
+                                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 flex-shrink-0"
+                                checked={selectedRecordIds.has(record.id)}
+                                onChange={() => handleRecordSelection(record.id)}
+                                aria-labelledby={`record-title-${record.id}`}
+                              />
+                              <div className="flex-grow">
+                                <div className="flex justify-between items-start mb-2">
+                                  <h3 id={`record-title-${record.id}`} className="text-lg font-semibold text-gray-900 line-clamp-2">{record.title}</h3>
+                                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0">
+                                    已購買
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            {record.accountingCategory && (<div className="sm:col-span-2"><span className="text-gray-600">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
-                          </div>
-                           {/* 新增：顯示購買備註 */}
-                           {record.purchaseNotes && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <p className="text-sm font-medium text-gray-800 mb-1">購買備註：</p>
-                              <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded-md">
-                                {record.purchaseNotes}
-                              </p>
+                            <div className="flex-grow">
+                              <div className="space-y-2 text-sm">
+                                <div><span className="text-gray-600">提出者：</span><span className="font-medium">{record.requester}</span></div>
+                                <div><span className="text-gray-600">購買金額：</span><span className="font-medium text-green-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></div>
+                                <div><span className="text-gray-600">需求日期：</span><span className="font-medium">{record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span></div>
+                                <div><span className="text-gray-600">購買日期：</span><span className="font-medium">{record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span></div>
+                                {record.purchaserName && (<div><span className="text-gray-600">購買人：</span><span className="font-medium">{record.purchaserName}</span></div>)}
+                                {/* --- 👇 修改：顯示請款人 --- */}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-gray-600">請款人：</span>
+                                    <span className="font-medium flex items-center gap-1">{record.reimbursementerName || record.purchaserName}
+                                      {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                                        <UserCheck size={14} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                                      )}
+                                    </span>
+                                  </div>
+                                  {isCurrentUserReimburser(record) && (
+                                    <button
+                                      onClick={() => {
+                                        // 在「購買紀錄」列表中，我們只有簡化的 record 物件。
+                                        // 但「轉交」彈窗需要完整的 request 物件才能正確運作。
+                                        // 因此，我們需要從主資料 `requests` 陣列中，根據 ID 找到對應的完整物件。
+                                        const fullRequest = requests.find(r => r.id === record.id);
+                                        if (fullRequest) {
+                                          handleOpenTransferModal(fullRequest);
+                                        } else {
+                                          // 如果因故找不到，提供一個安全的備用方案。
+                                          console.error('Could not find the full request object for this record:', record.id);
+                                          alert('操作失敗：無法找到此紀錄的完整需求資料。');
+                                        }
+                                      }}
+                                      className="p-1 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                      title="轉交報帳責任給其他人員"
+                                    >
+                                      <ArrowRightLeft size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                                {record.accountingCategory && (<div><span className="text-gray-600">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
+                              </div>
                             </div>
-                          )}
-                        </div>
+                            {/* 新增：顯示購買備註 */}
+                            {record.purchaseNotes && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <p className="text-sm font-medium text-gray-800 mb-1">購買備註：</p>
+                                <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded-md">
+                                  {record.purchaseNotes}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+
+                    {/* --- 新增開始：列表視圖 --- */}
+                    {recordsViewMode === 'list' && (
+                      <div className="space-y-2" aria-label="列表視圖購買紀錄">
+                        {/* 列表標題 - 僅在大螢幕顯示 */}
+                        <div className="hidden lg:block bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
+                          <div className="grid grid-cols-12 gap-3 text-sm font-medium text-gray-700">
+                            <div className="col-span-1 flex justify-center">選擇</div>
+                            <div className="col-span-3">需求標題</div>
+                            <div className="col-span-2">購買金額</div>
+                            <div className="col-span-2">購買日期</div>
+                            <div className="col-span-2">購買人</div>
+                            <div className="col-span-1">請款人</div>
+                            <div className="col-span-1">操作</div>
+                          </div>
+                        </div>
+
+                        {/* 列表項目 */}
+                        {filteredPurchaseRecords.map((record) => (
+                          <div key={record.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+                            {/* 大螢幕版本 */}
+                            <div className="hidden lg:grid lg:grid-cols-12 gap-3 p-3 items-center">
+                              {/* 勾選框 */}
+                              <div className="col-span-1 flex justify-center">
+                                <input
+                                  type="checkbox"
+                                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  checked={selectedRecordIds.has(record.id)}
+                                  onChange={() => handleRecordSelection(record.id)}
+                                  aria-labelledby={`record-title-${record.id}`}
+                                />
+                              </div>
+
+                              {/* 可點擊的內容區域 */}
+                              <div
+                                className="col-span-10 grid grid-cols-10 gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                                onClick={() => handleShowRecordDetails(record)}
+                              >
+                                <div className="col-span-3 font-medium text-gray-900 truncate" title={record.title}>
+                                  {record.title}
+                                </div>
+                                <div className="col-span-2 text-sm font-medium text-green-600">
+                                  NT$ {(record.purchaseAmount || 0).toLocaleString()}
+                                </div>
+                                <div className="col-span-2 text-sm text-gray-600">
+                                  {record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}
+                                </div>
+                                <div className="col-span-2 text-sm text-gray-600 truncate" title={record.purchaserName || 'N/A'}>
+                                  {record.purchaserName || 'N/A'}
+                                </div>
+                                <div className="col-span-1 text-sm text-gray-600 truncate" title={record.reimbursementerName || record.purchaserName || 'N/A'}>
+                                  {record.reimbursementerName || record.purchaserName || 'N/A'}
+                                  {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                                    <UserCheck size={12} className="inline ml-1 text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* 操作按鈕 */}
+                              <div className="col-span-1 flex justify-center">
+                                {isCurrentUserReimburser(record) && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const fullRequest = requests.find(r => r.id === record.id);
+                                      if (fullRequest) {
+                                        handleOpenTransferModal(fullRequest);
+                                      } else {
+                                        console.error('Could not find the full request object for this record:', record.id);
+                                        alert('操作失敗：無法找到此紀錄的完整需求資料。');
+                                      }
+                                    }}
+                                    className="p-2 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    title="轉交報帳責任"
+                                  >
+                                    <ArrowRightLeft size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 小螢幕版本 */}
+                            <div className="lg:hidden p-3">
+                              <div className="flex items-start gap-3">
+                                {/* 勾選框 */}
+                                <input
+                                  type="checkbox"
+                                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                                  checked={selectedRecordIds.has(record.id)}
+                                  onChange={() => handleRecordSelection(record.id)}
+                                  aria-labelledby={`record-title-mobile-${record.id}`}
+                                />
+
+                                {/* 內容區域 */}
+                                <div
+                                  className="flex-grow cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                                  onClick={() => handleShowRecordDetails(record)}
+                                >
+                                  <h4 id={`record-title-mobile-${record.id}`} className="font-medium text-gray-900 mb-2 line-clamp-2">
+                                    {record.title}
+                                  </h4>
+                                  <div className="space-y-1 text-sm text-gray-600">
+                                    <div className="font-medium text-green-600">購買金額: NT$ {(record.purchaseAmount || 0).toLocaleString()}</div>
+                                    <div>購買日期: {record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</div>
+                                    <div>購買人: {record.purchaserName || 'N/A'}</div>
+                                    <div className="flex items-center gap-1">
+                                      請款人: {record.reimbursementerName || record.purchaserName || 'N/A'}
+                                      {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                                        <UserCheck size={12} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 操作按鈕 */}
+                                <div className="flex-shrink-0">
+                                  {isCurrentUserReimburser(record) && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const fullRequest = requests.find(r => r.id === record.id);
+                                        if (fullRequest) {
+                                          handleOpenTransferModal(fullRequest);
+                                        } else {
+                                          console.error('Could not find the full request object for this record:', record.id);
+                                          alert('操作失敗：無法找到此紀錄的完整需求資料。');
+                                        }
+                                      }}
+                                      className="p-2 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                      title="轉交報帳責任"
+                                    >
+                                      <ArrowRightLeft size={16} />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* --- 新增結束 --- */}
                   </div>
                 </>
               )}
@@ -1926,12 +2170,22 @@ useEffect(() => {
 
       {/* --- 新增開始：詳情顯示彈出視窗 --- */}
       {showDetailModal && selectedRequestForDetail && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setShowDetailModal(false)}>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => setShowDetailModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="detail-modal-title"
+        >
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gray-100 p-4 rounded-t-lg flex justify-between items-center flex-shrink-0 border-b">
-              <h2 className="text-lg font-semibold text-gray-800">需求詳情</h2>
-              <button onClick={() => setShowDetailModal(false)} className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors">
-                <X size={20} />
+              <h2 id="detail-modal-title" className="text-lg font-semibold text-gray-800">需求詳情</h2>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                aria-label="關閉需求詳情對話框"
+              >
+                <X size={20} aria-hidden="true" />
               </button>
             </div>
             <div className="overflow-y-auto">
@@ -1960,25 +2214,25 @@ useEffect(() => {
                           {request.description}
                         </Linkify>
                       </p>
-                      
+
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-500 my-4 py-4 border-t border-b">
                         <div className="flex items-center gap-2"> <Calendar size={16} /> <span><b>提出日期:</b> {new Date(request.createdAt).toLocaleDateString()}</span> </div>
                         <div className="flex items-center gap-2"> <User size={16} /> <span><b>提出者:</b> {request.requesterName}</span> </div>
                         <div className="flex items-center gap-2 col-span-2"> <Tag size={16} className="text-gray-500" /> <span><b>會計類別:</b> {request.accountingCategory || '未分類'}</span> </div>
                       </div>
 
-                      {request.status === 'purchased' && request.purchaseAmount && ( 
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 my-4"> 
-                          <div className="flex items-center gap-2 text-green-800 mb-2"> <DollarSign size={18} /> <span className="font-semibold text-lg">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div> 
+                      {request.status === 'purchased' && request.purchaseAmount && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 my-4">
+                          <div className="flex items-center gap-2 text-green-800 mb-2"> <DollarSign size={18} /> <span className="font-semibold text-lg">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
                           <div className="text-sm text-green-700 grid grid-cols-2 gap-1">
-                            <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div> 
-                            {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)} 
+                            <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div>
+                            {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)}
                             {/* 新增報帳負責人資訊 */}
                             <div className="col-span-2 mt-1">
                               報帳負責人：{request.reimbursementerName || request.purchaserName || '未指定'}
                             </div>
                           </div>
-                           {/* 2. 在詳細資料彈窗中顯示備註 */}
+                          {/* 2. 在詳細資料彈窗中顯示備註 */}
                           {request.purchaseNotes && (
                             <div className="mt-2 pt-2 border-t border-green-200">
                               <p className="text-xs text-green-700 font-medium">備註：</p>
@@ -1986,7 +2240,7 @@ useEffect(() => {
                                 <Linkify componentDecorator={componentDecorator}>{request.purchaseNotes}</Linkify></p>
                             </div>
                           )}
-                        </div> 
+                        </div>
                       )}
 
                       <div className="flex gap-2 my-4">
@@ -1995,41 +2249,41 @@ useEffect(() => {
                         {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} 撤銷購買 </button>)}
                         {/* 轉交報帳按鈕 - 只對報帳負責人顯示且僅在已購買狀態下 */}
                         {request.status === 'purchased' && isCurrentUserReimburser(request) && (
-                          <button 
-                            onClick={() => { setShowDetailModal(false); handleOpenTransferModal(request); }} 
-                            className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded transition-colors text-sm disabled:opacity-50" 
+                          <button
+                            onClick={() => { setShowDetailModal(false); handleOpenTransferModal(request); }}
+                            className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded transition-colors text-sm disabled:opacity-50"
                             disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}
                             title="轉交報帳責任給其他人員"
-                          > 
-                            <ArrowRightLeft size={16} /> 
-                            轉交報帳 
+                          >
+                            <ArrowRightLeft size={16} />
+                            轉交報帳
                           </button>
                         )}
                         <button onClick={() => { setShowDetailModal(false); deleteRequest(request.id); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors text-sm ml-auto disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />} 刪除 </button>
                       </div>
 
-                      {request.comments?.length > 0 && ( 
-                        <div className="border-t pt-4 mt-4"> 
-                         <h4 className="text-base font-semibold text-gray-700 mb-3">留言列表：</h4> 
-                         <div className="space-y-3 max-h-40 overflow-y-auto pr-2"> 
-                          {request.comments.map((comment) => ( 
-                            <div key={comment.id} className="bg-gray-50 rounded-lg p-3 group relative"> 
-                              <div className="flex justify-between items-start mb-1"> 
-                                <div> 
-                                  <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span> 
-                                  <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span> 
-                                </div> 
-                                {currentUser && comment.userId === currentUser.uid && (<button onClick={() => {setShowDetailModal(false); handleDeleteComment(request.id, comment.id);}} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button> )} 
-                              </div> 
-                              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                                <Linkify componentDecorator={componentDecorator}>
-                                  {comment.text}
-                                </Linkify>
-                              </p>
-                            </div> 
-                          ))} 
-                         </div> 
-                        </div> 
+                      {request.comments?.length > 0 && (
+                        <div className="border-t pt-4 mt-4">
+                          <h4 className="text-base font-semibold text-gray-700 mb-3">留言列表：</h4>
+                          <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
+                            {request.comments.map((comment) => (
+                              <div key={comment.id} className="bg-gray-50 rounded-lg p-3 group relative">
+                                <div className="flex justify-between items-start mb-1">
+                                  <div>
+                                    <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span>
+                                    <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                                  </div>
+                                  {currentUser && comment.userId === currentUser.uid && (<button onClick={() => { setShowDetailModal(false); handleDeleteComment(request.id, comment.id); }} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button>)}
+                                </div>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                  <Linkify componentDecorator={componentDecorator}>
+                                    {comment.text}
+                                  </Linkify>
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -2041,8 +2295,119 @@ useEffect(() => {
       )}
       {/* --- 新增結束 --- */}
 
+      {/* --- 新增開始：購買紀錄詳情彈出視窗 --- */}
+      {showRecordDetailModal && selectedRecordForDetail && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-60" onClick={handleCloseRecordDetailModal}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gray-100 p-4 rounded-t-lg flex justify-between items-center flex-shrink-0 border-b">
+              <h2 className="text-lg font-semibold text-gray-800">購買紀錄詳情</h2>
+              <button onClick={handleCloseRecordDetailModal} className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-6">
+              {(() => {
+                const record = selectedRecordForDetail;
+                return (
+                  <div className="bg-white rounded-lg">
+                    <div className="mb-4">
+                      <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                        已購買
+                      </span>
+                    </div>
+
+                    <h3 className="text-xl font-semibold text-gray-900 mb-4">{record.title}</h3>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm mb-6">
+                      <div className="flex items-center gap-2">
+                        <User size={16} className="text-gray-500" />
+                        <span><strong>提出者:</strong> {record.requester}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign size={16} className="text-gray-500" />
+                        <span><strong>購買金額:</strong> <span className="text-green-600 font-semibold">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar size={16} className="text-gray-500" />
+                        <span><strong>需求日期:</strong> {record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar size={16} className="text-gray-500" />
+                        <span><strong>購買日期:</strong> {record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      {record.purchaserName && (
+                        <div className="flex items-center gap-2 col-span-2">
+                          <User size={16} className="text-gray-500" />
+                          <span><strong>購買人:</strong> {record.purchaserName}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 col-span-2">
+                        <UserCheck size={16} className="text-gray-500" />
+                        <span><strong>請款人:</strong> {record.reimbursementerName || record.purchaserName || '未指定'}
+                          {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                            <UserCheck size={14} className="inline ml-1 text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                          )}
+                        </span>
+                      </div>
+                      {record.accountingCategory && (
+                        <div className="flex items-center gap-2 col-span-2">
+                          <Tag size={16} className="text-gray-500" />
+                          <span><strong>會計類別:</strong> {record.accountingCategory}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 購買備註 */}
+                    {record.purchaseNotes && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <h4 className="text-sm font-semibold text-green-800 mb-2">購買備註</h4>
+                        <p className="text-sm text-green-700 whitespace-pre-wrap break-words">
+                          <Linkify componentDecorator={componentDecorator}>
+                            {record.purchaseNotes}
+                          </Linkify>
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 操作按鈕 */}
+                    <div className="flex gap-2 pt-4 border-t border-gray-200">
+                      {isCurrentUserReimburser(record) && (
+                        <button
+                          onClick={() => {
+                            handleCloseRecordDetailModal();
+                            const fullRequest = requests.find(r => r.id === record.id);
+                            if (fullRequest) {
+                              handleOpenTransferModal(fullRequest);
+                            } else {
+                              console.error('Could not find the full request object for this record:', record.id);
+                              alert('操作失敗：無法找到此紀錄的完整需求資料。');
+                            }
+                          }}
+                          className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded-lg transition-colors text-sm font-medium"
+                          title="轉交報帳責任給其他人員"
+                        >
+                          <ArrowRightLeft size={16} />
+                          轉交報帳
+                        </button>
+                      )}
+                      <button
+                        onClick={handleCloseRecordDetailModal}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium ml-auto"
+                      >
+                        關閉
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* --- 新增結束 --- */}
+
       {/* ... (Other modals JSX remains the same) ... */}
-      {isCommentModalOpen && currentRequestForComment && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-gray-800"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div> )}
+      {isCommentModalOpen && currentRequestForComment && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-gray-800"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div>)}
 
       {/* 轉交報帳彈窗 */}
       <TransferReimbursementModal
