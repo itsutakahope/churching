@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck, ArrowRightLeft } from 'lucide-react'; // 新增 CheckSquare icon 和 ArrowRightLeft icon
+import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck, ArrowRightLeft, Filter, ChevronDown, ChevronUp, ArrowRight, ArrowUpDown } from 'lucide-react'; // 新增 CheckSquare icon 和 ArrowRightLeft icon
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -23,16 +23,17 @@ const PurchaseRequestBoard = () => {
   const [selectedRecordIds, setSelectedRecordIds] = useState(new Set());
 
   // --- 新增開始：主要採購請求的視圖切換與詳情彈窗狀態 ---
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' 或 'list'
+  const [viewMode, setViewMode] = useState('list'); // 'grid' 或 'list'
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedRequestForDetail, setSelectedRequestForDetail] = useState(null);
   // --- 新增結束 ---
 
   // --- 新增開始：購買紀錄視窗的視圖切換與詳情彈窗狀態 ---
-  const [recordsViewMode, setRecordsViewMode] = useState('grid'); // 'grid' 或 'list'
+  const [recordsViewMode, setRecordsViewMode] = useState('list'); // 'grid' 或 'list'
   const [showRecordDetailModal, setShowRecordDetailModal] = useState(false);
   const [selectedRecordForDetail, setSelectedRecordForDetail] = useState(null);
   const [shouldRestoreRecordsModal, setShouldRestoreRecordsModal] = useState(false);
+  const [isFilterPanelExpanded, setIsFilterPanelExpanded] = useState(false);
   // --- 新增結束 ---
 
   const handleRecordSelection = (recordId) => {
@@ -149,6 +150,24 @@ const PurchaseRequestBoard = () => {
   const [filterPurchaserUid, setFilterPurchaserUid] = useState('');
   const [filterReimburserUid, setFilterReimburserUid] = useState(''); // <-- 1. 新增 state
 
+  // 計算活躍篩選條件數量
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filterPurchaserUid) count++;
+    if (filterReimburserUid) count++;
+    if (filterStartDate) count++;
+    if (filterEndDate) count++;
+    return count;
+  }, [filterPurchaserUid, filterReimburserUid, filterStartDate, filterEndDate]);
+
+  // 清除所有篩選條件
+  const clearAllFilters = useCallback(() => {
+    setFilterPurchaserUid('');
+    setFilterReimburserUid('');
+    setFilterStartDate('');
+    setFilterEndDate('');
+  }, []);
+
   // --- 👇 新增：用於確認購買彈窗的狀態 ---
   const [isDifferentReimburser, setIsDifferentReimburser] = useState(false);
   const [reimbursementContacts, setReimbursementContacts] = useState([]);
@@ -203,9 +222,10 @@ const PurchaseRequestBoard = () => {
 
 
   const statusLabels = {
-    'pending': { text: '待購買', color: 'bg-yellow-100 text-yellow-800' },
-    'purchased': { text: '已購買', color: 'bg-green-100 text-green-800' }
+    'pending': { text: '待購買', shortText: '待', color: 'bg-yellow-100 text-yellow-800' },
+    'purchased': { text: '已購買', shortText: '已', color: 'bg-green-100 text-green-800' }
   };
+
 
   const priorityLabels = {
     'general': { text: '一般', color: 'bg-gray-100 text-gray-800' },
@@ -1097,9 +1117,9 @@ const PurchaseRequestBoard = () => {
     <>
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         {/* ... (Header and filter UI remains the same) ... */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 text-center">Purchase Board</h1>
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 text-center sm:text-left">Purchase Board</h1>
+          <div className="flex gap-3 w-full sm:w-auto">
             {/* --- 修改/新增開始 --- */}
             <div className="relative flex-1 group">
               <button
@@ -1156,7 +1176,7 @@ const PurchaseRequestBoard = () => {
         </div>
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center md:justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-gray-700 font-medium shrink-0" id="filter-label">篩選：</span>
+            <Filter size={20} className="text-gray-700 shrink-0" />
             <div className="flex-grow grid grid-cols-3 gap-2" role="group" aria-labelledby="filter-label">
               {['all', 'pending', 'purchased'].map(f => (
                 <button
@@ -1171,52 +1191,59 @@ const PurchaseRequestBoard = () => {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="sort-select" className="text-gray-700 font-medium shrink-0">排序：</label>
-            <select
-              id="sort-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              aria-label="選擇採購需求排序方式"
-            >
-              <option value="newest">最新建立</option>
-              <option value="oldest">最舊建立</option>
-              <option value="priority_desc">緊急優先</option>
-              <option value="priority_asc">一般優先</option>
-            </select>
-          </div>
-          {/* --- 新增開始：視圖切換器 --- */}
-          <div className="flex items-center gap-2">
-            <span className="text-gray-700 font-medium shrink-0" id="view-mode-label">檢視：</span>
-            <div className="flex items-center rounded-lg bg-gray-200 p-1" role="tablist" aria-labelledby="view-mode-label">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
-                title="列表模式"
-                role="tab"
-                aria-selected={viewMode === 'list'}
-                aria-controls="requests-content"
-                aria-label="切換到列表檢視模式"
+          
+          {/* --- 響應式佈局修改開始 --- */}
+          <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start md:gap-4">
+            {/* 排序下拉選單 */}
+            <div className="flex flex-grow items-center gap-2 md:flex-grow-0">
+              <ArrowUpDown size={20} className="text-gray-700 shrink-0 md:hidden" />
+              <label htmlFor="sort-select" className="hidden text-gray-700 font-medium shrink-0 md:inline">排序：</label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="選擇採購需求排序方式"
               >
-                <List size={20} aria-hidden="true" />
-                <span className="sr-only">列表模式</span>
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'grid' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
-                title="網格模式"
-                role="tab"
-                aria-selected={viewMode === 'grid'}
-                aria-controls="requests-content"
-                aria-label="切換到網格檢視模式"
-              >
-                <LayoutGrid size={20} aria-hidden="true" />
-                <span className="sr-only">網格模式</span>
-              </button>
+                <option value="newest">最新建立</option>
+                <option value="oldest">最舊建立</option>
+                <option value="priority_desc">緊急優先</option>
+                <option value="priority_asc">一般優先</option>
+              </select>
+            </div>
+            
+            {/* 視圖切換器 */}
+            <div className="flex items-center gap-2">
+              <span className="hidden text-gray-700 font-medium shrink-0 md:inline" id="view-mode-label">檢視：</span>
+              <div className="flex items-center rounded-lg bg-gray-200 p-1" role="tablist" aria-labelledby="view-mode-label">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                  title="列表模式"
+                  role="tab"
+                  aria-selected={viewMode === 'list'}
+                  aria-controls="requests-content"
+                  aria-label="切換到列表檢視模式"
+                >
+                  <List size={20} aria-hidden="true" />
+                  <span className="sr-only">列表模式</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'grid' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                  title="網格模式"
+                  role="tab"
+                  aria-selected={viewMode === 'grid'}
+                  aria-controls="requests-content"
+                  aria-label="切換到網格檢視模式"
+                >
+                  <LayoutGrid size={20} aria-hidden="true" />
+                  <span className="sr-only">網格模式</span>
+                </button>
+              </div>
             </div>
           </div>
-          {/* --- 新增結束 --- */}
+          {/* --- 響應式佈局修改結束 --- */}
         </div>
       </div>
 
@@ -1315,7 +1342,7 @@ const PurchaseRequestBoard = () => {
                         <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                           <div className="flex items-center gap-2 text-green-800">
                             <DollarSign size={16} />
-                            <span className="font-medium">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span>
+                            <span className="font-medium">金額：NT$ {request.purchaseAmount.toLocaleString()}</span>
                           </div>
                           <div className="text-sm text-green-600 mt-1">
                             購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}
@@ -1337,16 +1364,17 @@ const PurchaseRequestBoard = () => {
                       )}
 
                       <div className="flex items-center gap-2 mb-3">
-                        <button
+                      <button
                           onClick={(e) => { e.stopPropagation(); openCommentModal(request); }}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors text-sm disabled:opacity-50"
+                          className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-blue-600 hover:bg-blue-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
                           title={`留言 (${request.comments?.length || 0})`}
                           disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}>
                           <MessageCircle size={16} />
+                          <span className="hidden md:inline">留言</span>
                         </button>
 
                         {request.status === 'pending' && (
-                          <button onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
+                          <button onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
                             {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買
                           </button>
                         )}
@@ -1355,20 +1383,22 @@ const PurchaseRequestBoard = () => {
                           <>
                             <button
                               onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'pending'); }}
-                              className="p-2 text-orange-600 hover:bg-orange-100 rounded-full transition-colors text-sm disabled:opacity-50"
+                              className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-orange-600 hover:bg-orange-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
                               title="撤銷購買"
                               disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
                               {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}
+                              <span className="hidden md:inline">撤銷</span>
                             </button>
 
                             {isCurrentUserReimburser(request) && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
-                                className="p-2 text-purple-600 hover:bg-purple-100 rounded-full transition-colors text-sm disabled:opacity-50"
+                                className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-purple-600 hover:bg-purple-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
                                 title="轉交報帳責任"
                                 disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
                               >
                                 <ArrowRightLeft size={16} />
+                                <span className="hidden md:inline">轉交</span>
                               </button>
                             )}
                           </>
@@ -1376,10 +1406,11 @@ const PurchaseRequestBoard = () => {
 
                         <button
                           onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors text-sm ml-auto disabled:opacity-50"
+                          className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-red-600 hover:bg-red-100 rounded-full md:rounded-lg transition-all text-sm ml-auto disabled:opacity-50"
                           title="刪除"
                           disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}>
                           {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}
+                          <span className="hidden md:inline">刪除</span>
                         </button>
                       </div>
                       {request.comments?.length > 0 && (
@@ -1407,38 +1438,118 @@ const PurchaseRequestBoard = () => {
           )}
 
           {viewMode === 'list' && (
-            <div className="space-y-3" aria-label="列表檢視採購需求">
-              {sortedRequests.map(request => {
+            <div className="space-y-2" aria-label="列表檢視採購需求">
+                {sortedRequests.map(request => {
                 const isUrgent = request.priority === 'urgent';
                 return (
                   <button
                     key={request.id}
                     onClick={() => handleShowDetails(request)}
-                    className={`w-full text-left bg-white rounded-lg shadow-sm border p-4 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-4 ${isUrgent ? 'border-red-400' : 'border-gray-200'}`}
+                    className={`w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-between gap-3 ${isUrgent ? 'border-red-400' : 'border-gray-200'}`}
                     aria-label={`查看採購需求詳情: ${request.title || request.text}${isUrgent ? ' (緊急)' : ''}`}
                     aria-describedby={`request-status-${request.id} request-date-${request.id}`}
                   >
-                    <div className="flex-shrink-0">
-                      <span
-                        id={`request-status-${request.id}`}
-                        className={`inline-flex px-3 py-1 rounded-full text-sm font-medium w-20 justify-center ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}
-                      >
-                        {statusLabels[request.status]?.text || request.status}
-                      </span>
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-md font-semibold text-gray-800">{request.title || request.text}</h3>
-                    </div>
-                    <div className="flex-shrink-0 flex items-center gap-4 text-sm text-gray-500">
+                    {/* --- Group 1: Left-aligned info --- */}
+                    <div className="flex items-center gap-3 min-w-0 flex-grow">
                       {isUrgent && (
-                        <span className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
-                          <AlertTriangle size={14} aria-hidden="true" />
-                          {priorityLabels.urgent.text}
-                        </span>
+                        <>
+                          <div className="flex-shrink-0 sm:hidden" title="緊急需求">
+                            <AlertTriangle size={20} className="text-red-500" />
+                          </div>
+                          <span className={`hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
+                            <AlertTriangle size={14} aria-hidden="true" />
+                            {priorityLabels.urgent.text}
+                          </span>
+                        </>
                       )}
-                      <div className="flex items-center gap-1.5" id={`request-date-${request.id}`}>
+                      <div className="flex-shrink-0">
+                        <span
+                          id={`request-status-${request.id}`}
+                          className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium md:w-20 ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}
+                        >
+                          <span className="md:hidden">{statusLabels[request.status]?.shortText || request.status}</span>
+                          <span className="hidden md:inline">{statusLabels[request.status]?.text || request.status}</span>
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-md font-semibold text-gray-800 truncate" title={request.title || request.text}>
+                          {request.title || request.text}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* --- Group 2: Right-aligned actions and date --- */}
+                    <div className="flex items-center gap-4 flex-shrink-0">
+                      <div className="hidden md:flex w-36 items-center gap-1.5 text-sm text-gray-600" title={`提出者: ${request.requesterName}`}>
+                        <User size={16} />
+                        <span className="truncate">{request.requesterName}</span>
+                      </div>
+                      <div className="hidden md:flex w-32 items-center justify-end gap-1.5">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openCommentModal(request); }}
+                          className="p-2 text-gray-500 hover:bg-blue-100 hover:text-blue-600 rounded-full transition-colors disabled:opacity-50"
+                          title={`留言 (${request.comments?.length || 0})`}
+                          disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}
+                        >
+                          <MessageCircle size={16} />
+                        </button>
+
+                        {request.status === 'pending' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }}
+                            className="p-2 text-gray-500 hover:bg-green-100 hover:text-green-600 rounded-full transition-colors disabled:opacity-50"
+                            title="標記為已購買"
+                            disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}
+                          >
+                            {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : <CheckSquare size={16} />}
+                          </button>
+                        )}
+                        {request.status === 'purchased' && (
+                          <>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'pending'); }}
+                              className="p-2 text-gray-500 hover:bg-orange-100 hover:text-orange-600 rounded-full transition-colors disabled:opacity-50"
+                              title="撤銷購買"
+                              disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}
+                            >
+                              {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}
+                            </button>
+                            {isCurrentUserReimburser(request) && (
+                              <button
+                              onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
+                              className="p-2 text-gray-500 hover:bg-purple-100 hover:text-purple-600 rounded-full transition-colors disabled:opacity-50"
+                              title="轉交報帳責任"
+                              disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
+                            >
+                              <ArrowRightLeft size={16} />
+                            </button>
+                            )}
+                          </>
+                        )}
+
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }}
+                          className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors disabled:opacity-50"
+                          title="刪除"
+                          disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}
+                        >
+                          {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}
+                        </button>
+                      </div>
+                      
+                      <div className="flex-shrink-0 flex items-center gap-1.5 text-sm text-gray-500" id={`request-date-${request.id}`}>
                         <Calendar size={16} aria-hidden="true" />
-                        <span>{new Date(request.createdAt).toLocaleDateString()}</span>
+                        <span>
+                          <span className="sm:hidden">
+                            {(() => {
+                              const d = new Date(request.createdAt);
+                              return `${d.getMonth() + 1}/${d.getDate()}`;
+                            })()}
+                          </span>
+                          <span className="hidden sm:inline">
+                            {new Date(request.createdAt).toLocaleDateString()}
+                          </span>
+                        </span>
                       </div>
                     </div>
                   </button>
@@ -1669,7 +1780,7 @@ const PurchaseRequestBoard = () => {
                 請輸入購買金額與購買人以完成採購： </p>
               <div className="mb-4">
                 <label htmlFor="purchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
-                  購買金額 (NT$)*
+                  金額 (NT$)*
                 </label>
                 <input id="purchaseAmount"
                   type="number"
@@ -1821,86 +1932,146 @@ const PurchaseRequestBoard = () => {
             </div>
 
             <div className="p-6 overflow-y-auto flex-grow">
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h4 className="text-md font-semibold text-gray-800 mb-3">篩選條件</h4>
-                {/* --- 👇 核心修改：調整 grid 排版並新增「請款人」篩選器 --- */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label htmlFor="filterPurchaser" className="block text-sm font-medium text-gray-700 mb-1">購買人</label>
-                    <select
-                      id="filterPurchaser"
-                      value={filterPurchaserUid}
-                      onChange={(e) => setFilterPurchaserUid(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              {/* --- 新增開始：統一控制列 --- */}
+              <div className="mb-2">
+                {/* 控制列：篩選按鈕 + 視圖切換按鈕 */}
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  {/* 左側：篩選控制區 */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsFilterPanelExpanded(!isFilterPanelExpanded)}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      aria-expanded={isFilterPanelExpanded}
+                      aria-controls="filter-panel"
                     >
-                      <option value="">所有購買人</option>
-                      {allUsers.map(user => (
-                        <option key={user.uid} value={user.uid}>{user.displayName}</option>
-                      ))}
-                    </select>
+                      <Filter size={16} className="text-gray-600" />
+                      <span className="text-sm font-medium text-gray-700">
+                        篩選
+                        {activeFiltersCount > 0 && (
+                          <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                            {activeFiltersCount}
+                          </span>
+                        )}
+                      </span>
+                      {isFilterPanelExpanded ? (
+                        <ChevronUp size={16} className="text-gray-600" />
+                      ) : (
+                        <ChevronDown size={16} className="text-gray-600" />
+                      )}
+                    </button>
+                    
+                    {activeFiltersCount > 0 && (
+                      <button
+                        onClick={clearAllFilters}
+                        className="text-sm text-gray-500 hover:text-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded px-2 py-1"
+                      >
+                        清除全部
+                      </button>
+                    )}
                   </div>
-                  <div>
-                    <label htmlFor="filterReimburser" className="block text-sm font-medium text-gray-700 mb-1">請款人</label>
-                    <select
-                      id="filterReimburser"
-                      value={filterReimburserUid}
-                      onChange={(e) => setFilterReimburserUid(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                      <option value="">所有請款人</option>
-                      {reimbursementContacts.map(contact => (
-                        <option key={contact.uid} value={contact.uid}>{contact.displayName}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="filterSDate" className="block text-sm font-medium text-gray-700 mb-1">購買日期 (起)</label>
-                    <input id="filterSDate" type="date" value={filterStartDate} onChange={(e) => setFilterStartDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
-                  </div>
-                  <div>
-                    <label htmlFor="filterEDate" className="block text-sm font-medium text-gray-700 mb-1">購買日期 (迄)</label>
-                    <input id="filterEDate" type="date" value={filterEndDate} onChange={(e) => setFilterEndDate(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
-                  </div>
-                </div>
-                {/* --- 修改結束 --- */}
-              </div>
 
-              {/* --- 新增開始：視圖切換器 --- */}
-              <div className="flex justify-end mb-4">
-                <div className="flex bg-gray-100 rounded-lg p-1" role="tablist" aria-label="購買紀錄視圖模式">
-                  <button
-                    onClick={() => setRecordsViewMode('grid')}
-                    className={`flex items-center justify-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${recordsViewMode === 'grid'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                  {/* 右側：視圖切換按鈕 */}
+                  <div className="flex items-center">
+                  <div className="flex items-center rounded-lg bg-gray-200 p-1" role="tablist" aria-label="購買紀錄視圖模式">
+                   
+                    <button
+                      onClick={() => setRecordsViewMode('list')}
+                      className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        recordsViewMode === 'list' 
+                          ? 'bg-white shadow' 
+                          : 'text-gray-500 hover:bg-gray-300'
                       }`}
-                    title="網格視圖"
-                    role="tab"
-                    aria-selected={recordsViewMode === 'grid'}
-                    aria-controls="records-content"
-                    aria-label="切換到網格檢視模式"
-                  >
-                    <LayoutGrid size={16} aria-hidden="true" />
-                    <span className="sr-only">網格模式</span>
-                  </button>
-                  <button
-                    onClick={() => setRecordsViewMode('list')}
-                    className={`flex items-center justify-center p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${recordsViewMode === 'list'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
+                      title="列表視圖"
+                      role="tab"
+                      aria-selected={recordsViewMode === 'list'}
+                      aria-controls="records-content"
+                      aria-label="切換到列表檢視模式"
+                    >
+                      <List size={20} aria-hidden="true" />
+                      <span className="sr-only">列表模式</span>
+                    </button>
+                    <button
+                      onClick={() => setRecordsViewMode('grid')}
+                      className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        recordsViewMode === 'grid' 
+                          ? 'bg-white shadow' 
+                          : 'text-gray-500 hover:bg-gray-300'
                       }`}
-                    title="列表視圖"
-                    role="tab"
-                    aria-selected={recordsViewMode === 'list'}
-                    aria-controls="records-content"
-                    aria-label="切換到列表檢視模式"
-                  >
-                    <List size={16} aria-hidden="true" />
-                    <span className="sr-only">列表模式</span>
-                  </button>
+                      title="網格視圖"
+                      role="tab"
+                      aria-selected={recordsViewMode === 'grid'}
+                      aria-controls="records-content"
+                      aria-label="切換到網格檢視模式"
+                    >
+                      <LayoutGrid size={20} aria-hidden="true" />
+                      <span className="sr-only">網格模式</span>
+                    </button>
+                  </div>
+                </div>
+                </div>
+                {/* 可摺疊的篩選面板 */}
+                <div
+                  id="filter-panel"
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isFilterPanelExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                  aria-hidden={!isFilterPanelExpanded}
+                >
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label htmlFor="filterPurchaser" className="block text-sm font-medium text-gray-700 mb-1">購買人</label>
+                        <select
+                          id="filterPurchaser"
+                          value={filterPurchaserUid}
+                          onChange={(e) => setFilterPurchaserUid(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">所有購買人</option>
+                          {allUsers.map(user => (
+                            <option key={user.uid} value={user.uid}>{user.displayName}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="filterReimburser" className="block text-sm font-medium text-gray-700 mb-1">請款人</label>
+                        <select
+                          id="filterReimburser"
+                          value={filterReimburserUid}
+                          onChange={(e) => setFilterReimburserUid(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">所有請款人</option>
+                          {reimbursementContacts.map(contact => (
+                            <option key={contact.uid} value={contact.uid}>{contact.displayName}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="filterSDate" className="block text-sm font-medium text-gray-700 mb-1">購買日期 (起)</label>
+                        <input 
+                          id="filterSDate" 
+                          type="date" 
+                          value={filterStartDate} 
+                          onChange={(e) => setFilterStartDate(e.target.value)} 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="filterEDate" className="block text-sm font-medium text-gray-700 mb-1">購買日期 (迄)</label>
+                        <input 
+                          id="filterEDate" 
+                          type="date" 
+                          value={filterEndDate} 
+                          onChange={(e) => setFilterEndDate(e.target.value)} 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              {/* --- 新增結束 --- */}
+              {/* --- 新增結束：統一控制列 --- */}
 
               {filteredPurchaseRecords.length === 0 ? (
                 <div className="text-center py-8">
@@ -1965,7 +2136,7 @@ const PurchaseRequestBoard = () => {
                             <div className="flex-grow">
                               <div className="space-y-2 text-sm">
                                 <div><span className="text-gray-600">提出者：</span><span className="font-medium">{record.requester}</span></div>
-                                <div><span className="text-gray-600">購買金額：</span><span className="font-medium text-green-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></div>
+                                <div><span className="text-gray-600">金額：</span><span className="font-medium text-green-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></div>
                                 <div><span className="text-gray-600">需求日期：</span><span className="font-medium">{record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span></div>
                                 <div><span className="text-gray-600">購買日期：</span><span className="font-medium">{record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span></div>
                                 {record.purchaserName && (<div><span className="text-gray-600">購買人：</span><span className="font-medium">{record.purchaserName}</span></div>)}
@@ -1974,7 +2145,7 @@ const PurchaseRequestBoard = () => {
                                   <div className="flex items-center gap-1">
                                     <span className="text-gray-600">請款人：</span>
                                     <span className="font-medium flex items-center gap-1">{record.reimbursementerName || record.purchaserName}
-                                      {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                                      {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
                                         <UserCheck size={14} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
                                       )}
                                     </span>
@@ -2020,17 +2191,17 @@ const PurchaseRequestBoard = () => {
 
                     {/* --- 新增開始：列表視圖 --- */}
                     {recordsViewMode === 'list' && (
-                      <div className="space-y-2" aria-label="列表視圖購買紀錄">
+                      <div className="space-y-1" aria-label="列表視圖購買紀錄">
                         {/* 列表標題 - 僅在大螢幕顯示 */}
                         <div className="hidden lg:block bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
                           <div className="grid grid-cols-12 gap-3 text-sm font-medium text-gray-700">
                             <div className="col-span-1 flex justify-center">選擇</div>
-                            <div className="col-span-3">需求標題</div>
-                            <div className="col-span-2">購買金額</div>
+                            <div className="col-span-2">需求標題</div>
+                            <div className="col-span-2">金額</div>
                             <div className="col-span-2">購買日期</div>
                             <div className="col-span-2">購買人</div>
-                            <div className="col-span-1">請款人</div>
-                            <div className="col-span-1">操作</div>
+                            <div className="col-span-2">請款人</div>
+                            <div className="col-span-1">轉交報帳</div>
                           </div>
                         </div>
 
@@ -2038,7 +2209,7 @@ const PurchaseRequestBoard = () => {
                         {filteredPurchaseRecords.map((record) => (
                           <div key={record.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                             {/* 大螢幕版本 */}
-                            <div className="hidden lg:grid lg:grid-cols-12 gap-3 p-3 items-center">
+                            <div className="hidden lg:grid lg:grid-cols-12 gap-3 p-1 items-center">
                               {/* 勾選框 */}
                               <div className="col-span-1 flex justify-center">
                                 <input
@@ -2055,7 +2226,7 @@ const PurchaseRequestBoard = () => {
                                 className="col-span-10 grid grid-cols-10 gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
                                 onClick={() => handleShowRecordDetails(record)}
                               >
-                                <div className="col-span-3 font-medium text-gray-900 truncate" title={record.title}>
+                                <div className="col-span-2 font-medium text-gray-900 truncate" title={record.title}>
                                   {record.title}
                                 </div>
                                 <div className="col-span-2 text-sm font-medium text-green-600">
@@ -2067,9 +2238,9 @@ const PurchaseRequestBoard = () => {
                                 <div className="col-span-2 text-sm text-gray-600 truncate" title={record.purchaserName || 'N/A'}>
                                   {record.purchaserName || 'N/A'}
                                 </div>
-                                <div className="col-span-1 text-sm text-gray-600 truncate" title={record.reimbursementerName || record.purchaserName || 'N/A'}>
+                                <div className="col-span-2 text-sm text-gray-600 truncate" title={record.reimbursementerName || record.purchaserName || 'N/A'}>
                                   {record.reimbursementerName || record.purchaserName || 'N/A'}
-                                  {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                                  {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
                                     <UserCheck size={12} className="inline ml-1 text-blue-500" title={`由 ${record.purchaserName} 指定`} />
                                   )}
                                 </div>
@@ -2098,59 +2269,62 @@ const PurchaseRequestBoard = () => {
                               </div>
                             </div>
 
-                            {/* 小螢幕版本 */}
-                            <div className="lg:hidden p-3">
-                              <div className="flex items-start gap-3">
+                             {/* 小螢幕版本 */}
+                             <div className="lg:hidden">
+                              <div className="flex items-start gap-3 p-2">
                                 {/* 勾選框 */}
                                 <input
                                   type="checkbox"
-                                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 flex-shrink-0"
                                   checked={selectedRecordIds.has(record.id)}
                                   onChange={() => handleRecordSelection(record.id)}
                                   aria-labelledby={`record-title-mobile-${record.id}`}
                                 />
 
-                                {/* 內容區域 */}
-                                <div
-                                  className="flex-grow cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
-                                  onClick={() => handleShowRecordDetails(record)}
-                                >
-                                  <h4 id={`record-title-mobile-${record.id}`} className="font-medium text-gray-900 mb-2 line-clamp-2">
-                                    {record.title}
-                                  </h4>
-                                  <div className="space-y-1 text-sm text-gray-600">
-                                    <div className="font-medium text-green-600">購買金額: NT$ {(record.purchaseAmount || 0).toLocaleString()}</div>
-                                    <div>購買日期: {record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</div>
-                                    <div>購買人: {record.purchaserName || 'N/A'}</div>
-                                    <div className="flex items-center gap-1">
-                                      請款人: {record.reimbursementerName || record.purchaserName || 'N/A'}
-                                      {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
-                                        <UserCheck size={12} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                                {/* 內容區域 (可點擊) */}
+                                <div className="flex-grow cursor-pointer" onClick={() => handleShowRecordDetails(record)}>
+                                  {/* 第一行: 品名, 日期 */}
+                                  <div className="flex justify-between items-baseline gap-2 mb-1.5">
+                                    <h4 id={`record-title-mobile-${record.id}`} className="font-medium text-gray-900 truncate pr-2">
+                                      {record.title}
+                                    </h4>
+                                    <div className="text-sm text-gray-500 flex-shrink-0">
+                                      {record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}
+                                    </div>
+                                  </div>
+
+                                  {/* 第二行: 金額, 負責人, 轉交按鈕 */}
+                                  <div className="flex justify-between items-center text-sm">
+                                    <div className="font-semibold text-green-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</div>
+                                    <div className="flex items-center flex-shrink-0 gap-2">
+                                      <div className="flex items-center text-xs text-gray-500" title={`購買人：${record.purchaserName}\n請款人：${record.reimbursementerName || record.purchaserName}`}>
+                                        <span className="truncate max-w-[50px]">{record.purchaserName || 'N/A'}</span>
+                                        <ArrowRight size={12} className="mx-0.5 flex-shrink-0" />
+                                        <span className="truncate max-w-[70px]">{record.reimbursementerName || record.purchaserName || 'N/A'}</span>
+                                        {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
+                                          <UserCheck size={12} className="ml-1 text-blue-500 flex-shrink-0" title={`由 ${record.purchaserName} 指定`} />
+                                        )}
+                                      </div>
+                                      {isCurrentUserReimburser(record) && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const fullRequest = requests.find(r => r.id === record.id);
+                                            if (fullRequest) {
+                                              handleOpenTransferModal(fullRequest);
+                                            } else {
+                                              console.error('Could not find the full request object for this record:', record.id);
+                                              alert('操作失敗：無法找到此紀錄的完整需求資料。');
+                                            }
+                                          }}
+                                          className="p-1 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                          title="轉交報帳責任"
+                                        >
+                                          <ArrowRightLeft size={16} />
+                                        </button>
                                       )}
                                     </div>
                                   </div>
-                                </div>
-
-                                {/* 操作按鈕 */}
-                                <div className="flex-shrink-0">
-                                  {isCurrentUserReimburser(record) && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const fullRequest = requests.find(r => r.id === record.id);
-                                        if (fullRequest) {
-                                          handleOpenTransferModal(fullRequest);
-                                        } else {
-                                          console.error('Could not find the full request object for this record:', record.id);
-                                          alert('操作失敗：無法找到此紀錄的完整需求資料。');
-                                        }
-                                      }}
-                                      className="p-2 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                      title="轉交報帳責任"
-                                    >
-                                      <ArrowRightLeft size={16} />
-                                    </button>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -2223,7 +2397,7 @@ const PurchaseRequestBoard = () => {
 
                       {request.status === 'purchased' && request.purchaseAmount && (
                         <div className="bg-green-50 border border-green-200 rounded-lg p-4 my-4">
-                          <div className="flex items-center gap-2 text-green-800 mb-2"> <DollarSign size={18} /> <span className="font-semibold text-lg">購買金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
+                          <div className="flex items-center gap-2 text-green-800 mb-2"> <DollarSign size={18} /> <span className="font-semibold text-lg">金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
                           <div className="text-sm text-green-700 grid grid-cols-2 gap-1">
                             <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div>
                             {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)}
@@ -2243,23 +2417,23 @@ const PurchaseRequestBoard = () => {
                         </div>
                       )}
 
-                      <div className="flex gap-2 my-4">
-                        <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> 留言 ({request.comments?.length || 0}) </button>
-                        {request.status === 'pending' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'purchased'); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white hover:bg-green-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買 </button>)}
-                        {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} 撤銷購買 </button>)}
+<div className="flex gap-2 my-4">
+                        <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> <span className="hidden sm:inline">留言 ({request.comments?.length || 0})</span> </button>
+                        {request.status === 'pending' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'purchased'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white hover:bg-green-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} <span className="hidden sm:inline">標記為已購買</span> </button>)}
+                        {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} <span className="hidden sm:inline">撤銷購買</span> </button>)}
                         {/* 轉交報帳按鈕 - 只對報帳負責人顯示且僅在已購買狀態下 */}
                         {request.status === 'purchased' && isCurrentUserReimburser(request) && (
                           <button
                             onClick={() => { setShowDetailModal(false); handleOpenTransferModal(request); }}
-                            className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded transition-colors text-sm disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded transition-colors text-sm disabled:opacity-50"
                             disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}
                             title="轉交報帳責任給其他人員"
                           >
                             <ArrowRightLeft size={16} />
-                            轉交報帳
+                            <span className="hidden sm:inline">轉交報帳</span>
                           </button>
                         )}
-                        <button onClick={() => { setShowDetailModal(false); deleteRequest(request.id); }} className="flex-grow flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors text-sm ml-auto disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />} 刪除 </button>
+                        <button onClick={() => { setShowDetailModal(false); deleteRequest(request.id); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />} <span className="hidden sm:inline">刪除</span> </button>
                       </div>
 
                       {request.comments?.length > 0 && (
@@ -2325,7 +2499,7 @@ const PurchaseRequestBoard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign size={16} className="text-gray-500" />
-                        <span><strong>購買金額:</strong> <span className="text-green-600 font-semibold">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></span>
+                        <span><strong>金額:</strong> <span className="text-green-600 font-semibold">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar size={16} className="text-gray-500" />
@@ -2344,7 +2518,7 @@ const PurchaseRequestBoard = () => {
                       <div className="flex items-center gap-2 col-span-2">
                         <UserCheck size={16} className="text-gray-500" />
                         <span><strong>請款人:</strong> {record.reimbursementerName || record.purchaserName || '未指定'}
-                          {record.reimbursementerName && record.reimbursementerName !== record.purchaserName && (
+                          {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
                             <UserCheck size={14} className="inline ml-1 text-blue-500" title={`由 ${record.purchaserName} 指定`} />
                           )}
                         </span>
