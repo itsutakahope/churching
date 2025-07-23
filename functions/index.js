@@ -5,27 +5,37 @@ import {onRequest} from "firebase-functions/v2/https"; // For HTTP functions
 import {onCall, HttpsError} from "firebase-functions/v2/https"; // For Callable functions
 import * as functions from 'firebase-functions';
 import { google } from 'googleapis';
+import { defineString } from 'firebase-functions/params'; // <-- 1. 引入 defineString
 
+// --- 👇 2. 使用 V2 的方式定義參數 ---
+const GMAIL_CLIENT_ID = defineString('GMAIL_CLIENT_ID');
+const GMAIL_CLIENT_SECRET = defineString('GMAIL_CLIENT_SECRET');
+const GMAIL_REFRESH_TOKEN = defineString('GMAIL_REFRESH_TOKEN');
+const GMAIL_SENDER = defineString('GMAIL_SENDER');
 
 // Initialize firebase-admin
 admin.initializeApp();
 const db = admin.firestore();
 
-// --- Gmail API Setup ---
-const GMAIL_CONFIG = functions.config().gmail;
-const oauth2Client = new google.auth.OAuth2(
-  GMAIL_CONFIG?.client_id,
-  GMAIL_CONFIG?.client_secret,
-  'https://developers.google.com/oauthplayground' // Redirect URL
-);
+// --- ✨ 核心修正 2：Gmail API 客戶端延遲初始化 ---
+let gmailClient;
 
-if (GMAIL_CONFIG?.refresh_token) {
-    oauth2Client.setCredentials({
-      refresh_token: GMAIL_CONFIG.refresh_token,
-    });
+function getGmailClient() {
+  if (!gmailClient) {
+    const oauth2Client = new google.auth.OAuth2(
+      GMAIL_CLIENT_ID.value(),
+      GMAIL_CLIENT_SECRET.value(),
+      'https://developers.google.com/oauthplayground'
+    );
+    if (GMAIL_REFRESH_TOKEN.value()) {
+      oauth2Client.setCredentials({
+        refresh_token: GMAIL_REFRESH_TOKEN.value(),
+      });
+    }
+    gmailClient = google.gmail({ version: 'v1', auth: oauth2Client });
+  }
+  return gmailClient;
 }
-
-const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
 /**
  * Sends an email notification about a new purchase request.
@@ -33,8 +43,8 @@ const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
  */
 async function sendNewRequestNotification(requirementData) {
   // Check if Gmail config is available
-  if (!GMAIL_CONFIG?.client_id || !GMAIL_CONFIG?.refresh_token || !GMAIL_CONFIG?.sender) {
-    logger.warn('Gmail configuration is missing. Skipping email notification.');
+  if (!GMAIL_CLIENT_ID.value() || !GMAIL_REFRESH_TOKEN.value() || !GMAIL_SENDER.value()) {
+    logger.warn('Gmail configuration parameters are missing. Skipping email notification.');
     return;
   }
 
@@ -75,7 +85,7 @@ async function sendNewRequestNotification(requirementData) {
     // 3. Construct and Send Email (with proper encoding for headers)
     const senderDisplayName = '採購板系統';
     const encodedDisplayName = `=?UTF-8?B?${Buffer.from(senderDisplayName).toString('base64')}?=`;
-    const fromHeader = `${encodedDisplayName} <${GMAIL_CONFIG.sender}>`;
+    const fromHeader = `${encodedDisplayName} <${GMAIL_SENDER.value()}>`;
     
     const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
     
@@ -90,7 +100,7 @@ async function sendNewRequestNotification(requirementData) {
     ].join('\n');
 
     const encodedMessage = Buffer.from(rawMessage).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    
+    const gmail = getGmailClient(); // ✨ 使用延遲初始化
     await gmail.users.messages.send({
       userId: 'me',
       requestBody: {
@@ -116,13 +126,8 @@ async function sendNewRequestNotification(requirementData) {
  */
 async function sendPurchaseCompleteNotification(requirementData, originalRequesterUid) {
   // Enhanced error handling: Check if Gmail config is available
-  if (!GMAIL_CONFIG?.client_id || !GMAIL_CONFIG?.refresh_token || !GMAIL_CONFIG?.sender) {
-    logger.warn('Gmail configuration is missing. Skipping purchase complete notification.', {
-      hasClientId: !!GMAIL_CONFIG?.client_id,
-      hasRefreshToken: !!GMAIL_CONFIG?.refresh_token,
-      hasSender: !!GMAIL_CONFIG?.sender,
-      requirementId: requirementData.id || 'unknown'
-    });
+  if (!GMAIL_CLIENT_ID.value() || !GMAIL_REFRESH_TOKEN.value() || !GMAIL_SENDER.value()) {
+    logger.warn('Gmail configuration parameters are missing. Skipping purchase complete notification.');
     return;
   }
 
@@ -199,7 +204,7 @@ async function sendPurchaseCompleteNotification(requirementData, originalRequest
     // 5. Construct and Send Email (with proper encoding for headers)
     const senderDisplayName = '採購板系統';
     const encodedDisplayName = `=?UTF-8?B?${Buffer.from(senderDisplayName).toString('base64')}?=`;
-    const fromHeader = `${encodedDisplayName} <${GMAIL_CONFIG.sender}>`;
+    const fromHeader = `${encodedDisplayName} <${GMAIL_SENDER.value()}>`;
     
     const encodedSubject = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
     
@@ -214,7 +219,7 @@ async function sendPurchaseCompleteNotification(requirementData, originalRequest
     ].join('\n');
 
     const encodedMessage = Buffer.from(rawMessage).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    
+    const gmail = getGmailClient(); // ✨ 使用延遲初始化
     await gmail.users.messages.send({
       userId: 'me',
       requestBody: {

@@ -13,3 +13,4 @@ functions/firestore-debug.log
 .specstory/
 .firebase/
 .runtimeconfig.json
+.env.bqgracechurch

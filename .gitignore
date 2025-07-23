@@ -58,3 +58,4 @@ coverage/
 # 測試結果
 test-results/
 TEST_SUMMARY.md
+.env.bqgracechurch
