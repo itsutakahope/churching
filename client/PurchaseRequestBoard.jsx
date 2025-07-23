@@ -1437,54 +1437,100 @@ const PurchaseRequestBoard = () => {
             </div>
           )}
 
-          {viewMode === 'list' && (
+{viewMode === 'list' && (
             <div className="space-y-2" aria-label="列表檢視採購需求">
+              {/* --- New: Header for large screens --- */}
+              <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2 text-sm font-semibold text-gray-500 border-b">
+                <div className="col-span-2">狀態</div>
+                <div className="col-span-4">品名</div>
+                <div className="col-span-2">提出者</div>
+                <div className="col-span-2 text-right">操作</div>
+                <div className="col-span-2 text-right">提出日期</div>
+              </div>
+
+              {/* --- Small screen version (existing layout) --- */}
+              <div className="md:hidden">
                 {sortedRequests.map(request => {
-                const isUrgent = request.priority === 'urgent';
-                return (
-                  <button
-                    key={request.id}
-                    onClick={() => handleShowDetails(request)}
-                    className={`w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-between gap-3 ${isUrgent ? 'border-red-400' : 'border-gray-200'}`}
-                    aria-label={`查看採購需求詳情: ${request.title || request.text}${isUrgent ? ' (緊急)' : ''}`}
-                    aria-describedby={`request-status-${request.id} request-date-${request.id}`}
-                  >
-                    {/* --- Group 1: Left-aligned info --- */}
-                    <div className="flex items-center gap-3 min-w-0 flex-grow">
-                      {isUrgent && (
-                        <>
-                          <div className="flex-shrink-0 sm:hidden" title="緊急需求">
+                  const isUrgent = request.priority === 'urgent';
+                  return (
+                    <button
+                      key={request.id}
+                      onClick={() => handleShowDetails(request)}
+                      className={`w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-between gap-3 ${isUrgent ? 'border-red-400' : 'border-gray-200'}`}
+                      aria-label={`查看採購需求詳情: ${request.title || request.text}${isUrgent ? ' (緊急)' : ''}`}
+                      aria-describedby={`request-status-${request.id} request-date-${request.id}`}
+                    >
+                      {/* Left-aligned info for small screens */}
+                      <div className="flex items-center gap-3 min-w-0 flex-grow">
+                        {isUrgent && (
+                          <div className="flex-shrink-0" title="緊急需求">
                             <AlertTriangle size={20} className="text-red-500" />
                           </div>
-                          <span className={`hidden sm:inline-flex flex-shrink-0 items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
+                        )}
+                        <div className="flex-shrink-0">
+                          <span
+                            id={`request-status-${request.id}`}
+                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}
+                          >
+                            {statusLabels[request.status]?.shortText || request.status}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-md font-semibold text-gray-800 truncate" title={request.title || request.text}>
+                            {request.title || request.text}
+                          </h3>
+                        </div>
+                      </div>
+                      {/* Right-aligned date for small screens */}
+                      <div className="flex-shrink-0 flex items-center gap-1.5 text-sm text-gray-500" id={`request-date-${request.id}`}>
+                        <Calendar size={16} aria-hidden="true" />
+                        <span>
+                          {(() => {
+                            const d = new Date(request.createdAt);
+                            return `${d.getMonth() + 1}/${d.getDate()}`;
+                          })()}
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* --- Large screen version (new grid layout) --- */}
+              <div className="hidden md:block space-y-2">
+                {sortedRequests.map(request => {
+                  const isUrgent = request.priority === 'urgent';
+                  return (
+                    <div
+                      key={request.id}
+                      onClick={() => handleShowDetails(request)}
+                      className={`grid grid-cols-12 gap-3 items-center w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer ${isUrgent ? 'border-red-400' : ''}`}
+                    >
+                      {/* Col 1: Status */}
+                      <div className="col-span-2 flex items-center gap-2">
+                        <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium w-20 ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                          {statusLabels[request.status]?.text || request.status}
+                        </span>
+                        {isUrgent && (
+                          <span className={`inline-flex flex-shrink-0 items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${priorityLabels.urgent.color}`}>
                             <AlertTriangle size={14} aria-hidden="true" />
                             {priorityLabels.urgent.text}
                           </span>
-                        </>
-                      )}
-                      <div className="flex-shrink-0">
-                        <span
-                          id={`request-status-${request.id}`}
-                          className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium md:w-20 ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}
-                        >
-                          <span className="md:hidden">{statusLabels[request.status]?.shortText || request.status}</span>
-                          <span className="hidden md:inline">{statusLabels[request.status]?.text || request.status}</span>
-                        </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
+                      {/* Col 2: Title */}
+                      <div className="col-span-4 min-w-0">
                         <h3 className="text-md font-semibold text-gray-800 truncate" title={request.title || request.text}>
                           {request.title || request.text}
                         </h3>
                       </div>
-                    </div>
-
-                    {/* --- Group 2: Right-aligned actions and date --- */}
-                    <div className="flex items-center gap-4 flex-shrink-0">
-                      <div className="hidden md:flex w-36 items-center gap-1.5 text-sm text-gray-600" title={`提出者: ${request.requesterName}`}>
+                      {/* Col 3: Requester */}
+                      <div className="col-span-2 flex items-center gap-1.5 text-sm text-gray-600" title={`提出者: ${request.requesterName}`}>
                         <User size={16} />
                         <span className="truncate">{request.requesterName}</span>
                       </div>
-                      <div className="hidden md:flex w-32 items-center justify-end gap-1.5">
+                      {/* Col 4: Actions */}
+                      <div className="col-span-2 flex items-center justify-end gap-1.5">
                         <button
                           onClick={(e) => { e.stopPropagation(); openCommentModal(request); }}
                           className="p-2 text-gray-500 hover:bg-blue-100 hover:text-blue-600 rounded-full transition-colors disabled:opacity-50"
@@ -1493,7 +1539,6 @@ const PurchaseRequestBoard = () => {
                         >
                           <MessageCircle size={16} />
                         </button>
-
                         {request.status === 'pending' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }}
@@ -1516,17 +1561,16 @@ const PurchaseRequestBoard = () => {
                             </button>
                             {isCurrentUserReimburser(request) && (
                               <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
-                              className="p-2 text-gray-500 hover:bg-purple-100 hover:text-purple-600 rounded-full transition-colors disabled:opacity-50"
-                              title="轉交報帳責任"
-                              disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
-                            >
-                              <ArrowRightLeft size={16} />
-                            </button>
+                                onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
+                                className="p-2 text-gray-500 hover:bg-purple-100 hover:text-purple-600 rounded-full transition-colors disabled:opacity-50"
+                                title="轉交報帳責任"
+                                disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
+                              >
+                                <ArrowRightLeft size={16} />
+                              </button>
                             )}
                           </>
                         )}
-
                         <button
                           onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }}
                           className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors disabled:opacity-50"
@@ -1536,25 +1580,15 @@ const PurchaseRequestBoard = () => {
                           {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}
                         </button>
                       </div>
-                      
-                      <div className="flex-shrink-0 flex items-center gap-1.5 text-sm text-gray-500" id={`request-date-${request.id}`}>
+                      {/* Col 5: Date */}
+                      <div className="col-span-2 flex items-center justify-end gap-1.5 text-sm text-gray-500">
                         <Calendar size={16} aria-hidden="true" />
-                        <span>
-                          <span className="sm:hidden">
-                            {(() => {
-                              const d = new Date(request.createdAt);
-                              return `${d.getMonth() + 1}/${d.getDate()}`;
-                            })()}
-                          </span>
-                          <span className="hidden sm:inline">
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </span>
-                        </span>
+                        <span>{new Date(request.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
-                  </button>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>
