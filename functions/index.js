@@ -185,7 +185,7 @@ async function sendPurchaseCompleteNotification(requirementData, originalRequest
       : '未指定';
     
     const emailBody = `
-      您好 ${requesterData.displayName || ''},<br><br>
+      您好 ${requirementData.requesterName} || ''},<br><br>
       您申請的採購項目已完成購買，詳情如下：<br><br>
       <ul>
         <li><b>品項名稱:</b> ${requirementData.text}</li>
