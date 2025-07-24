@@ -1449,7 +1449,7 @@ const PurchaseRequestBoard = () => {
               </div>
 
               {/* --- Small screen version (existing layout) --- */}
-              <div className="md:hidden">
+              <div className="md:hidden space-y-1">
                 {sortedRequests.map(request => {
                   const isUrgent = request.priority === 'urgent';
                   return (
