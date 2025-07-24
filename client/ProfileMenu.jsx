@@ -2,6 +2,21 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { LogOut, Edit2, Loader2, ChevronDown } from 'lucide-react';
 
+const getShortName = (name) => {
+  if (!name || typeof name !== 'string' || name.trim() === '') {
+    return '';
+  }
+
+  const trimmedName = name.trim();
+  const chineseCharRegex = /[\u4e00-\u9fa5]/;
+
+  if (chineseCharRegex.test(trimmedName)) {
+    return trimmedName.slice(-2);
+  } else {
+    return trimmedName.charAt(0).toUpperCase();
+  }
+};
+
 const ProfileMenu = () => {
   const { currentUser, logout, updateUserProfile, userProfile, updateUserPreferences } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -89,7 +104,7 @@ const ProfileMenu = () => {
         onClick={() => setIsOpen(!isOpen)} 
         className="flex items-center gap-2 text-base font-medium text-graphite-700 hover:text-glory-red-600 p-2 rounded-lg transition-colors border border-graphite-300"
       >
-        <span>{currentUser.displayName || currentUser.email}</span>
+        <span>{getShortName(currentUser.displayName) || currentUser.email}</span>
         <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
