@@ -47,7 +47,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Dedication Date */}
         <div className="flex flex-col">
-          <label htmlFor="dedicationDate" className="text-sm font-medium text-gray-600 mb-1">奉獻日期</label>
+          <label htmlFor="dedicationDate" className="text-sm font-medium text-graphite-500 mb-1">奉獻日期</label>
           <input
             id="dedicationDate"
             type="date"
@@ -60,7 +60,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
 
         {/* Dedicator ID */}
         <div className="flex flex-col">
-          <label htmlFor="dedicatorId" className="text-sm font-medium text-gray-600 mb-1">奉獻者代號</label>
+          <label htmlFor="dedicatorId" className="text-sm font-medium text-graphite-500 mb-1">奉獻者代號</label>
           <input
             id="dedicatorId"
             type="text"
@@ -74,7 +74,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
 
         {/* Dedication Category */}
         <div className="flex flex-col">
-          <label htmlFor="dedicationCategory" className="text-sm font-medium text-gray-600 mb-1">奉獻科目</label>
+          <label htmlFor="dedicationCategory" className="text-sm font-medium text-graphite-500 mb-1">奉獻科目</label>
           <select
             id="dedicationCategory"
             value={dedicationCategory}
@@ -89,7 +89,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
 
         {/* Amount */}
         <div className="flex flex-col">
-          <label htmlFor="amount" className="text-sm font-medium text-gray-600 mb-1">奉獻數額</label>
+          <label htmlFor="amount" className="text-sm font-medium text-graphite-500 mb-1">奉獻數額</label>
           <input
             id="amount"
             type="number"
@@ -103,15 +103,15 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
 
         {/* Method */}
         <div className="flex flex-col justify-center">
-           <label className="text-sm font-medium text-gray-600 mb-1">奉獻方式</label>
+           <label className="text-sm font-medium text-graphite-500 mb-1">奉獻方式</label>
           <div className="flex items-center space-x-4 pt-2">
             <label className="flex items-center">
               <input type="radio" name="method" value="cash" checked={method === 'cash'} onChange={() => setMethod('cash')} className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"/>
-              <span className="ml-2 text-sm text-gray-700">現金</span>
+              <span className="ml-2 text-sm text-graphite-700">現金</span>
             </label>
             <label className="flex items-center">
               <input type="radio" name="method" value="cheque" checked={method === 'cheque'} onChange={() => setMethod('cheque')} className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"/>
-              <span className="ml-2 text-sm text-gray-700">支票</span>
+              <span className="ml-2 text-sm text-graphite-700">支票</span>
             </label>
           </div>
         </div>
@@ -122,7 +122,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400"
+        className="w-full flex items-center justify-center gap-2 bg-success-600 hover:bg-success-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400"
       >
         <Plus size={20} />
         {isSubmitting ? '新增中...' : '新增此筆'}

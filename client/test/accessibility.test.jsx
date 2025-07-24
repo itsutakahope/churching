@@ -128,7 +128,7 @@ describe('PurchaseRequestBoard Accessibility', () => {
     expect(addButton).toHaveFocus();
     
     // Check if it has focus styles
-    expect(addButton).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+    expect(addButton).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-glory-red-500');
   });
 
   it('should support keyboard navigation for view toggle', () => {

@@ -112,7 +112,7 @@ const PurchaseRequestBoard = () => {
       key={key}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 hover:underline hover:text-blue-800"
+      className="text-glory-red-600 hover:underline hover:text-glory-red-800 transition-colors duration-200"
     >
       {text}
     </a>
@@ -222,14 +222,14 @@ const PurchaseRequestBoard = () => {
 
 
   const statusLabels = {
-    'pending': { text: '待購買', shortText: '待', color: 'bg-yellow-100 text-yellow-800' },
-    'purchased': { text: '已購買', shortText: '已', color: 'bg-green-100 text-green-800' }
+    'pending': { text: '待購買', shortText: '待', color: 'bg-holy-gold-100 text-holy-gold-700' },
+    'purchased': { text: '已購買', shortText: '已', color: 'bg-success-100 text-success-700' }
   };
 
 
   const priorityLabels = {
-    'general': { text: '一般', color: 'bg-gray-100 text-gray-800' },
-    'urgent': { text: '緊急', color: 'bg-red-100 text-red-800' }
+    'general': { text: '一般', color: 'bg-graphite-100 text-graphite-800' },
+    'urgent': { text: '緊急', color: 'bg-danger-100 text-danger-700' }
   };
 
   const fetchRequests = useCallback(async () => {
@@ -1118,14 +1118,14 @@ const PurchaseRequestBoard = () => {
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
         {/* ... (Header and filter UI remains the same) ... */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 text-center sm:text-left">Purchase Board</h1>
+          <h1 className="text-2xl font-bold text-graphite-900 text-center sm:text-left">Purchase Board</h1>
           <div className="flex gap-3 w-full sm:w-auto">
             {/* --- 修改/新增開始 --- */}
             <div className="relative flex-1 group">
               <button
                 onClick={() => setShowRecordsModal(true)}
                 disabled={!currentUser}
-                className="w-full whitespace-nowrap bg-green-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className="w-full whitespace-nowrap bg-holy-gold-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-graphite-400 disabled:cursor-not-allowed hover:bg-holy-gold-600 focus:outline-none focus:ring-2 focus:ring-holy-gold-500 focus:ring-offset-2"
                 title={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
                 aria-label={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
               >
@@ -1157,7 +1157,7 @@ const PurchaseRequestBoard = () => {
                   setShowModal(true);
                 }}
                 disabled={!currentUser}
-                className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-full bg-glory-red-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-graphite-400 disabled:cursor-not-allowed hover:bg-glory-red-600 focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2"
                 title={currentUser ? "新增一筆採購需求" : "請先登入以新增需求"}
                 aria-label={currentUser ? "新增一筆採購需求" : "請先登入以新增需求"}
               >
@@ -1176,13 +1176,13 @@ const PurchaseRequestBoard = () => {
         </div>
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center md:justify-between">
           <div className="flex items-center gap-2">
-            <Filter size={20} className="text-gray-700 shrink-0" />
+            <Filter size={20} className="text-graphite-700 shrink-0" />
             <div className="flex-grow grid grid-cols-3 gap-2" role="group" aria-labelledby="filter-label">
               {['all', 'pending', 'purchased'].map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-2 rounded-full text-sm transition-colors text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${filter === f ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}
+                  className={`px-3 py-2 rounded-full text-sm transition-colors text-center focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 ${filter === f ? 'bg-glory-red-500 text-white' : 'bg-graphite-200 text-graphite-500 hover:bg-graphite-300'}`}
                   aria-pressed={filter === f}
                   aria-label={`篩選${f === 'all' ? '全部' : statusLabels[f]?.text || f}採購需求`}
                 >
@@ -1196,13 +1196,13 @@ const PurchaseRequestBoard = () => {
           <div className="flex w-full items-center justify-between gap-4 md:w-auto md:justify-start md:gap-4">
             {/* 排序下拉選單 */}
             <div className="flex flex-grow items-center gap-2 md:flex-grow-0">
-              <ArrowUpDown size={20} className="text-gray-700 shrink-0 md:hidden" />
-              <label htmlFor="sort-select" className="hidden text-gray-700 font-medium shrink-0 md:inline">排序：</label>
+              <ArrowUpDown size={20} className="text-graphite-700 shrink-0 md:hidden" />
+              <label htmlFor="sort-select" className="hidden text-graphite-700 font-medium shrink-0 md:inline">排序：</label>
               <select
                 id="sort-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500"
                 aria-label="選擇採購需求排序方式"
               >
                 <option value="newest">最新建立</option>
@@ -1214,11 +1214,11 @@ const PurchaseRequestBoard = () => {
             
             {/* 視圖切換器 */}
             <div className="flex items-center gap-2">
-              <span className="hidden text-gray-700 font-medium shrink-0 md:inline" id="view-mode-label">檢視：</span>
-              <div className="flex items-center rounded-lg bg-gray-200 p-1" role="tablist" aria-labelledby="view-mode-label">
+              <span className="hidden text-graphite-700 font-medium shrink-0 md:inline" id="view-mode-label">檢視：</span>
+              <div className="flex items-center rounded-lg bg-graphite-200 p-1" role="tablist" aria-labelledby="view-mode-label">
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'list' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                  className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 ${viewMode === 'list' ? 'bg-white shadow' : 'text-graphite-500 hover:bg-graphite-300'}`}
                   title="列表模式"
                   role="tab"
                   aria-selected={viewMode === 'list'}
@@ -1230,7 +1230,7 @@ const PurchaseRequestBoard = () => {
                 </button>
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${viewMode === 'grid' ? 'bg-white shadow' : 'text-gray-500 hover:bg-gray-300'}`}
+                  className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 ${viewMode === 'grid' ? 'bg-white shadow' : 'text-graphite-500 hover:bg-graphite-300'}`}
                   title="網格模式"
                   role="tab"
                   aria-selected={viewMode === 'grid'}
@@ -1257,8 +1257,8 @@ const PurchaseRequestBoard = () => {
 
       {isLoadingRequests && (
         <div className="text-center py-10">
-          <SpinnerIcon className="text-blue-500 h-12 w-12 mx-auto" />
-          <p className="text-xl mt-4 text-gray-700">載入需求中...</p>
+          <SpinnerIcon className="text-glory-red-500 h-12 w-12 mx-auto" />
+          <p className="text-xl mt-4 text-graphite-700">載入需求中...</p>
         </div>
       )}
 
@@ -1270,7 +1270,7 @@ const PurchaseRequestBoard = () => {
             <p className="text-md text-red-600 mt-1 mb-4">{fetchError}</p>
             <button
               onClick={fetchRequests}
-              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center gap-2"
+              className="px-6 py-2 bg-glory-red-500 text-white rounded-lg hover:bg-glory-red-600 transition-colors text-sm font-medium flex items-center gap-2"
             >
               <RotateCcw size={16} />
               重新嘗試
@@ -1281,11 +1281,11 @@ const PurchaseRequestBoard = () => {
 
       {!isLoadingRequests && !fetchError && requests.length === 0 && (
         <div className="text-center py-10">
-          <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <svg className="mx-auto h-16 w-16 text-graphite-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           </svg>
-          <h3 className="mt-2 text-xl font-medium text-gray-900">目前沒有任何採購需求</h3>
-          <p className="mt-1 text-base text-gray-500">點擊「新增需求」按鈕來建立您的第一個採購單吧！</p>
+          <h3 className="mt-2 text-xl font-medium text-graphite-900">目前沒有任何採購需求</h3>
+          <p className="mt-1 text-base text-graphite-500">點擊「新增需求」按鈕來建立您的第一個採購單吧！</p>
         </div>
       )}
 
@@ -1300,9 +1300,9 @@ const PurchaseRequestBoard = () => {
                 const isLongText = request.description && request.description.length > 50;
                 const isUrgent = request.priority === 'urgent';
                 return (
-                  <div key={request.id} className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-300 ${isUrgent ? 'border-red-400' : 'border-gray-200'} ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  <div key={request.id} className={`bg-white rounded-lg shadow-sm border overflow-hidden transition-all duration-300 ${isUrgent ? 'border-red-400' : 'border-graphite-200'} ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="p-4 pb-0 flex justify-between items-start">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-graphite-900'}`}>
                         {statusLabels[request.status]?.text || request.status}
                       </span>
                       {isUrgent && (
@@ -1313,8 +1313,8 @@ const PurchaseRequestBoard = () => {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{request.title || request.text}</h3>
-                      <p className={`text-gray-600 text-sm mb-2 whitespace-pre-wrap break-words ${!isExpanded ? 'line-clamp-3' : ''}`}>
+                      <h3 className="text-lg font-semibold text-graphite-900 mb-2">{request.title || request.text}</h3>
+                      <p className={`text-graphite-500 text-sm mb-2 whitespace-pre-wrap break-words ${!isExpanded ? 'line-clamp-3' : ''}`}>
                         <Linkify componentDecorator={componentDecorator}>
                           {request.description}
                         </Linkify>
@@ -1322,40 +1322,40 @@ const PurchaseRequestBoard = () => {
                       {isLongText && (
                         <button
                           onClick={() => toggleCardExpansion(request.id)}
-                          className="text-sm text-blue-600 hover:text-blue-800 font-medium mb-3 transition-colors"
+                          className="text-sm text-glory-red-600 hover:text-glory-red-800 font-medium mb-3 transition-colors"
                         >
                           {isExpanded ? '收合內容' : '...顯示更多'}
                         </button>
                       )}
-                      <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                      <div className="flex items-center gap-4 text-sm text-graphite-500 mb-4">
                         <div className="flex items-center gap-1"> <Calendar size={16} /> <span>{new Date(request.createdAt).toLocaleDateString()}</span> </div>
                         {request.comments?.length > 0 && (<div className="flex items-center gap-1"> <MessageCircle size={16} /> <span>{request.comments.length}</span> </div>)}
                       </div>
-                      {request.requesterName && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-2"> <User size={16} /> <span>提出者：{request.requesterName}</span> </div>)}
-                      {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-gray-600 mb-4">
-                        <Tag size={16} className="text-gray-500" />
+                      {request.requesterName && (<div className="flex items-center gap-1 text-sm text-graphite-500 mb-2"> <User size={16} /> <span>提出者：{request.requesterName}</span> </div>)}
+                      {request.accountingCategory && (<div className="flex items-center gap-1 text-sm text-graphite-500 mb-4">
+                        <Tag size={16} className="text-graphite-500" />
                         <span>會計類別：{request.accountingCategory}</span>
                       </div>
                       )}
 
                       {request.status === 'purchased' && request.purchaseAmount && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                          <div className="flex items-center gap-2 text-green-800">
+                        <div className="bg-success-50 border border-success-200 rounded-lg p-3 mb-4">
+                          <div className="flex items-center gap-2 text-success-800">
                             <DollarSign size={16} />
                             <span className="font-medium">金額：NT$ {request.purchaseAmount.toLocaleString()}</span>
                           </div>
-                          <div className="text-sm text-green-600 mt-1">
+                          <div className="text-sm text-success-600 mt-1">
                             購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}
                           </div>
                           {request.purchaserName && (
-                            <div className="text-sm text-green-600 mt-1">
+                            <div className="text-sm text-success-600 mt-1">
                               購買人：{request.purchaserName}
                             </div>
                           )}
                           {request.purchaseNotes && (
-                            <div className="mt-2 pt-2 border-t border-green-200">
-                              <p className="text-xs text-green-700 font-medium">備註：</p>
-                              <p className="text-sm text-green-800 whitespace-pre-wrap break-words">
+                            <div className="mt-2 pt-2 border-t border-success-200">
+                              <p className="text-xs text-success-700 font-medium">備註：</p>
+                              <p className="text-sm text-success-800 whitespace-pre-wrap break-words">
                                 <Linkify componentDecorator={componentDecorator}>{request.purchaseNotes}</Linkify>
                               </p>
                             </div>
@@ -1366,7 +1366,7 @@ const PurchaseRequestBoard = () => {
                       <div className="flex items-center gap-2 mb-3">
                       <button
                           onClick={(e) => { e.stopPropagation(); openCommentModal(request); }}
-                          className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-blue-600 hover:bg-blue-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
+                          className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-holy-gold-600 hover:bg-holy-gold-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
                           title={`留言 (${request.comments?.length || 0})`}
                           disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}>
                           <MessageCircle size={16} />
@@ -1374,7 +1374,7 @@ const PurchaseRequestBoard = () => {
                         </button>
 
                         {request.status === 'pending' && (
-                          <button onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }} className="flex items-center gap-1 px-3 py-1 text-green-600 hover:bg-green-50 rounded-lg transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
+                          <button onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }} className="flex items-center gap-1 px-3 py-1 text-glory-red-600 hover:bg-glory-red-100 rounded-lg transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
                             {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} 標記為已購買
                           </button>
                         )}
@@ -1383,7 +1383,7 @@ const PurchaseRequestBoard = () => {
                           <>
                             <button
                               onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'pending'); }}
-                              className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-orange-600 hover:bg-orange-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
+                              className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-holy-gold-600 hover:bg-holy-gold-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
                               title="撤銷購買"
                               disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}>
                               {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />}
@@ -1393,7 +1393,7 @@ const PurchaseRequestBoard = () => {
                             {isCurrentUserReimburser(request) && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
-                                className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-purple-600 hover:bg-purple-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
+                                className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-holy-gold-600 hover:bg-holy-gold-100 rounded-full md:rounded-lg transition-all text-sm disabled:opacity-50"
                                 title="轉交報帳責任"
                                 disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
                               >
@@ -1406,7 +1406,7 @@ const PurchaseRequestBoard = () => {
 
                         <button
                           onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }}
-                          className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-red-600 hover:bg-red-100 rounded-full md:rounded-lg transition-all text-sm ml-auto disabled:opacity-50"
+                          className="flex items-center gap-1 p-2 md:px-3 md:py-1 text-danger-600 hover:bg-danger-100 rounded-full md:rounded-lg transition-all text-sm ml-auto disabled:opacity-50"
                           title="刪除"
                           disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}>
                           {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />}
@@ -1415,16 +1415,16 @@ const PurchaseRequestBoard = () => {
                       </div>
                       {request.comments?.length > 0 && (
                         <div className="border-t pt-3 mt-3">
-                          <h4 className="text-sm font-semibold text-gray-700 mb-2">留言列表：</h4>
+                          <h4 className="text-sm font-semibold text-graphite-700 mb-2">留言列表：</h4>
                           <div className="space-y-2 max-h-32 overflow-y-auto"> {request.comments.map((comment) => (
-                            <div key={comment.id} className="bg-gray-50 rounded p-2 group relative">
+                            <div key={comment.id} className="bg-graphite-50 rounded p-2 group relative">
                               <div className="flex justify-between items-start mb-1">
                                 <div>
                                   <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span>
-                                  <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                                  <span className="text-xs text-graphite-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
                                 </div>
-                                {currentUser && comment.userId === currentUser.uid && (<button onClick={() => handleDeleteComment(request.id, comment.id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button>)} </div>
-                              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                {currentUser && comment.userId === currentUser.uid && (<button onClick={() => handleDeleteComment(request.id, comment.id)} className="text-graphite-400 hover:text-danger-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button>)} </div>
+                              <p className="text-sm text-graphite-700 whitespace-pre-wrap break-words">
                                 <Linkify componentDecorator={componentDecorator}>
                                   {comment.text}
                                 </Linkify>
@@ -1440,7 +1440,7 @@ const PurchaseRequestBoard = () => {
 {viewMode === 'list' && (
             <div className="space-y-2" aria-label="列表檢視採購需求">
               {/* --- New: Header for large screens --- */}
-              <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2 text-sm font-semibold text-gray-500 border-b">
+              <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2 text-sm font-semibold text-graphite-500 border-b">
                 <div className="col-span-2">狀態</div>
                 <div className="col-span-4">品名</div>
                 <div className="col-span-2">提出者</div>
@@ -1456,7 +1456,7 @@ const PurchaseRequestBoard = () => {
                     <button
                       key={request.id}
                       onClick={() => handleShowDetails(request)}
-                      className={`w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-between gap-3 ${isUrgent ? 'border-red-400' : 'border-gray-200'}`}
+                      className={`w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-glory-red-400 focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 flex items-center justify-between gap-3 ${isUrgent ? 'border-red-400' : 'border-graphite-200'}`}
                       aria-label={`查看採購需求詳情: ${request.title || request.text}${isUrgent ? ' (緊急)' : ''}`}
                       aria-describedby={`request-status-${request.id} request-date-${request.id}`}
                     >
@@ -1464,25 +1464,25 @@ const PurchaseRequestBoard = () => {
                       <div className="flex items-center gap-3 min-w-0 flex-grow">
                         {isUrgent && (
                           <div className="flex-shrink-0" title="緊急需求">
-                            <AlertTriangle size={20} className="text-red-500" />
+                            <AlertTriangle size={20} className="text-danger-500" />
                           </div>
                         )}
                         <div className="flex-shrink-0">
                           <span
                             id={`request-status-${request.id}`}
-                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}
+                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-graphite-900'}`}
                           >
                             {statusLabels[request.status]?.shortText || request.status}
                           </span>
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-md font-semibold text-gray-800 truncate" title={request.title || request.text}>
+                          <h3 className="text-md font-semibold text-graphite-900 truncate" title={request.title || request.text}>
                             {request.title || request.text}
                           </h3>
                         </div>
                       </div>
                       {/* Right-aligned date for small screens */}
-                      <div className="flex-shrink-0 flex items-center gap-1.5 text-sm text-gray-500" id={`request-date-${request.id}`}>
+                      <div className="flex-shrink-0 flex items-center gap-1.5 text-sm text-graphite-500" id={`request-date-${request.id}`}>
                         <Calendar size={16} aria-hidden="true" />
                         <span>
                           {(() => {
@@ -1504,11 +1504,11 @@ const PurchaseRequestBoard = () => {
                     <div
                       key={request.id}
                       onClick={() => handleShowDetails(request)}
-                      className={`grid grid-cols-12 gap-3 items-center w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer ${isUrgent ? 'border-red-400' : ''}`}
+                      className={`grid grid-cols-12 gap-3 items-center w-full text-left bg-white rounded-lg shadow-sm border p-3 transition-all duration-200 hover:shadow-md hover:border-glory-red-400 focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 cursor-pointer ${isUrgent ? 'border-red-400' : ''}`}
                     >
                       {/* Col 1: Status */}
                       <div className="col-span-2 flex items-center gap-2">
-                        <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium w-20 ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                        <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium w-20 ${statusLabels[request.status]?.color || 'bg-gray-100 text-graphite-900'}`}>
                           {statusLabels[request.status]?.text || request.status}
                         </span>
                         {isUrgent && (
@@ -1520,12 +1520,12 @@ const PurchaseRequestBoard = () => {
                       </div>
                       {/* Col 2: Title */}
                       <div className="col-span-4 min-w-0">
-                        <h3 className="text-md font-semibold text-gray-800 truncate" title={request.title || request.text}>
+                        <h3 className="text-md font-semibold text-graphite-900 truncate" title={request.title || request.text}>
                           {request.title || request.text}
                         </h3>
                       </div>
                       {/* Col 3: Requester */}
-                      <div className="col-span-2 flex items-center gap-1.5 text-sm text-gray-600" title={`提出者: ${request.requesterName}`}>
+                      <div className="col-span-2 flex items-center gap-1.5 text-sm text-graphite-500" title={`提出者: ${request.requesterName}`}>
                         <User size={16} />
                         <span className="truncate">{request.requesterName}</span>
                       </div>
@@ -1533,7 +1533,7 @@ const PurchaseRequestBoard = () => {
                       <div className="col-span-2 flex items-center justify-end gap-1.5">
                         <button
                           onClick={(e) => { e.stopPropagation(); openCommentModal(request); }}
-                          className="p-2 text-gray-500 hover:bg-blue-100 hover:text-blue-600 rounded-full transition-colors disabled:opacity-50"
+                          className="p-2 text-graphite-500 hover:bg-holy-gold-100 hover:text-holy-gold-600 rounded-full transition-colors disabled:opacity-50"
                           title={`留言 (${request.comments?.length || 0})`}
                           disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}
                         >
@@ -1542,7 +1542,7 @@ const PurchaseRequestBoard = () => {
                         {request.status === 'pending' && (
                           <button
                             onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'purchased'); }}
-                            className="p-2 text-gray-500 hover:bg-green-100 hover:text-green-600 rounded-full transition-colors disabled:opacity-50"
+                            className="p-2 text-graphite-500 hover:bg-glory-red-100 hover:text-glory-red-600 rounded-full transition-colors disabled:opacity-50"
                             title="標記為已購買"
                             disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}
                           >
@@ -1553,7 +1553,7 @@ const PurchaseRequestBoard = () => {
                           <>
                             <button
                               onClick={(e) => { e.stopPropagation(); updateStatus(request.id, 'pending'); }}
-                              className="p-2 text-gray-500 hover:bg-orange-100 hover:text-orange-600 rounded-full transition-colors disabled:opacity-50"
+                              className="p-2 text-graphite-500 hover:bg-holy-gold-100 hover:text-holy-gold-600 rounded-full transition-colors disabled:opacity-50"
                               title="撤銷購買"
                               disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}
                             >
@@ -1562,7 +1562,7 @@ const PurchaseRequestBoard = () => {
                             {isCurrentUserReimburser(request) && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleOpenTransferModal(request); }}
-                                className="p-2 text-gray-500 hover:bg-purple-100 hover:text-purple-600 rounded-full transition-colors disabled:opacity-50"
+                                className="p-2 text-graphite-500 hover:bg-holy-gold-100 hover:text-holy-gold-600 rounded-full transition-colors disabled:opacity-50"
                                 title="轉交報帳責任"
                                 disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
                               >
@@ -1573,7 +1573,7 @@ const PurchaseRequestBoard = () => {
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); deleteRequest(request.id); }}
-                          className="p-2 text-gray-500 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors disabled:opacity-50"
+                          className="p-2 text-graphite-500 hover:bg-danger-100 hover:text-danger-600 rounded-full transition-colors disabled:opacity-50"
                           title="刪除"
                           disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}
                         >
@@ -1581,7 +1581,7 @@ const PurchaseRequestBoard = () => {
                         </button>
                       </div>
                       {/* Col 5: Date */}
-                      <div className="col-span-2 flex items-center justify-end gap-1.5 text-sm text-gray-500">
+                      <div className="col-span-2 flex items-center justify-end gap-1.5 text-sm text-graphite-500">
                         <Calendar size={16} aria-hidden="true" />
                         <span>{new Date(request.createdAt).toLocaleDateString()}</span>
                       </div>
@@ -1601,11 +1601,11 @@ const PurchaseRequestBoard = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
             {/* --- 固定標頭 --- */}
-            <div className="bg-blue-500 text-white p-4 rounded-t-lg flex justify-between items-center flex-shrink-0">
+            <div className="bg-glory-red-500 text-white p-4 rounded-t-lg flex justify-between items-center flex-shrink-0">
               <h2 className="text-lg font-semibold">新增採購需求</h2>
               <button
                 onClick={() => { setShowModal(false); setSubmitError(null); }}
-                className="text-white hover:bg-blue-600 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-500"
+                className="text-white hover:bg-glory-red-600 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-glory-red-500"
                 aria-label="關閉新增需求對話框"
               >
                 <X size={20} aria-hidden="true" />
@@ -1621,7 +1621,7 @@ const PurchaseRequestBoard = () => {
                 </div>
               )}
               <div>
-                <label htmlFor="formTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="formTitle" className="block text-sm font-medium text-graphite-700 mb-2">
                   需求標題*
                 </label>
                 <input
@@ -1630,26 +1630,26 @@ const PurchaseRequestBoard = () => {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="請輸入標題..."
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="formPriority" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="formPriority" className="block text-sm font-medium text-graphite-700 mb-2">
                   緊急程度
                 </label>
                 <select
                   id="formPriority"
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500"
                 >
                   <option value="general">一般</option>
                   <option value="urgent">緊急</option>
                 </select>
               </div>
               <div>
-                <label htmlFor="formDescription" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="formDescription" className="block text-sm font-medium text-graphite-700 mb-2">
                   詳細描述
                 </label>
                 <textarea
@@ -1658,11 +1658,11 @@ const PurchaseRequestBoard = () => {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="請描述需求的詳細內容：數量、去哪買、可貼連結..."
                   rows="2"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500 resize-none"
                 />
               </div>
               <div>
-                <label htmlFor="formRequester" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="formRequester" className="block text-sm font-medium text-graphite-700 mb-2">
                   提出者姓名
                 </label>
                 <input
@@ -1671,7 +1671,7 @@ const PurchaseRequestBoard = () => {
                   value={currentUser?.displayName || formData.requester}
                   onChange={(e) => !currentUser?.displayName && setFormData({ ...formData, requester: e.target.value })}
                   placeholder="您的姓名"
-                  className={`w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`}
+                  className={`w-full border border-graphite-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500 ${currentUser?.displayName ? 'bg-graphite-100' : ''}`}
                   readOnly={!!currentUser?.displayName}
                 />
               </div>
@@ -1684,7 +1684,7 @@ const PurchaseRequestBoard = () => {
                   <input
                     id="isAlreadyPurchased"
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="h-4 w-4 text-glory-red-600 border-gray-300 rounded focus:ring-glory-red-500"
                     checked={formData.isAlreadyPurchased}
                     onChange={(e) => {
                       const isChecked = e.target.checked;
@@ -1696,14 +1696,14 @@ const PurchaseRequestBoard = () => {
                       }
                     }}
                   />
-                  <label htmlFor="isAlreadyPurchased" className="ml-3 block text-sm font-medium text-gray-800">
+                  <label htmlFor="isAlreadyPurchased" className="ml-3 block text-sm font-medium text-graphite-900">
                     我已購買此項目 (直接登記為「已購買」)
                   </label>
                 </div>
                 {formData.isAlreadyPurchased && (
                   <div className="mt-4 pl-2 border-l-2 border-gray-200">
                     <div className="mb-4">
-                      <label htmlFor="formPurchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="formPurchaseAmount" className="block text-sm font-medium text-graphite-700 mb-2">
                         購買總金額 (NT$)*
                       </label>
                       <input
@@ -1723,12 +1723,12 @@ const PurchaseRequestBoard = () => {
                         <input
                           id="isDifferentReimburser_add"
                           type="checkbox"
-                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-70"
+                          className="h-4 w-4 text-glory-red-600 border-gray-300 rounded focus:ring-glory-red-500 disabled:opacity-70"
                           checked={isDifferentReimburser}
                           onChange={(e) => setIsDifferentReimburser(e.target.checked)}
                           disabled={!isReimburser}
                         />
-                        <label htmlFor="isDifferentReimburser_add" className="ml-3 block text-sm font-medium text-gray-800">
+                        <label htmlFor="isDifferentReimburser_add" className="ml-3 block text-sm font-medium text-graphite-900">
                           指定他人請款 (非本人報帳)
                         </label>
                       </div>
@@ -1739,11 +1739,11 @@ const PurchaseRequestBoard = () => {
 
                       {isDifferentReimburser && (
                         <div className="mt-4">
-                          <label htmlFor="reimburserSelect_add" className="block text-sm font-medium text-gray-700 mb-2">
+                          <label htmlFor="reimburserSelect_add" className="block text-sm font-medium text-graphite-700 mb-2">
                             報帳請款人*
                           </label>
                           {isLoadingContacts ? (
-                            <div className="flex items-center gap-2 text-gray-500">
+                            <div className="flex items-center gap-2 text-graphite-500">
                               <SpinnerIcon />
                               <span>正在載入人員列表...</span>
                             </div>
@@ -1777,7 +1777,7 @@ const PurchaseRequestBoard = () => {
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setSubmitError(null); }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-graphite-300 hover:bg-graphite-400 text-graphite-700 py-2 px-4 rounded-lg transition-colors"
                   disabled={isSubmittingRequest}
                 >
                   取消
@@ -1785,7 +1785,7 @@ const PurchaseRequestBoard = () => {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 bg-glory-red-500 hover:bg-glory-red-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   disabled={isSubmittingRequest || (formData.isAlreadyPurchased && isLoadingContacts)}
                 >
                   {isSubmittingRequest && <SpinnerIcon />}
@@ -1801,19 +1801,19 @@ const PurchaseRequestBoard = () => {
       {showPurchaseModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="bg-green-500 text-white p-4 rounded-t-lg flex justify-between items-center">
+            <div className="bg-holy-gold-500 text-white p-4 rounded-t-lg flex justify-between items-center">
               <h2 className="text-lg font-semibold">
                 確認購買
               </h2>
-              <button onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }} className="text-white hover:bg-green-600 p-1 rounded-full transition-colors"> <X size={20} />
+              <button onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }} className="text-white hover:bg-holy-gold-600 p-1 rounded-full transition-colors"> <X size={20} />
               </button>
             </div>
             <div className="p-6"> {updateError && <p
               className="text-red-500 text-sm mb-3 bg-red-100 p-2 rounded text-center">{updateError}</p>} <p
-                className="text-gray-700 mb-4">
+                className="text-graphite-700 mb-4">
                 請輸入購買金額與購買人以完成採購： </p>
               <div className="mb-4">
-                <label htmlFor="purchaseAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="purchaseAmount" className="block text-sm font-medium text-graphite-700 mb-2">
                   金額 (NT$)*
                 </label>
                 <input id="purchaseAmount"
@@ -1825,20 +1825,20 @@ const PurchaseRequestBoard = () => {
               </div>
               <div className="mb-4">
                 <label htmlFor="purchaserName"
-                  className="block text-sm font-medium text-gray-700 mb-2">
+                  className="block text-sm font-medium text-graphite-700 mb-2">
                   購買人*
                 </label>
                 <input id="purchaserName"
                   type="text"
                   value={purchaserNameInput}
                   readOnly
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none bg-gray-100 cursor-not-allowed"
+                  className="w-full border border-graphite-300 rounded-lg px-3 py-2 focus:outline-none bg-graphite-100 cursor-not-allowed"
                 />
               </div>
 
               {/* 3. 新增購買備註欄位 */}
               <div className="mb-6">
-                <label htmlFor="purchaseNotes" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="purchaseNotes" className="block text-sm font-medium text-graphite-700 mb-2">
                   購買備註（選填）
                 </label>
                 <textarea
@@ -1856,12 +1856,12 @@ const PurchaseRequestBoard = () => {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y"
                 />
                 <div className="flex justify-between items-center mt-1">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-graphite-500">
                     可記錄重要採購資訊
                   </p>
                   <span className={`text-xs ${notesCharCount > MAX_NOTES_LENGTH * 0.9
                     ? 'text-red-500'
-                    : 'text-gray-400'
+                    : 'text-graphite-400'
                     }`}>
                     {notesCharCount}/{MAX_NOTES_LENGTH}
                   </span>
@@ -1874,12 +1874,12 @@ const PurchaseRequestBoard = () => {
                   <input
                     id="isDifferentReimburser"
                     type="checkbox"
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-70"
+                    className="h-4 w-4 text-glory-red-600 border-gray-300 rounded focus:ring-glory-red-500 disabled:opacity-70"
                     checked={isDifferentReimburser}
                     onChange={(e) => setIsDifferentReimburser(e.target.checked)}
                     disabled={!isReimburser}
                   />
-                  <label htmlFor="isDifferentReimburser" className="ml-3 block text-sm font-medium text-gray-800">
+                  <label htmlFor="isDifferentReimburser" className="ml-3 block text-sm font-medium text-graphite-900">
                     指定他人請款 (非本人報帳)
                   </label>
                 </div>
@@ -1890,11 +1890,11 @@ const PurchaseRequestBoard = () => {
 
                 {isDifferentReimburser && (
                   <div className="mt-4">
-                    <label htmlFor="reimburserSelect" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="reimburserSelect" className="block text-sm font-medium text-graphite-700 mb-2">
                       報帳請款人*
                     </label>
                     {isLoadingContacts ? (
-                      <div className="flex items-center gap-2 text-gray-500">
+                      <div className="flex items-center gap-2 text-graphite-500">
                         <SpinnerIcon />
                         <span>正在載入人員列表...</span>
                       </div>
@@ -1921,14 +1921,14 @@ const PurchaseRequestBoard = () => {
               <div className="flex gap-3">
                 <button type="button"
                   onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-graphite-300 hover:bg-graphite-400 text-graphite-700 py-2 px-4 rounded-lg transition-colors"
                   disabled={isUpdatingRequest}>
                   取消
                 </button>
                 <button
                   type="button"
                   onClick={confirmPurchase}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 bg-holy-gold-500 hover:bg-holy-gold-600 text-white py-2 px-4 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   disabled={isUpdatingRequest || (isDifferentReimburser && !selectedReimburserId) || isLoadingContacts}>
                   {isUpdatingRequest && <SpinnerIcon />} {isUpdatingRequest ? '處理中...' : '確認購買'}
                 </button>
@@ -1942,24 +1942,24 @@ const PurchaseRequestBoard = () => {
       {showRecordsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
-            <div className="bg-green-500 text-white py-4 pr-3 pl-4 rounded-t-lg flex justify-between items-center">
+            <div className="bg-holy-gold-500 text-white py-4 pr-3 pl-4 rounded-t-lg flex justify-between items-center">
               <div className="flex items-center gap-3 mr-10">
                 <button
                   onClick={handleBatchExport}
                   disabled={selectedRecordIds.size === 0}
-                  className="flex items-center gap-2 bg-white text-blue-700 hover:bg-gray-100 py-2 px-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 bg-white text-glory-red-700 hover:bg-graphite-100 py-2 px-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="將勾選的項目合併成一張轉帳傳票"
                 >
                   <Download size={18} />
                   匯出選中傳票 PDF
                 </button>
-                <button onClick={exportPurchaseRecordsToCSV} className="flex items-center gap-2 bg-white text-green-700 hover:bg-gray-100 py-2 px-3 rounded-md text-sm font-medium transition-colors" title="匯出目前篩選的記錄為 CSV">
+                <button onClick={exportPurchaseRecordsToCSV} className="flex items-center gap-2 bg-white text-holy-gold-700 hover:bg-gray-100 py-2 px-3 rounded-md text-sm font-medium transition-colors" title="匯出目前篩選的記錄為 CSV">
                   <Download size={18} />
                   匯出篩選結果 CSV
                 </button>
               </div>
               <div> {/* 將關閉按鈕移到這個新的 div 內 */}
-                <button onClick={() => setShowRecordsModal(false)} className="text-white hover:bg-green-600 p-1 rounded-full transition-colors" title="關閉">
+                <button onClick={() => setShowRecordsModal(false)} className="text-white hover:bg-holy-gold-600 p-1 rounded-full transition-colors" title="關閉">
                   <X size={30} />
                 </button>
               </div>
@@ -1974,30 +1974,30 @@ const PurchaseRequestBoard = () => {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setIsFilterPanelExpanded(!isFilterPanelExpanded)}
-                      className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-graphite-300 rounded-lg hover:bg-graphite-50 transition-colors focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2"
                       aria-expanded={isFilterPanelExpanded}
                       aria-controls="filter-panel"
                     >
-                      <Filter size={16} className="text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">
+                      <Filter size={16} className="text-graphite-500" />
+                      <span className="text-sm font-medium text-graphite-700">
                         篩選
                         {activeFiltersCount > 0 && (
-                          <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          <span className="ml-1 px-2 py-0.5 bg-glory-red-100 text-glory-red-700 text-xs rounded-full">
                             {activeFiltersCount}
                           </span>
                         )}
                       </span>
                       {isFilterPanelExpanded ? (
-                        <ChevronUp size={16} className="text-gray-600" />
+                        <ChevronUp size={16} className="text-graphite-500" />
                       ) : (
-                        <ChevronDown size={16} className="text-gray-600" />
+                        <ChevronDown size={16} className="text-graphite-500" />
                       )}
                     </button>
                     
                     {activeFiltersCount > 0 && (
                       <button
                         onClick={clearAllFilters}
-                        className="text-sm text-gray-500 hover:text-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded px-2 py-1"
+                        className="text-sm text-graphite-500 hover:text-danger-600 transition-colors focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2 rounded px-2 py-1"
                       >
                         清除全部
                       </button>
@@ -2010,10 +2010,10 @@ const PurchaseRequestBoard = () => {
                    
                     <button
                       onClick={() => setRecordsViewMode('list')}
-                      className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 ${
                         recordsViewMode === 'list' 
                           ? 'bg-white shadow' 
-                          : 'text-gray-500 hover:bg-gray-300'
+                          : 'text-graphite-500 hover:bg-gray-300'
                       }`}
                       title="列表視圖"
                       role="tab"
@@ -2026,10 +2026,10 @@ const PurchaseRequestBoard = () => {
                     </button>
                     <button
                       onClick={() => setRecordsViewMode('grid')}
-                      className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 ${
                         recordsViewMode === 'grid' 
                           ? 'bg-white shadow' 
-                          : 'text-gray-500 hover:bg-gray-300'
+                          : 'text-graphite-500 hover:bg-gray-300'
                       }`}
                       title="網格視圖"
                       role="tab"
@@ -2054,12 +2054,12 @@ const PurchaseRequestBoard = () => {
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
-                        <label htmlFor="filterPurchaser" className="block text-sm font-medium text-gray-700 mb-1">購買人</label>
+                        <label htmlFor="filterPurchaser" className="block text-sm font-medium text-graphite-700 mb-1">購買人</label>
                         <select
                           id="filterPurchaser"
                           value={filterPurchaserUid}
                           onChange={(e) => setFilterPurchaserUid(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500"
                         >
                           <option value="">所有購買人</option>
                           {allUsers.map(user => (
@@ -2068,12 +2068,12 @@ const PurchaseRequestBoard = () => {
                         </select>
                       </div>
                       <div>
-                        <label htmlFor="filterReimburser" className="block text-sm font-medium text-gray-700 mb-1">請款人</label>
+                        <label htmlFor="filterReimburser" className="block text-sm font-medium text-graphite-700 mb-1">請款人</label>
                         <select
                           id="filterReimburser"
                           value={filterReimburserUid}
                           onChange={(e) => setFilterReimburserUid(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500"
                         >
                           <option value="">所有請款人</option>
                           {reimbursementContacts.map(contact => (
@@ -2082,23 +2082,23 @@ const PurchaseRequestBoard = () => {
                         </select>
                       </div>
                       <div>
-                        <label htmlFor="filterSDate" className="block text-sm font-medium text-gray-700 mb-1">購買日期 (起)</label>
+                        <label htmlFor="filterSDate" className="block text-sm font-medium text-graphite-700 mb-1">購買日期 (起)</label>
                         <input 
                           id="filterSDate" 
                           type="date" 
                           value={filterStartDate} 
                           onChange={(e) => setFilterStartDate(e.target.value)} 
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500" 
                         />
                       </div>
                       <div>
-                        <label htmlFor="filterEDate" className="block text-sm font-medium text-gray-700 mb-1">購買日期 (迄)</label>
+                        <label htmlFor="filterEDate" className="block text-sm font-medium text-graphite-700 mb-1">購買日期 (迄)</label>
                         <input 
                           id="filterEDate" 
                           type="date" 
                           value={filterEndDate} 
                           onChange={(e) => setFilterEndDate(e.target.value)} 
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500" 
                         />
                       </div>
                     </div>
@@ -2110,21 +2110,21 @@ const PurchaseRequestBoard = () => {
               {filteredPurchaseRecords.length === 0 ? (
                 <div className="text-center py-8">
                   <Receipt size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">無符合條件的購買記錄</p>
+                  <p className="text-graphite-500">無符合條件的購買記錄</p>
                 </div>
               ) : (
                 <>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <label htmlFor="select-all-records" className="text-sm font-medium text-gray-700">全選</label>
-                        <input id="select-all-records" type="checkbox" className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ref={selectAllCheckboxRef} checked={isAllSelected} onChange={handleSelectAll} />
+                        <label htmlFor="select-all-records" className="text-sm font-medium text-graphite-700">全選</label>
+                        <input id="select-all-records" type="checkbox" className="h-5 w-5 rounded border-gray-300 text-glory-red-600 focus:ring-glory-red-500" ref={selectAllCheckboxRef} checked={isAllSelected} onChange={handleSelectAll} />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 text-green-700 mb-2">
+                        <div className="flex items-center gap-2 text-success-700 mb-2">
                           <span className="font-semibold">篩選總計：NT${filteredPurchaseRecords.reduce((total, record) => total + (record.purchaseAmount || 0), 0).toLocaleString()}</span>
                         </div>
-                        <p className="text-sm text-green-600">共 {filteredPurchaseRecords.length} 筆符合條件的紀錄</p>
+                        <p className="text-sm text-success-600">共 {filteredPurchaseRecords.length} 筆符合條件的紀錄</p>
                       </div>
                     </div>
                     {/* --- 這是新增的已選項目統計區塊 --- */}
@@ -2133,11 +2133,11 @@ const PurchaseRequestBoard = () => {
                         <hr className="my-3 border-gray-300" />
                         <div className="flex justify-between items-center">
                           <div>
-                            <div className="flex items-center gap-2 text-blue-700 font-semibold">
+                            <div className="flex items-center gap-2 text-glory-red-700 font-semibold">
                               <CheckSquare size={20} />
                               <span>已勾選總計：NT${selectedRecordsSummary.totalAmount.toLocaleString()}</span>
                             </div>
-                            <p className="text-sm text-blue-600 mt-1">共勾選 {selectedRecordsSummary.count} 筆紀錄</p>
+                            <p className="text-sm text-glory-red-600 mt-1">共勾選 {selectedRecordsSummary.count} 筆紀錄</p>
                           </div>
                         </div>
                       </>
@@ -2153,7 +2153,7 @@ const PurchaseRequestBoard = () => {
                             <div className="flex items-start gap-3 mb-3">
                               <input
                                 type="checkbox"
-                                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 flex-shrink-0"
+                                className="h-5 w-5 rounded border-gray-300 text-glory-red-600 focus:ring-glory-red-500 mt-1 flex-shrink-0"
                                 checked={selectedRecordIds.has(record.id)}
                                 onChange={() => handleRecordSelection(record.id)}
                                 aria-labelledby={`record-title-${record.id}`}
@@ -2161,7 +2161,7 @@ const PurchaseRequestBoard = () => {
                               <div className="flex-grow">
                                 <div className="flex justify-between items-start mb-2">
                                   <h3 id={`record-title-${record.id}`} className="text-lg font-semibold text-gray-900 line-clamp-2">{record.title}</h3>
-                                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0">
+                                  <span className="bg-success-100 text-success-700 px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0">
                                     已購買
                                   </span>
                                 </div>
@@ -2169,18 +2169,18 @@ const PurchaseRequestBoard = () => {
                             </div>
                             <div className="flex-grow">
                               <div className="space-y-2 text-sm">
-                                <div><span className="text-gray-600">提出者：</span><span className="font-medium">{record.requester}</span></div>
-                                <div><span className="text-gray-600">金額：</span><span className="font-medium text-green-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></div>
-                                <div><span className="text-gray-600">需求日期：</span><span className="font-medium">{record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span></div>
-                                <div><span className="text-gray-600">購買日期：</span><span className="font-medium">{record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span></div>
-                                {record.purchaserName && (<div><span className="text-gray-600">購買人：</span><span className="font-medium">{record.purchaserName}</span></div>)}
+                                <div><span className="text-graphite-500">提出者：</span><span className="font-medium">{record.requester}</span></div>
+                                <div><span className="text-graphite-500">金額：</span><span className="font-medium text-success-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></div>
+                                <div><span className="text-graphite-500">需求日期：</span><span className="font-medium">{record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span></div>
+                                <div><span className="text-graphite-500">購買日期：</span><span className="font-medium">{record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span></div>
+                                {record.purchaserName && (<div><span className="text-graphite-500">購買人：</span><span className="font-medium">{record.purchaserName}</span></div>)}
                                 {/* --- 👇 修改：顯示請款人 --- */}
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-1">
-                                    <span className="text-gray-600">請款人：</span>
+                                    <span className="text-graphite-500">請款人：</span>
                                     <span className="font-medium flex items-center gap-1">{record.reimbursementerName || record.purchaserName}
                                       {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
-                                        <UserCheck size={14} className="text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                                        <UserCheck size={14} className="text-holy-gold-600" title={`由 ${record.purchaserName} 指定`} />
                                       )}
                                     </span>
                                   </div>
@@ -2199,21 +2199,21 @@ const PurchaseRequestBoard = () => {
                                           alert('操作失敗：無法找到此紀錄的完整需求資料。');
                                         }
                                       }}
-                                      className="p-1 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                      className="p-1 text-gray-400 hover:text-holy-gold-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-holy-gold-500"
                                       title="轉交報帳責任給其他人員"
                                     >
                                       <ArrowRightLeft size={16} />
                                     </button>
                                   )}
                                 </div>
-                                {record.accountingCategory && (<div><span className="text-gray-600">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
+                                {record.accountingCategory && (<div><span className="text-graphite-500">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
                               </div>
                             </div>
                             {/* 新增：顯示購買備註 */}
                             {record.purchaseNotes && (
                               <div className="mt-3 pt-3 border-t border-gray-200">
-                                <p className="text-sm font-medium text-gray-800 mb-1">購買備註：</p>
-                                <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded-md">
+                                <p className="text-sm font-medium text-graphite-900 mb-1">購買備註：</p>
+                                <p className="text-sm text-graphite-500 whitespace-pre-wrap bg-gray-50 p-2 rounded-md">
                                   {record.purchaseNotes}
                                 </p>
                               </div>
@@ -2228,7 +2228,7 @@ const PurchaseRequestBoard = () => {
                       <div className="space-y-1" aria-label="列表視圖購買紀錄">
                         {/* 列表標題 - 僅在大螢幕顯示 */}
                         <div className="hidden lg:block bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
-                          <div className="grid grid-cols-12 gap-3 text-sm font-medium text-gray-700">
+                          <div className="grid grid-cols-12 gap-3 text-sm font-medium text-graphite-700">
                             <div className="col-span-1 flex justify-center">選擇</div>
                             <div className="col-span-2">需求標題</div>
                             <div className="col-span-2">金額</div>
@@ -2248,7 +2248,7 @@ const PurchaseRequestBoard = () => {
                               <div className="col-span-1 flex justify-center">
                                 <input
                                   type="checkbox"
-                                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  className="h-5 w-5 rounded border-gray-300 text-glory-red-600 focus:ring-glory-red-500"
                                   checked={selectedRecordIds.has(record.id)}
                                   onChange={() => handleRecordSelection(record.id)}
                                   aria-labelledby={`record-title-${record.id}`}
@@ -2263,19 +2263,19 @@ const PurchaseRequestBoard = () => {
                                 <div className="col-span-2 font-medium text-gray-900 truncate" title={record.title}>
                                   {record.title}
                                 </div>
-                                <div className="col-span-2 text-sm font-medium text-green-600">
+                                <div className="col-span-2 text-sm font-medium text-success-600">
                                   NT$ {(record.purchaseAmount || 0).toLocaleString()}
                                 </div>
-                                <div className="col-span-2 text-sm text-gray-600">
+                                <div className="col-span-2 text-sm text-graphite-500">
                                   {record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}
                                 </div>
-                                <div className="col-span-2 text-sm text-gray-600 truncate" title={record.purchaserName || 'N/A'}>
+                                <div className="col-span-2 text-sm text-graphite-500 truncate" title={record.purchaserName || 'N/A'}>
                                   {record.purchaserName || 'N/A'}
                                 </div>
-                                <div className="col-span-2 text-sm text-gray-600 truncate" title={record.reimbursementerName || record.purchaserName || 'N/A'}>
+                                <div className="col-span-2 text-sm text-graphite-500 truncate" title={record.reimbursementerName || record.purchaserName || 'N/A'}>
                                   {record.reimbursementerName || record.purchaserName || 'N/A'}
                                   {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
-                                    <UserCheck size={12} className="inline ml-1 text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                                    <UserCheck size={12} className="inline ml-1 text-holy-gold-600" title={`由 ${record.purchaserName} 指定`} />
                                   )}
                                 </div>
                               </div>
@@ -2294,7 +2294,7 @@ const PurchaseRequestBoard = () => {
                                         alert('操作失敗：無法找到此紀錄的完整需求資料。');
                                       }
                                     }}
-                                    className="p-2 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    className="p-2 text-gray-400 hover:text-holy-gold-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-holy-gold-500"
                                     title="轉交報帳責任"
                                   >
                                     <ArrowRightLeft size={16} />
@@ -2309,7 +2309,7 @@ const PurchaseRequestBoard = () => {
                                 {/* 勾選框 */}
                                 <input
                                   type="checkbox"
-                                  className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1 flex-shrink-0"
+                                  className="h-5 w-5 rounded border-gray-300 text-glory-red-600 focus:ring-glory-red-500 mt-1 flex-shrink-0"
                                   checked={selectedRecordIds.has(record.id)}
                                   onChange={() => handleRecordSelection(record.id)}
                                   aria-labelledby={`record-title-mobile-${record.id}`}
@@ -2329,14 +2329,14 @@ const PurchaseRequestBoard = () => {
 
                                   {/* 第二行: 金額, 負責人, 轉交按鈕 */}
                                   <div className="flex justify-between items-center text-sm">
-                                    <div className="font-semibold text-green-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</div>
+                                    <div className="font-semibold text-success-600">NT$ {(record.purchaseAmount || 0).toLocaleString()}</div>
                                     <div className="flex items-center flex-shrink-0 gap-2">
-                                      <div className="flex items-center text-xs text-gray-500" title={`購買人：${record.purchaserName}\n請款人：${record.reimbursementerName || record.purchaserName}`}>
+                                      <div className="flex items-center text-xs text-graphite-500" title={`購買人：${record.purchaserName}\n請款人：${record.reimbursementerName || record.purchaserName}`}>
                                         <span className="truncate max-w-[50px]">{record.purchaserName || 'N/A'}</span>
                                         <ArrowRight size={12} className="mx-0.5 flex-shrink-0" />
                                         <span className="truncate max-w-[70px]">{record.reimbursementerName || record.purchaserName || 'N/A'}</span>
                                         {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
-                                          <UserCheck size={12} className="ml-1 text-blue-500 flex-shrink-0" title={`由 ${record.purchaserName} 指定`} />
+                                          <UserCheck size={12} className="ml-1 text-holy-gold-600 flex-shrink-0" title={`由 ${record.purchaserName} 指定`} />
                                         )}
                                       </div>
                                       {isCurrentUserReimburser(record) && (
@@ -2351,7 +2351,7 @@ const PurchaseRequestBoard = () => {
                                               alert('操作失敗：無法找到此紀錄的完整需求資料。');
                                             }
                                           }}
-                                          className="p-1 text-gray-400 hover:text-purple-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                          className="p-1 text-gray-400 hover:text-holy-gold-600 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-holy-gold-500"
                                           title="轉交報帳責任"
                                         >
                                           <ArrowRightLeft size={16} />
@@ -2387,7 +2387,7 @@ const PurchaseRequestBoard = () => {
         >
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gray-100 p-4 rounded-t-lg flex justify-between items-center flex-shrink-0 border-b">
-              <h2 id="detail-modal-title" className="text-lg font-semibold text-gray-800">需求詳情</h2>
+              <h2 id="detail-modal-title" className="text-lg font-semibold text-graphite-900">需求詳情</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
                 className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
@@ -2405,7 +2405,7 @@ const PurchaseRequestBoard = () => {
                 return (
                   <div className={`bg-white rounded-b-lg overflow-hidden transition-all duration-300`}>
                     <div className="p-5 pb-0 flex justify-between items-start">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-gray-100 text-graphite-900'}`}>
                         {statusLabels[request.status]?.text || request.status}
                       </span>
                       {isUrgent && (
@@ -2426,13 +2426,13 @@ const PurchaseRequestBoard = () => {
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-500 my-4 py-4 border-t border-b">
                         <div className="flex items-center gap-2"> <Calendar size={16} /> <span><b>提出日期:</b> {new Date(request.createdAt).toLocaleDateString()}</span> </div>
                         <div className="flex items-center gap-2"> <User size={16} /> <span><b>提出者:</b> {request.requesterName}</span> </div>
-                        <div className="flex items-center gap-2 col-span-2"> <Tag size={16} className="text-gray-500" /> <span><b>會計類別:</b> {request.accountingCategory || '未分類'}</span> </div>
+                        <div className="flex items-center gap-2 col-span-2"> <Tag size={16} className="text-graphite-500" /> <span><b>會計類別:</b> {request.accountingCategory || '未分類'}</span> </div>
                       </div>
 
                       {request.status === 'purchased' && request.purchaseAmount && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 my-4">
-                          <div className="flex items-center gap-2 text-green-800 mb-2"> <DollarSign size={18} /> <span className="font-semibold text-lg">金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
-                          <div className="text-sm text-green-700 grid grid-cols-2 gap-1">
+                        <div className="bg-success-50 border border-success-200 rounded-lg p-4 my-4">
+                          <div className="flex items-center gap-2 text-success-800 mb-2"> <DollarSign size={18} /> <span className="font-semibold text-lg">金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
+                          <div className="text-sm text-success-700 grid grid-cols-2 gap-1">
                             <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div>
                             {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)}
                             {/* 新增報帳負責人資訊 */}
@@ -2442,9 +2442,9 @@ const PurchaseRequestBoard = () => {
                           </div>
                           {/* 2. 在詳細資料彈窗中顯示備註 */}
                           {request.purchaseNotes && (
-                            <div className="mt-2 pt-2 border-t border-green-200">
-                              <p className="text-xs text-green-700 font-medium">備註：</p>
-                              <p className="text-sm text-green-800 whitespace-pre-wrap break-words">
+                            <div className="mt-2 pt-2 border-t border-success-200">
+                              <p className="text-xs text-success-700 font-medium">備註：</p>
+                              <p className="text-sm text-success-800 whitespace-pre-wrap break-words">
                                 <Linkify componentDecorator={componentDecorator}>{request.purchaseNotes}</Linkify></p>
                             </div>
                           )}
@@ -2452,14 +2452,14 @@ const PurchaseRequestBoard = () => {
                       )}
 
 <div className="flex gap-2 my-4">
-                        <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> <span className="hidden sm:inline">留言 ({request.comments?.length || 0})</span> </button>
-                        {request.status === 'pending' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'purchased'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white hover:bg-green-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} <span className="hidden sm:inline">標記為已購買</span> </button>)}
-                        {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white hover:bg-orange-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} <span className="hidden sm:inline">撤銷購買</span> </button>)}
+                        <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-holy-gold-500 text-white hover:bg-holy-gold-600 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> <span className="hidden sm:inline">留言 ({request.comments?.length || 0})</span> </button>
+                        {request.status === 'pending' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'purchased'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-glory-red-500 text-white hover:bg-glory-red-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} <span className="hidden sm:inline">標記為已購買</span> </button>)}
+                        {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-holy-gold-500 text-white hover:bg-holy-gold-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} <span className="hidden sm:inline">撤銷購買</span> </button>)}
                         {/* 轉交報帳按鈕 - 只對報帳負責人顯示且僅在已購買狀態下 */}
                         {request.status === 'purchased' && isCurrentUserReimburser(request) && (
                           <button
                             onClick={() => { setShowDetailModal(false); handleOpenTransferModal(request); }}
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded transition-colors text-sm disabled:opacity-50"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-holy-gold-500 text-white hover:bg-holy-gold-600 rounded transition-colors text-sm disabled:opacity-50"
                             disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}
                             title="轉交報帳責任給其他人員"
                           >
@@ -2467,7 +2467,7 @@ const PurchaseRequestBoard = () => {
                             <span className="hidden sm:inline">轉交報帳</span>
                           </button>
                         )}
-                        <button onClick={() => { setShowDetailModal(false); deleteRequest(request.id); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white hover:bg-red-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />} <span className="hidden sm:inline">刪除</span> </button>
+                        <button onClick={() => { setShowDetailModal(false); deleteRequest(request.id); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-danger-500 text-white hover:bg-danger-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isDeletingRequest && selectedRequestId === request.id) || isUpdatingRequest || isAddingComment}> {(isDeletingRequest && selectedRequestId === request.id) ? <SpinnerIcon /> : <Trash2 size={16} />} <span className="hidden sm:inline">刪除</span> </button>
                       </div>
 
                       {request.comments?.length > 0 && (
@@ -2479,11 +2479,11 @@ const PurchaseRequestBoard = () => {
                                 <div className="flex justify-between items-start mb-1">
                                   <div>
                                     <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span>
-                                    <span className="text-xs text-gray-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                                    <span className="text-xs text-graphite-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
                                   </div>
                                   {currentUser && comment.userId === currentUser.uid && (<button onClick={() => { setShowDetailModal(false); handleDeleteComment(request.id, comment.id); }} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button>)}
                                 </div>
-                                <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                                <p className="text-sm text-graphite-700 whitespace-pre-wrap break-words">
                                   <Linkify componentDecorator={componentDecorator}>
                                     {comment.text}
                                   </Linkify>
@@ -2508,7 +2508,7 @@ const PurchaseRequestBoard = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-60" onClick={handleCloseRecordDetailModal}>
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gray-100 p-4 rounded-t-lg flex justify-between items-center flex-shrink-0 border-b">
-              <h2 className="text-lg font-semibold text-gray-800">購買紀錄詳情</h2>
+              <h2 className="text-lg font-semibold text-graphite-900">購買紀錄詳情</h2>
               <button onClick={handleCloseRecordDetailModal} className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors">
                 <X size={20} />
               </button>
@@ -2519,7 +2519,7 @@ const PurchaseRequestBoard = () => {
                 return (
                   <div className="bg-white rounded-lg">
                     <div className="mb-4">
-                      <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                      <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-success-100 text-success-800">
                         已購買
                       </span>
                     </div>
@@ -2533,7 +2533,7 @@ const PurchaseRequestBoard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign size={16} className="text-gray-500" />
-                        <span><strong>金額:</strong> <span className="text-green-600 font-semibold">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></span>
+                        <span><strong>金額:</strong> <span className="text-success-600 font-semibold">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar size={16} className="text-gray-500" />
@@ -2553,13 +2553,13 @@ const PurchaseRequestBoard = () => {
                         <UserCheck size={16} className="text-gray-500" />
                         <span><strong>請款人:</strong> {record.reimbursementerName || record.purchaserName || '未指定'}
                           {record.reimbursementerId && record.reimbursementerId !== record.purchaserId && (
-                            <UserCheck size={14} className="inline ml-1 text-blue-500" title={`由 ${record.purchaserName} 指定`} />
+                            <UserCheck size={14} className="inline ml-1 text-holy-gold-600" title={`由 ${record.purchaserName} 指定`} />
                           )}
                         </span>
                       </div>
                       {record.accountingCategory && (
                         <div className="flex items-center gap-2 col-span-2">
-                          <Tag size={16} className="text-gray-500" />
+                          <Tag size={16} className="text-graphite-500" />
                           <span><strong>會計類別:</strong> {record.accountingCategory}</span>
                         </div>
                       )}
@@ -2567,9 +2567,9 @@ const PurchaseRequestBoard = () => {
 
                     {/* 購買備註 */}
                     {record.purchaseNotes && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                        <h4 className="text-sm font-semibold text-green-800 mb-2">購買備註</h4>
-                        <p className="text-sm text-green-700 whitespace-pre-wrap break-words">
+                      <div className="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
+                        <h4 className="text-sm font-semibold text-success-800 mb-2">購買備註</h4>
+                        <p className="text-sm text-success-700 whitespace-pre-wrap break-words">
                           <Linkify componentDecorator={componentDecorator}>
                             {record.purchaseNotes}
                           </Linkify>
@@ -2591,7 +2591,7 @@ const PurchaseRequestBoard = () => {
                               alert('操作失敗：無法找到此紀錄的完整需求資料。');
                             }
                           }}
-                          className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 text-white hover:bg-purple-600 rounded-lg transition-colors text-sm font-medium"
+                          className="flex items-center justify-center gap-2 px-4 py-2 bg-holy-gold-500 text-white hover:bg-holy-gold-600 rounded-lg transition-colors text-sm font-medium"
                           title="轉交報帳責任給其他人員"
                         >
                           <ArrowRightLeft size={16} />
@@ -2615,7 +2615,7 @@ const PurchaseRequestBoard = () => {
       {/* --- 新增結束 --- */}
 
       {/* ... (Other modals JSX remains the same) ... */}
-      {isCommentModalOpen && currentRequestForComment && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-gray-800"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-gray-400 hover:text-gray-600 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div>)}
+      {isCommentModalOpen && currentRequestForComment && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-graphite-900"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-gray-400 hover:text-graphite-500 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-glory-red-500 hover:bg-glory-red-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div>)}
 
       {/* 轉交報帳彈窗 */}
       <TransferReimbursementModal

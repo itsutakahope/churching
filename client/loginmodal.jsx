@@ -108,10 +108,10 @@ const LoginModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="bg-blue-500 text-white p-4 rounded-t-lg flex justify-between items-center">
+        <div className="bg-glory-red-500 text-white p-4 rounded-t-lg flex justify-between items-center">
           {/* 👇 3. 標題根據模式改變 */}
           <h2 className="text-lg font-semibold">{mode === 'login' ? '登入' : '註冊新帳號'}</h2>
-          <button onClick={onClose} className="text-white hover:bg-blue-600 p-1 rounded-full transition-colors">
+          <button onClick={onClose} className="text-white hover:bg-glory-red-600 p-1 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -122,7 +122,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           <button 
             onClick={handleGoogleLogin} // 現在這個函式存在了
             disabled={isSubmitting}
-            className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
+            className="w-full border border-graphite-300 hover:bg-graphite-50 text-graphite-700 font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
           >
             <GoogleIcon />
             使用 Google 帳號登入
@@ -139,30 +139,30 @@ const LoginModal = ({ isOpen, onClose }) => {
             {/* 👇 5. 根據模式條件性渲染註冊欄位 */}
             {mode === 'register' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">姓名*</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="您的姓名" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                <label className="block text-sm font-medium text-graphite-700 mb-1">姓名*</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="您的姓名" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email*</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="test@example.com" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              <label className="block text-sm font-medium text-graphite-700 mb-1">Email*</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="test@example.com" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">密碼*</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少6位數" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+              <label className="block text-sm font-medium text-graphite-700 mb-1">密碼*</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少6位數" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
             </div>
              {mode === 'register' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">確認密碼*</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="再次輸入密碼" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                <label className="block text-sm font-medium text-graphite-700 mb-1">確認密碼*</label>
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="再次輸入密碼" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
               </div>
             )}
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={onClose} className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors">
+              <button type="button" onClick={onClose} className="flex-1 bg-graphite-300 hover:bg-graphite-400 text-graphite-700 py-2 px-4 rounded-lg transition-colors">
                 取消
               </button>
               {/* 👇 6. 按鈕也根據模式改變 */}
-              <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
+              <button type="submit" disabled={isSubmitting} className="flex-1 bg-glory-red-500 hover:bg-glory-red-600 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
                 {isSubmitting ? (mode === 'login' ? '登入中...' : '註冊中...') : (
                   mode === 'login' ? <><LogIn size={16} /> 登入</> : <><UserPlus size={16} /> 註冊</>
                 )}
@@ -172,7 +172,7 @@ const LoginModal = ({ isOpen, onClose }) => {
 
           {/* 👇 7. 新增模式切換的連結 */}
           <div className="text-center mt-4">
-            <button onClick={handleModeSwitch} className="text-sm text-blue-600 hover:underline focus:outline-none">
+            <button onClick={handleModeSwitch} className="text-sm text-glory-red-600 hover:underline focus:outline-none transition-all duration-200">
               {mode === 'login' ? '還沒有帳號？點此註冊' : '已經有帳號？點此登入'}
             </button>
           </div>

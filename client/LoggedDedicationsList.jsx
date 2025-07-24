@@ -31,7 +31,7 @@ const LoggedDedicationsList = ({ taskId }) => {
   }, [taskId]);
 
   if (loading) {
-    return <p className="text-center text-gray-500">正在載入奉獻記錄...</p>;
+    return <p className="text-center text-graphite-500">正在載入奉獻記錄...</p>;
   }
 
   if (error) {
@@ -43,11 +43,11 @@ const LoggedDedicationsList = ({ taskId }) => {
       <table className="min-w-full bg-white">
         <thead className="bg-gray-200">
           <tr>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">奉獻日期</th>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">奉獻者代號</th>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">奉獻科目</th>
-            <th className="py-3 px-4 text-right text-sm font-semibold text-gray-600">金額</th>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">方式</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻日期</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻者代號</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻科目</th>
+            <th className="py-3 px-4 text-right text-sm font-semibold text-graphite-500">金額</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">方式</th>
           </tr>
         </thead>
         <tbody>
@@ -63,7 +63,7 @@ const LoggedDedicationsList = ({ taskId }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="5" className="py-6 px-4 text-center text-gray-500">
+              <td colSpan="5" className="py-6 px-4 text-center text-graphite-500">
                 尚未新增任何奉獻記錄。
               </td>
             </tr>

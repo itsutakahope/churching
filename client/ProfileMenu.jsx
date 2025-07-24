@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
-import { LogOut, Edit2, Check, X, Bell, Loader2, ChevronDown } from 'lucide-react';
+import { LogOut, Edit2, Loader2, ChevronDown } from 'lucide-react';
 
 const ProfileMenu = () => {
   const { currentUser, logout, updateUserProfile, userProfile, updateUserPreferences } = useAuth();
@@ -87,7 +87,7 @@ const ProfileMenu = () => {
     <div className="relative" ref={menuRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="flex items-center gap-2 text-base font-medium text-gray-700 hover:text-blue-600 p-2 rounded-lg transition-colors border border-gray-300"
+        className="flex items-center gap-2 text-base font-medium text-graphite-700 hover:text-glory-red-600 p-2 rounded-lg transition-colors border border-graphite-300"
       >
         <span>{currentUser.displayName || currentUser.email}</span>
         <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -102,50 +102,50 @@ const ProfileMenu = () => {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  className="w-full border border-graphite-300 rounded-md px-2 py-1 text-sm focus:border-glory-red-500 focus:ring-1 focus:ring-glory-red-500"
                   autoFocus
                 />
-                {editError && <small className="text-red-500">{editError}</small>}
+                {editError && <small className="text-danger-500">{editError}</small>}
                 <div className="flex gap-2">
-                  <button onClick={handleSaveName} className="flex-1 text-base bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">儲存</button>
-                  <button onClick={() => setIsEditing(false)} className="flex-1 text-base bg-gray-200 px-2 py-1 rounded hover:bg-gray-300">取消</button>
+                  <button onClick={handleSaveName} className="flex-1 text-base bg-glory-red-500 text-white px-2 py-1 rounded hover:bg-glory-red-600 transition-colors">儲存</button>
+                  <button onClick={() => setIsEditing(false)} className="flex-1 text-base bg-graphite-200 px-2 py-1 rounded hover:bg-graphite-300 transition-colors">取消</button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center">
-                <p className="font-semibold text-gray-800 truncate flex-1 text-lg">{currentUser.displayName || '未設定姓名'}</p>
-                <button onClick={handleEditName} className="text-gray-500 hover:text-blue-600 ml-2" title="編輯姓名">
+                <p className="font-semibold text-graphite-800 truncate flex-1 text-lg">{currentUser.displayName || '未設定姓名'}</p>
+                <button onClick={handleEditName} className="text-graphite-500 hover:text-glory-red-600 ml-2" title="編輯姓名">
                   <Edit2 size={20} />
                 </button>
               </div>
             )}
-            <p className="text-xs text-gray-500 truncate mt-1">{currentUser.email}</p>
+            <p className="text-xs text-graphite-500 truncate mt-1">{currentUser.email}</p>
           </div>
 
           <div className="p-4 border-b">
-            <h4 className="text-base font-bold text-gray-500 uppercase mb-3">通知設定</h4>
+            <h4 className="text-base font-bold text-graphite-500 uppercase mb-3">通知設定</h4>
             <div className="space-y-3">
               <label htmlFor="notif-new" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
-                <span className="text-sm text-gray-700">新需求通知</span>
+                <span className="text-sm text-graphite-700">新需求通知</span>
                 {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
-                  <input type="checkbox" id="notif-new" disabled={!isApproved} checked={notificationPref} onChange={(e) => handlePreferenceChange('wantsNewRequestNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-blue-600"/>
+                  <input type="checkbox" id="notif-new" disabled={!isApproved} checked={notificationPref} onChange={(e) => handlePreferenceChange('wantsNewRequestNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600"/>
                 }
               </label>
                <label htmlFor="notif-complete" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
-                <span className="text-sm text-gray-700">購買完成通知</span>
+                <span className="text-sm text-graphite-700">購買完成通知</span>
                  {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
-                  <input type="checkbox" id="notif-complete" disabled={!isApproved} checked={purchaseCompletePref} onChange={(e) => handlePreferenceChange('wantsPurchaseCompleteNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-blue-600"/>
+                  <input type="checkbox" id="notif-complete" disabled={!isApproved} checked={purchaseCompletePref} onChange={(e) => handlePreferenceChange('wantsPurchaseCompleteNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600"/>
                 }
               </label>
             </div>
-             {!isApproved && <p className="text-xs text-amber-600 mt-2">需管理員審核後才能設定</p>}
-             {prefsError && <p className="text-xs text-red-500 mt-2">{prefsError}</p>}
+             {!isApproved && <p className="text-xs text-warning-600 mt-2">需管理員審核後才能設定</p>}
+             {prefsError && <p className="text-xs text-danger-500 mt-2">{prefsError}</p>}
           </div>
 
           <div className="p-2">
             <button 
               onClick={handleLogout}
-              className="w-full text-left flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 rounded-md px-3 py-2 transition-colors"
+              className="w-full text-left flex items-center gap-2 text-sm text-danger-600 hover:bg-danger-50 rounded-md px-3 py-2 transition-colors"
             >
               <LogOut size={16} />
               登出

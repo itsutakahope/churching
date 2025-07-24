@@ -89,11 +89,11 @@ const TithingTaskDetail = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-10">載入中...</div>;
+    return <div className="text-center py-10 text-graphite-600">載入中...</div>;
   }
 
   if (error) {
-    return <div className="text-center py-10 text-red-500">{error}</div>;
+    return <div className="text-center py-10 text-danger-500">{error}</div>;
   }
 
   if (!task) {
@@ -107,21 +107,21 @@ const TithingTaskDetail = () => {
       <div className="bg-white shadow-md rounded-lg p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            <h2 className="text-2xl font-bold text-graphite-900 mb-4">
             任務詳情
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
               <div>
-                <p className="text-sm text-gray-500">任務 ID</p>
-                <p className="font-mono text-sm bg-gray-100 p-2 rounded">{task.id}</p>
+                <p className="text-sm text-graphite-500">任務 ID</p>
+                <p className="font-mono text-sm bg-graphite-100 p-2 rounded">{task.id}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">計算日期</p>
+                <p className="text-sm text-graphite-500">計算日期</p>
                 <p className="font-semibold">{task.calculationTimestamp?.toDate().toLocaleDateString('zh-TW')}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">狀態</p>
-                <p className={`font-semibold ${isTaskCompleted ? 'text-green-600' : 'text-yellow-600'}`}>
+                <p className="text-sm text-graphite-500">狀態</p>
+                <p className={`font-semibold ${isTaskCompleted ? 'text-success-600' : 'text-holy-gold-600'}`}>
                   {isTaskCompleted ? '已完成' : '進行中'}
                 </p>
               </div>
@@ -132,7 +132,7 @@ const TithingTaskDetail = () => {
               <button
                 onClick={handleCompleteTask}
                 disabled={isCompleting}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400"
+                className="bg-success-600 hover:bg-success-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-graphite-400"
               >
                 <CheckCircle size={20} />
                 {isCompleting ? '計算中...' : '完成本次計算'}
@@ -142,7 +142,7 @@ const TithingTaskDetail = () => {
               <button
                 onClick={handleExportPdf}
                 disabled={isExporting}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-gray-400"
+                className="bg-holy-gold-500 hover:bg-holy-gold-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-graphite-400"
               >
                 <Download size={20} />
                 {isExporting ? '匯出中...' : '匯出PDF'}
@@ -158,13 +158,13 @@ const TithingTaskDetail = () => {
 
       {!isTaskCompleted && (
         <div className="bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-xl font-bold text-gray-700 mb-4">新增奉獻記錄</h3>
+          <h3 className="text-xl font-bold text-graphite-700 mb-4">新增奉獻記錄</h3>
           <DedicationEntryForm taskId={taskId} onAddDedication={handleAddDedication} />
         </div>
       )}
 
       <div className="bg-white shadow-md rounded-lg p-6">
-        <h3 className="text-xl font-bold text-gray-700 mb-4">已登錄的奉獻</h3>
+        <h3 className="text-xl font-bold text-graphite-700 mb-4">已登錄的奉獻</h3>
         <LoggedDedicationsList taskId={taskId} />
       </div>
     </div>

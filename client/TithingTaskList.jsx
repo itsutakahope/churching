@@ -43,14 +43,14 @@ const SelectFinanceStaffModal = ({ isOpen, onClose, staffList, onConfirm, loadin
             <div className="flex justify-end gap-4">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                className="px-4 py-2 bg-graphite-300 text-graphite-900 rounded-md hover:bg-graphite-400 transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={() => onConfirm(selectedStaff)}
                 disabled={!selectedStaff}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-300"
+                className="px-4 py-2 bg-glory-red-500 text-white rounded-md hover:bg-glory-red-600 disabled:bg-graphite-300 disabled:text-graphite-500 transition-colors"
               >
                 確認新增
               </button>
@@ -250,17 +250,17 @@ const TithingTaskList = () => {
         loading={isStaffListLoading}
       />
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">任務列表</h2>
+        <h2 className="text-2xl font-bold text-graphite-900">任務列表</h2>
         <button
           onClick={handleAddNewTask}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
+          className="bg-glory-red-500 hover:bg-glory-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
         >
           <PlusCircle size={20} />
           新增任務
         </button>
       </div>
 
-      {loading && <p className="text-center text-gray-500">載入中...</p>}
+      {loading && <p className="text-center text-graphite-500">載入中...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
       
       {!loading && !error && (
@@ -268,11 +268,11 @@ const TithingTaskList = () => {
           <table className="min-w-full bg-white">
             <thead className="bg-gray-200">
               <tr>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">計算日期</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">司庫</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">財務同工</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">狀態</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600">操作</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">計算日期</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">司庫</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">財務同工</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">狀態</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -287,8 +287,8 @@ const TithingTaskList = () => {
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         task.status === 'completed' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
+                          ? 'bg-success-100 text-success-800' 
+                          : 'bg-holy-gold-100 text-holy-gold-800'
                       }`}>
                         {task.status === 'completed' ? '已完成' : '進行中'}
                       </span>
@@ -305,7 +305,7 @@ const TithingTaskList = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="py-6 px-4 text-center text-gray-500">
+                  <td colSpan="5" className="py-6 px-4 text-center text-graphite-500">
                     目前沒有任何計算任務。
                   </td>
                 </tr>
