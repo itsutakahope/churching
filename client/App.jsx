@@ -38,16 +38,21 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   return (
-     <div className="bg-cloud-white min-h-screen p-1 sm:p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* --- 核心修改區域 --- */}
-        <header className="flex items-center gap-4 mb-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-glory-red-700">BQ GRACE CHURCH</h1>
-          
-          <div className="ml-auto">
-            {currentUser ? (
-              <ProfileMenu />
-            ) : (
+    <div className="bg-cloud-white min-h-screen p-1 sm:p-6">
+     <div className="max-w-6xl mx-auto">
+       {/* --- 核心修改區域 --- */}
+       <header className="grid grid-cols-3 items-center gap-4 mb-3">
+         {/* 1. 左側新增一個空白 div 用於對齊 */}
+         <div />
+         
+         {/* 2. 將標題置中 */}
+         <h1 className="text-2xl sm:text-3xl font-bold text-glory-red-700 text-center">BQ GRACE CHURCH</h1>
+         
+         {/* 3. 將右側內容靠右對齊 */}
+         <div className="flex justify-end">
+           {currentUser ? (
+             <ProfileMenu />
+           ) : (
               <button
                 onClick={() => setIsLoginModalOpen(true)}
                 className="bg-glory-red-500 hover:bg-glory-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
