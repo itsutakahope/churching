@@ -122,7 +122,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 bg-success-600 hover:bg-success-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-gray-400"
+        className="w-full flex items-center justify-center gap-2 bg-success-600 hover:bg-success-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-graphite-400"
       >
         <Plus size={20} />
         {isSubmitting ? '新增中...' : '新增此筆'}

@@ -1953,7 +1953,7 @@ const PurchaseRequestBoard = () => {
                   <Download size={18} />
                   匯出選中傳票 PDF
                 </button>
-                <button onClick={exportPurchaseRecordsToCSV} className="flex items-center gap-2 bg-white text-holy-gold-700 hover:bg-gray-100 py-2 px-3 rounded-md text-sm font-medium transition-colors" title="匯出目前篩選的記錄為 CSV">
+                <button onClick={exportPurchaseRecordsToCSV} className="flex items-center gap-2 bg-white text-holy-gold-700 hover:bg-graphite-100 py-2 px-3 rounded-md text-sm font-medium transition-colors" title="匯出目前篩選的記錄為 CSV">
                   <Download size={18} />
                   匯出篩選結果 CSV
                 </button>
@@ -2013,7 +2013,7 @@ const PurchaseRequestBoard = () => {
                       className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 ${
                         recordsViewMode === 'list' 
                           ? 'bg-white shadow' 
-                          : 'text-graphite-500 hover:bg-gray-300'
+                          : 'text-graphite-500 hover:bg-graphite-300'
                       }`}
                       title="列表視圖"
                       role="tab"
@@ -2029,7 +2029,7 @@ const PurchaseRequestBoard = () => {
                       className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-glory-red-500 focus:ring-offset-2 ${
                         recordsViewMode === 'grid' 
                           ? 'bg-white shadow' 
-                          : 'text-graphite-500 hover:bg-gray-300'
+                          : 'text-graphite-500 hover:bg-graphite-300'
                       }`}
                       title="網格視圖"
                       role="tab"
@@ -2257,7 +2257,7 @@ const PurchaseRequestBoard = () => {
 
                               {/* 可點擊的內容區域 */}
                               <div
-                                className="col-span-10 grid grid-cols-10 gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                                className="col-span-10 grid grid-cols-10 gap-3 cursor-pointer hover:bg-graphite-50 p-2 rounded transition-colors"
                                 onClick={() => handleShowRecordDetails(record)}
                               >
                                 <div className="col-span-2 font-medium text-gray-900 truncate" title={record.title}>
@@ -2390,7 +2390,7 @@ const PurchaseRequestBoard = () => {
               <h2 id="detail-modal-title" className="text-lg font-semibold text-graphite-900">需求詳情</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="text-graphite-500 hover:bg-graphite-300 p-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-graphite-500 focus:ring-offset-2"
                 aria-label="關閉需求詳情對話框"
               >
                 <X size={20} aria-hidden="true" />
@@ -2452,7 +2452,7 @@ const PurchaseRequestBoard = () => {
                       )}
 
 <div className="flex gap-2 my-4">
-                        <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-holy-gold-500 text-white hover:bg-holy-gold-600 rounded transition-colors text-sm" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> <span className="hidden sm:inline">留言 ({request.comments?.length || 0})</span> </button>
+                        <button onClick={() => { setShowDetailModal(false); openCommentModal(request); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-holy-gold-500 text-white hover:bg-holy-gold-600 rounded transition-colors text-sm disabled:opacity-50" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <MessageCircle size={16} /> <span className="hidden sm:inline">留言 ({request.comments?.length || 0})</span> </button>
                         {request.status === 'pending' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'purchased'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-glory-red-500 text-white hover:bg-glory-red-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'purchased') ? <SpinnerIcon /> : '✓'} <span className="hidden sm:inline">標記為已購買</span> </button>)}
                         {request.status === 'purchased' && (<button onClick={() => { setShowDetailModal(false); updateStatus(request.id, 'pending'); }} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-holy-gold-500 text-white hover:bg-holy-gold-600 rounded transition-colors text-sm disabled:opacity-50" disabled={(isUpdatingRequest && selectedRequestId === request.id) || isDeletingRequest || isAddingComment}> {(isUpdatingRequest && selectedRequestId === request.id && newStatusForUpdate === 'pending') ? <SpinnerIcon /> : <RotateCcw size={16} />} <span className="hidden sm:inline">撤銷購買</span> </button>)}
                         {/* 轉交報帳按鈕 - 只對報帳負責人顯示且僅在已購買狀態下 */}
@@ -2509,7 +2509,7 @@ const PurchaseRequestBoard = () => {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gray-100 p-4 rounded-t-lg flex justify-between items-center flex-shrink-0 border-b">
               <h2 className="text-lg font-semibold text-graphite-900">購買紀錄詳情</h2>
-              <button onClick={handleCloseRecordDetailModal} className="text-gray-500 hover:bg-gray-300 p-1 rounded-full transition-colors">
+              <button onClick={handleCloseRecordDetailModal} className="text-graphite-500 hover:bg-graphite-300 p-1 rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -2600,7 +2600,7 @@ const PurchaseRequestBoard = () => {
                       )}
                       <button
                         onClick={handleCloseRecordDetailModal}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium ml-auto"
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-graphite-500 text-white hover:bg-graphite-600 rounded-lg transition-colors text-sm font-medium ml-auto"
                       >
                         關閉
                       </button>
@@ -2615,7 +2615,7 @@ const PurchaseRequestBoard = () => {
       {/* --- 新增結束 --- */}
 
       {/* ... (Other modals JSX remains the same) ... */}
-      {isCommentModalOpen && currentRequestForComment && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-graphite-900"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-gray-400 hover:text-graphite-500 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-glory-red-500 hover:bg-glory-red-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div>)}
+      {isCommentModalOpen && currentRequestForComment && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-graphite-900"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-graphite-400 hover:text-graphite-500 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 mb-1">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 ${currentUser?.displayName ? 'bg-gray-100' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 mb-1">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 resize-none" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4"> <button type="button" onClick={closeCommentModal} className="bg-graphite-200 hover:bg-graphite-300 text-graphite-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-glory-red-500 hover:bg-glory-red-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div>)}
 
       {/* 轉交報帳彈窗 */}
       <TransferReimbursementModal

@@ -129,7 +129,7 @@ const ProfileMenu = () => {
             ) : (
               <div className="flex items-center">
                 <p className="font-semibold text-graphite-800 truncate flex-1 text-lg">{currentUser.displayName || '未設定姓名'}</p>
-                <button onClick={handleEditName} className="text-graphite-500 hover:text-glory-red-600 ml-2" title="編輯姓名">
+                <button onClick={handleEditName} className="text-graphite-500 hover:text-glory-red-600 ml-2 transition-colors" title="編輯姓名">
                   <Edit2 size={20} />
                 </button>
               </div>

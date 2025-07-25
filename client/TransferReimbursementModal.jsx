@@ -343,7 +343,7 @@ const TransferReimbursementModal = ({
             
             {isLoadingContacts ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 size={20} className="animate-spin text-gray-400" />
+                <Loader2 size={20} className="animate-spin text-graphite-400" />
                 <span className="ml-2 text-graphite-500">載入中...</span>
               </div>
             ) : reimbursementContacts.length === 0 ? (
@@ -359,7 +359,7 @@ const TransferReimbursementModal = ({
                     className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedContactId === contact.uid
                         ? 'border-glory-red-500 bg-glory-red-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        : 'border-graphite-200 hover:border-graphite-300 hover:bg-graphite-50'
                     }`}
                   >
                     <input
@@ -390,7 +390,7 @@ const TransferReimbursementModal = ({
           <button
             onClick={handleClose}
             disabled={isLoading || showSuccessMessage}
-            className="flex-1 px-4 py-2 text-graphite-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2 text-graphite-700 bg-white border border-graphite-300 rounded-lg hover:bg-graphite-50 transition-colors disabled:opacity-50"
           >
             取消
           </button>
@@ -469,7 +469,7 @@ const TransferReimbursementModal = ({
                     setErrorType('');
                   }}
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 text-graphite-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 text-graphite-700 bg-white border border-graphite-300 rounded-lg hover:bg-graphite-50 transition-colors disabled:opacity-50"
                 >
                   取消
                 </button>
