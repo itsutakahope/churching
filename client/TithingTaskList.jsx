@@ -261,12 +261,12 @@ const TithingTaskList = () => {
       </div>
 
       {loading && <p className="text-center text-graphite-500">載入中...</p>}
-      {error && <p className="text-center text-red-500">{error}</p>}
+      {error && <p className="text-center text-danger-500">{error}</p>}
       
       {!loading && !error && (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
-            <thead className="bg-gray-200">
+            <thead className="bg-graphite-200">
               <tr>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">計算日期</th>
                 <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">司庫</th>
@@ -278,7 +278,7 @@ const TithingTaskList = () => {
             <tbody>
               {tasks.length > 0 ? (
                 tasks.map(task => (
-                  <tr key={task.id} className="border-b hover:bg-gray-50">
+                  <tr key={task.id} className="border-b hover:bg-graphite-50">
                     <td className="py-3 px-4">
                     {task.calculationTimestamp && new Date(task.calculationTimestamp).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </td>
@@ -296,7 +296,7 @@ const TithingTaskList = () => {
                     <td className="py-3 px-4">
                       <Link 
                         to={`/tithing/${task.id}`}
-                        className="text-blue-600 hover:underline"
+                        className="text-glory-red-600 hover:underline"
                       >
                         查看詳情
                       </Link>

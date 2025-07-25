@@ -35,13 +35,13 @@ const LoggedDedicationsList = ({ taskId }) => {
   }
 
   if (error) {
-    return <p className="text-center text-red-500">{error}</p>;
+    return <p className="text-center text-danger-500">{error}</p>;
   }
 
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white">
-        <thead className="bg-gray-200">
+        <thead className="bg-graphite-200">
           <tr>
             <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻日期</th>
             <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻者代號</th>
@@ -53,7 +53,7 @@ const LoggedDedicationsList = ({ taskId }) => {
         <tbody>
           {dedications.length > 0 ? (
             dedications.map(item => (
-              <tr key={item.id} className="border-b hover:bg-gray-50">
+              <tr key={item.id} className="border-b hover:bg-graphite-50">
                 <td className="py-3 px-4">{item.dedicationDate}</td>
                 <td className="py-3 px-4">{item.dedicatorId}</td>
                 <td className="py-3 px-4">{item.dedicationCategory}</td>
