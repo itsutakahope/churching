@@ -1,9 +1,19 @@
 /* client/App.css */
+:root {
+  --body-bg-light: #f8f9fa; /* 與 Tailwind cloud-white 一致 */
+  --body-bg-dark: #121212;  /* 與 Tailwind dark-background 一致 */
+}
+
 body {
   font-family: sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f4f4f4;
+  background-color: var(--body-bg-light);
+  transition: background-color 0.3s ease;
+}
+
+body.dark {
+  background-color: var(--body-bg-dark);
 }
 
 #root {

@@ -89,11 +89,11 @@ const TithingTaskDetail = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-10 text-graphite-600">載入中...</div>;
+    return <div className="text-center py-10 text-text-subtle dark:text-dark-text-subtle transition-theme">載入中...</div>;
   }
 
   if (error) {
-    return <div className="text-center py-10 text-danger-500">{error}</div>;
+    return <div className="text-center py-10 text-danger-500 dark:text-danger-dark transition-theme">{error}</div>;
   }
 
   if (!task) {
@@ -104,24 +104,24 @@ const TithingTaskDetail = () => {
 
   return (
     <div className="space-y-8">
-      <div className="bg-white shadow-md rounded-lg p-6">
+      <div className="bg-surface dark:bg-dark-surface shadow-md rounded-lg p-6 transition-theme">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-graphite-900 mb-4">
+            <h2 className="text-2xl font-bold text-text-main dark:text-dark-text-main mb-4 transition-theme">
             任務詳情
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
               <div>
-                <p className="text-sm text-graphite-500">任務 ID</p>
-                <p className="font-mono text-sm bg-graphite-100 p-2 rounded">{task.id}</p>
+                <p className="text-sm text-text-subtle dark:text-dark-text-subtle">任務 ID</p>
+                <p className="font-mono text-sm bg-background dark:bg-dark-background p-2 rounded text-text-main dark:text-dark-text-main transition-theme">{task.id}</p>
               </div>
               <div>
-                <p className="text-sm text-graphite-500">計算日期</p>
-                <p className="font-semibold">{task.calculationTimestamp?.toDate().toLocaleDateString('zh-TW')}</p>
+                <p className="text-sm text-text-subtle dark:text-dark-text-subtle">計算日期</p>
+                <p className="font-semibold text-text-main dark:text-dark-text-main transition-theme">{task.calculationTimestamp?.toDate().toLocaleDateString('zh-TW')}</p>
               </div>
               <div>
-                <p className="text-sm text-graphite-500">狀態</p>
-                <p className={`font-semibold ${isTaskCompleted ? 'text-success-600' : 'text-holy-gold-600'}`}>
+                <p className="text-sm text-text-subtle dark:text-dark-text-subtle">狀態</p>
+                <p className={`font-semibold ${isTaskCompleted ? 'text-success-600 dark:text-success-dark' : 'text-holy-gold-600 dark:text-dark-accent'} transition-theme`}>
                   {isTaskCompleted ? '已完成' : '進行中'}
                 </p>
               </div>
@@ -132,7 +132,7 @@ const TithingTaskDetail = () => {
               <button
                 onClick={handleCompleteTask}
                 disabled={isCompleting}
-                className="bg-success-600 hover:bg-success-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-graphite-400"
+                className="bg-success-600 dark:bg-success-dark hover:bg-success-700 dark:hover:bg-success-dark/90 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-gray-600"
               >
                 <CheckCircle size={20} />
                 {isCompleting ? '計算中...' : '完成本次計算'}
@@ -142,7 +142,7 @@ const TithingTaskDetail = () => {
               <button
                 onClick={handleExportPdf}
                 disabled={isExporting}
-                className="bg-holy-gold-500 hover:bg-holy-gold-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:bg-graphite-400"
+                className="bg-accent dark:bg-dark-accent hover:bg-holy-gold-600 dark:hover:bg-dark-accent/90 text-white dark:text-success-500 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-gray-600"
               >
                 <Download size={20} />
                 {isExporting ? '匯出中...' : '匯出PDF'}
@@ -157,14 +157,14 @@ const TithingTaskDetail = () => {
       )}
 
       {!isTaskCompleted && (
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-xl font-bold text-graphite-700 mb-4">新增奉獻記錄</h3>
+        <div className="bg-surface dark:bg-dark-surface shadow-md rounded-lg p-6 transition-theme">
+          <h3 className="text-xl font-bold text-text-main dark:text-dark-text-main mb-4 transition-theme">新增奉獻記錄</h3>
           <DedicationEntryForm taskId={taskId} onAddDedication={handleAddDedication} />
         </div>
       )}
 
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h3 className="text-xl font-bold text-graphite-700 mb-4">已登錄的奉獻</h3>
+      <div className="bg-surface dark:bg-dark-surface shadow-md rounded-lg p-6 transition-theme">
+        <h3 className="text-xl font-bold text-text-main dark:text-dark-text-main mb-4 transition-theme">已登錄的奉獻</h3>
         <LoggedDedicationsList taskId={taskId} />
       </div>
     </div>

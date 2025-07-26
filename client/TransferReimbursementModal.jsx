@@ -224,15 +224,15 @@ const TransferReimbursementModal = ({
     switch (errorType) {
       case 'network':
       case 'timeout':
-        return <WifiOff size={16} className="text-red-500 mt-0.5 flex-shrink-0" />;
+        return <WifiOff size={16} className="text-danger-500 dark:text-danger-dark mt-0.5 flex-shrink-0" />;
       case 'permission':
       case 'auth':
-        return <Shield size={16} className="text-red-500 mt-0.5 flex-shrink-0" />;
+        return <Shield size={16} className="text-danger-500 dark:text-danger-dark mt-0.5 flex-shrink-0" />;
       case 'validation':
       case 'not_found':
-        return <UserX size={16} className="text-red-500 mt-0.5 flex-shrink-0" />;
+        return <UserX size={16} className="text-danger-500 dark:text-danger-dark mt-0.5 flex-shrink-0" />;
       default:
-        return <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />;
+        return <AlertCircle size={16} className="text-danger-500 dark:text-danger-dark mt-0.5 flex-shrink-0" />;
     }
   };
 
@@ -252,17 +252,17 @@ const TransferReimbursementModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto transition-theme">
         {/* 標題列 */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold text-graphite-900 flex items-center gap-2">
+        <div className="flex items-center justify-between p-4 border-b border-graphite-200 dark:border-gray-600">
+          <h2 className="text-lg font-semibold text-text-main dark:text-dark-text-main flex items-center gap-2 transition-theme">
             <Users size={20} />
             轉交報帳
           </h2>
           <button
             onClick={handleClose}
             disabled={isLoading}
-            className="text-gray-400 hover:text-graphite-500 transition-colors disabled:opacity-50"
+            className="text-text-subtle dark:text-dark-text-subtle hover:text-primary dark:hover:text-dark-primary transition-theme disabled:opacity-50"
           >
             <X size={20} />
           </button>
@@ -272,10 +272,10 @@ const TransferReimbursementModal = ({
         <div className="p-4">
           {/* 目前購買需求資訊 */}
           {currentRequest && (
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-graphite-500 mb-1">購買項目：</p>
-              <p className="font-medium text-graphite-900">{currentRequest.text}</p>
-              <p className="text-sm text-graphite-500 mt-2">
+            <div className="mb-4 p-3 bg-background dark:bg-dark-background rounded-lg transition-theme">
+              <p className="text-sm text-text-subtle dark:text-dark-text-subtle mb-1">購買項目：</p>
+              <p className="font-medium text-text-main dark:text-dark-text-main">{currentRequest.text}</p>
+              <p className="text-sm text-text-subtle dark:text-dark-text-subtle mt-2">
                 目前報帳負責人：{currentRequest.reimbursementerName}
               </p>
             </div>
@@ -283,29 +283,29 @@ const TransferReimbursementModal = ({
 
           {/* 成功訊息 */}
           {showSuccessMessage && (
-            <div className="mb-4 p-3 bg-success-50 border border-success-200 rounded-lg flex items-start gap-2">
-              <CheckCircle size={16} className="text-success-500 mt-0.5 flex-shrink-0" />
+            <div className="mb-4 p-3 bg-success-50 dark:bg-success-dark/20 border border-success-200 dark:border-success-dark/30 rounded-lg flex items-start gap-2 transition-theme">
+              <CheckCircle size={16} className="text-success-500 dark:text-success-dark mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm text-success-700 font-medium">轉交成功！</p>
-                <p className="text-xs text-success-600 mt-1">報帳責任已成功轉交，頁面即將更新...</p>
+                <p className="text-sm text-success-700 dark:text-success-dark font-medium">轉交成功！</p>
+                <p className="text-xs text-success-600 dark:text-success-dark/80 mt-1">報帳責任已成功轉交，頁面即將更新...</p>
               </div>
             </div>
           )}
 
           {/* 錯誤訊息 */}
           {error && !showSuccessMessage && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-4 p-3 bg-danger-50 dark:bg-danger-dark/20 border border-danger-200 dark:border-danger-dark/30 rounded-lg transition-theme">
               <div className="flex items-start gap-2 mb-2">
                 {getErrorIcon()}
                 <div className="flex-1">
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-sm text-danger-700 dark:text-danger-dark">{error}</p>
                   {errorType === 'timeout' && (
-                    <p className="text-xs text-red-600 mt-1">
+                    <p className="text-xs text-danger-600 dark:text-danger-dark/80 mt-1">
                       請檢查您的網路連線是否穩定
                     </p>
                   )}
                   {errorType === 'permission' && (
-                    <p className="text-xs text-red-600 mt-1">
+                    <p className="text-xs text-danger-600 dark:text-danger-dark/80 mt-1">
                       請聯繫系統管理員確認您的權限設定
                     </p>
                   )}
@@ -317,7 +317,7 @@ const TransferReimbursementModal = ({
                   <button
                     onClick={handleRetryLoadContacts}
                     disabled={isLoadingContacts}
-                    className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors disabled:opacity-50 flex items-center gap-1"
+                    className="text-xs px-3 py-1 bg-danger-100 dark:bg-danger-dark/30 text-danger-700 dark:text-danger-dark rounded hover:bg-danger-200 dark:hover:bg-danger-dark/40 transition-theme disabled:opacity-50 flex items-center gap-1"
                   >
                     {isLoadingContacts ? (
                       <>
@@ -337,17 +337,17 @@ const TransferReimbursementModal = ({
 
           {/* 報帳聯絡人清單 */}
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-graphite-700 mb-3">
+            <h3 className="text-sm font-medium text-text-main dark:text-dark-text-main mb-3 transition-theme">
               選擇新的報帳負責人：
             </h3>
             
             {isLoadingContacts ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 size={20} className="animate-spin text-graphite-400" />
-                <span className="ml-2 text-graphite-500">載入中...</span>
+                <Loader2 size={20} className="animate-spin text-text-subtle dark:text-dark-text-subtle" />
+                <span className="ml-2 text-text-subtle dark:text-dark-text-subtle transition-theme">載入中...</span>
               </div>
             ) : reimbursementContacts.length === 0 ? (
-              <div className="text-center py-8 text-graphite-500">
+              <div className="text-center py-8 text-text-subtle dark:text-dark-text-subtle transition-theme">
                 <Users size={24} className="mx-auto mb-2 opacity-50" />
                 <p>沒有其他可選擇的報帳聯絡人</p>
               </div>
@@ -356,10 +356,10 @@ const TransferReimbursementModal = ({
                 {reimbursementContacts.map((contact) => (
                   <label
                     key={contact.uid}
-                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer transition-theme ${
                       selectedContactId === contact.uid
-                        ? 'border-glory-red-500 bg-glory-red-50'
-                        : 'border-graphite-200 hover:border-graphite-300 hover:bg-graphite-50'
+                        ? 'border-primary dark:border-dark-primary bg-primary/10 dark:bg-dark-primary/20'
+                        : 'border-graphite-200 dark:border-gray-600 hover:border-graphite-300 dark:hover:border-gray-500 hover:bg-background dark:hover:bg-dark-background'
                     }`}
                   >
                     <input
@@ -368,13 +368,13 @@ const TransferReimbursementModal = ({
                       value={contact.uid}
                       checked={selectedContactId === contact.uid}
                       onChange={() => handleContactSelect(contact.uid)}
-                      className="mr-3 text-glory-red-600"
+                      className="mr-3 text-primary dark:text-dark-primary"
                     />
                     <div>
-                      <p className="font-medium text-graphite-900">
+                      <p className="font-medium text-text-main dark:text-dark-text-main transition-theme">
                         {contact.displayName}
                       </p>
-                      <p className="text-sm text-graphite-500">
+                      <p className="text-sm text-text-subtle dark:text-dark-text-subtle transition-theme">
                         {contact.email}
                       </p>
                     </div>
@@ -386,18 +386,18 @@ const TransferReimbursementModal = ({
         </div>
 
         {/* 按鈕區域 */}
-        <div className="flex gap-3 p-4 border-t bg-gray-50">
+        <div className="flex gap-3 p-4 border-t border-graphite-200 dark:border-gray-600 bg-background dark:bg-dark-background transition-theme">
           <button
             onClick={handleClose}
             disabled={isLoading || showSuccessMessage}
-            className="flex-1 px-4 py-2 text-graphite-700 bg-white border border-graphite-300 rounded-lg hover:bg-graphite-50 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2 text-text-main dark:text-dark-text-main bg-surface dark:bg-dark-surface border border-graphite-300 dark:border-gray-600 rounded-lg hover:bg-background dark:hover:bg-dark-background transition-theme disabled:opacity-50"
           >
             取消
           </button>
           <button
             onClick={handleTransferClick}
             disabled={isLoading || !selectedContactId || isLoadingContacts || showSuccessMessage}
-            className="flex-1 px-4 py-2 bg-glory-red-600 text-white rounded-lg hover:bg-glory-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2 bg-primary dark:bg-dark-primary text-white rounded-lg hover:bg-primary/90 dark:hover:bg-dark-primary/90 transition-theme disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {showSuccessMessage ? (
               <>
@@ -419,45 +419,45 @@ const TransferReimbursementModal = ({
       {/* 確認對話框 */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl max-w-md w-full transition-theme">
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-holy-gold-100 rounded-full flex items-center justify-center">
-                  <AlertCircle size={20} className="text-holy-gold-600" />
+                <div className="w-10 h-10 bg-accent/20 dark:bg-dark-accent/20 rounded-full flex items-center justify-center">
+                  <AlertCircle size={20} className="text-accent dark:text-dark-accent" />
                 </div>
-                <h3 className="text-lg font-semibold text-graphite-900">
+                <h3 className="text-lg font-semibold text-text-main dark:text-dark-text-main transition-theme">
                   確認轉交報帳
                 </h3>
               </div>
               
               <div className="mb-6">
-                <p className="text-graphite-500 mb-3">
+                <p className="text-text-subtle dark:text-dark-text-subtle mb-3 transition-theme">
                   您即將將以下購買需求的報帳責任轉交：
                 </p>
-                <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                  <p className="font-medium text-graphite-900 text-sm">
+                <div className="bg-background dark:bg-dark-background rounded-lg p-3 mb-3 transition-theme">
+                  <p className="font-medium text-text-main dark:text-dark-text-main text-sm">
                     {currentRequest?.text}
                   </p>
-                  <p className="text-xs text-graphite-500 mt-1">
+                  <p className="text-xs text-text-subtle dark:text-dark-text-subtle mt-1">
                     購買金額：NT$ {currentRequest?.purchaseAmount?.toLocaleString()}
                   </p>
                 </div>
-                <p className="text-graphite-500">
+                <p className="text-text-subtle dark:text-dark-text-subtle transition-theme">
                   <span className="font-medium">轉交給：</span>
-                  <span className="text-glory-red-600 font-medium">
+                  <span className="text-primary dark:text-dark-primary font-medium">
                     {reimbursementContacts.find(c => c.uid === selectedContactId)?.displayName}
                   </span>
                 </p>
-                <p className="text-sm text-graphite-500 mt-2">
+                <p className="text-sm text-text-subtle dark:text-dark-text-subtle mt-2 transition-theme">
                   ⚠️ 轉交後，您將無法再管理此項目的報帳事宜
                 </p>
               </div>
 
               {/* 錯誤訊息 */}
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <div className="mb-4 p-3 bg-danger-50 dark:bg-danger-dark/20 border border-danger-200 dark:border-danger-dark/30 rounded-lg flex items-start gap-2 transition-theme">
                   {getErrorIcon()}
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-sm text-danger-700 dark:text-danger-dark">{error}</p>
                 </div>
               )}
 
@@ -469,14 +469,14 @@ const TransferReimbursementModal = ({
                     setErrorType('');
                   }}
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 text-graphite-700 bg-white border border-graphite-300 rounded-lg hover:bg-graphite-50 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 text-text-main dark:text-dark-text-main bg-surface dark:bg-dark-surface border border-graphite-300 dark:border-gray-600 rounded-lg hover:bg-background dark:hover:bg-dark-background transition-theme disabled:opacity-50"
                 >
                   取消
                 </button>
                 <button
                   onClick={handleConfirmTransfer}
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-danger-600 dark:bg-danger-dark text-white rounded-lg hover:bg-danger-700 dark:hover:bg-danger-dark/90 transition-theme disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>

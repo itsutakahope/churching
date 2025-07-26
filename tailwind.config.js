@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class', // 啟用 class-based 深色模式
   content: [
     "./index.html", // For classes used in the main HTML file
     "./client/**/*.{js,ts,jsx,tsx}", // For classes used in React components
@@ -52,31 +53,75 @@ export default {
         // 背景色彩 - 雲霧白 (Cloud White)
         'cloud-white': '#F8F9FA',
         
-        // 保留語意化色彩以維持功能完整性
+        // === 深色模式色彩系統 ===
+        // 深色模式主色 - 熾熱之紅 (更亮更鮮活的主色)
+        'dark-primary': '#E5484D',
+        
+        // 深色模式輔助色 - 榮光金 (在深色背景中足夠明亮)
+        'dark-accent': '#FFD479',
+        
+        // 深色模式文字色彩
+        'dark-text-main': '#EAEAEA',    // 月光白 - 柔和的白色，不刺眼
+        'dark-text-subtle': '#A0A0A0',  // 星辰灰 - 清晰可辨的次要文字
+        
+        // 深色模式背景色彩
+        'dark-surface': '#1A1A1A',      // 曜石黑 - 元件背景，創造層次
+        'dark-background': '#121212',   // 永夜黑 - 主背景，非純黑避免光暈
+        
+        // === 語意化色彩別名（便於使用）===
+        'primary': '#A91D22',           // 主色 - 榮耀紅
+        'accent': '#E4B869',            // 輔助色 - 聖光金
+        'text-main': '#222222',         // 主要文字 - 石墨黑
+        'text-subtle': '#6B7280',       // 次要文字 - 中灰
+        'surface': '#FFFFFF',           // 元件背景 - 純白
+        'background': '#F8F9FA',        // 頁面背景 - 雲霧白
+        
+        // === 語意化狀態色彩（支援深色模式）===
         'success': {
-          DEFAULT: '#28A745',
+          DEFAULT: '#28A745',  // 淺色模式
           50: '#F0FDF4',
           100: '#DCFCE7',
           500: '#28A745',
           600: '#16A34A',
           700: '#15803D',
+          dark: '#30C44E'      // 深色模式 - 螢光綠
         },
         'danger': {
-          DEFAULT: '#DC3545',
+          DEFAULT: '#DC3545',  // 淺色模式
           50: '#FEF2F2',
           100: '#FEE2E2',
           500: '#DC3545',
           600: '#DC2626',
           700: '#B91C1C',
+          dark: '#F87171'      // 深色模式 - 警示粉
         },
         'warning': {
-          DEFAULT: '#FFC107',
+          DEFAULT: '#FFC107',  // 淺色模式
           50: '#FFFBEB',
           100: '#FEF3C7',
           500: '#FFC107',
           600: '#F59E0B',
           700: '#D97706',
+          dark: '#FBBF24'      // 深色模式
         },
+        'info': {
+          DEFAULT: '#17A2B8',  // 淺色模式
+          500: '#17A2B8',
+          600: '#0891B2',
+          700: '#0E7490',
+          dark: '#06B6D4'      // 深色模式
+        },
+      },
+      
+      // 過渡動畫配置
+      transitionProperty: {
+        'theme': 'background-color, border-color, color, fill, stroke',
+      },
+      transitionDuration: {
+        'theme': '300ms',
+      },
+      transitionTimingFunction: {
+        'theme': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
     },
   },

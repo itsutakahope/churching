@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
+import { useTheme } from './ThemeContext.jsx';
+import ThemeSwitcher from './ThemeSwitcher.jsx';
 import { LogOut, Edit2, Loader2, ChevronDown } from 'lucide-react';
 
 const getShortName = (name) => {
@@ -102,65 +104,73 @@ const ProfileMenu = () => {
     <div className="relative" ref={menuRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)} 
-        className="flex items-center gap-2 text-base font-medium text-graphite-700 hover:text-glory-red-600 p-2 rounded-lg transition-colors border border-graphite-300"
+        className="flex items-center gap-2 text-base font-medium text-graphite-700 dark:text-dark-text-main hover:text-glory-red-600 dark:hover:text-dark-primary p-2 rounded-lg transition-theme border border-graphite-300 dark:border-dark-surface"
       >
         <span>{getShortName(currentUser.displayName) || currentUser.email}</span>
         <ChevronDown size={16} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border z-10">
-          <div className="p-4 border-b">
+        <div className="absolute right-0 mt-2 w-72 bg-surface dark:bg-dark-surface rounded-lg shadow-xl border border-graphite-200 dark:border-graphite-600 z-10 transition-theme">
+          <div className="p-4 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
             {isEditing ? (
               <div className="space-y-2">
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full border border-graphite-300 rounded-md px-2 py-1 text-sm focus:border-glory-red-500 focus:ring-1 focus:ring-glory-red-500"
+                  className="w-full border border-graphite-300 dark:border-graphite-600 rounded-md px-2 py-1 text-sm bg-surface dark:bg-dark-surface text-graphite-900 dark:text-dark-text-main focus:border-glory-red-500 dark:focus:border-glory-red-400 focus:ring-1 focus:ring-glory-red-500 dark:focus:ring-glory-red-400 transition-theme"
                   autoFocus
                 />
-                {editError && <small className="text-danger-500">{editError}</small>}
+                {editError && <small className="text-danger-500 dark:text-danger-dark">{editError}</small>}
                 <div className="flex gap-2">
-                  <button onClick={handleSaveName} className="flex-1 text-base bg-glory-red-500 text-white px-2 py-1 rounded hover:bg-glory-red-600 transition-colors">儲存</button>
-                  <button onClick={() => setIsEditing(false)} className="flex-1 text-base bg-graphite-200 px-2 py-1 rounded hover:bg-graphite-300 transition-colors">取消</button>
+                  <button onClick={handleSaveName} className="flex-1 text-base bg-glory-red-500 dark:bg-dark-primary text-white px-2 py-1 rounded hover:bg-glory-red-600 dark:hover:bg-dark-primary/90 transition-theme">儲存</button>
+                  <button onClick={() => setIsEditing(false)} className="flex-1 text-base bg-graphite-200 dark:bg-dark-background text-graphite-900 dark:text-dark-text-main px-2 py-1 rounded hover:bg-graphite-300 dark:hover:bg-dark-surface transition-theme">取消</button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center">
-                <p className="font-semibold text-graphite-800 truncate flex-1 text-lg">{currentUser.displayName || '未設定姓名'}</p>
-                <button onClick={handleEditName} className="text-graphite-500 hover:text-glory-red-600 ml-2 transition-colors" title="編輯姓名">
+                <p className="font-semibold text-graphite-800 dark:text-dark-text-main truncate flex-1 text-lg transition-theme">{currentUser.displayName || '未設定姓名'}</p>
+                <button onClick={handleEditName} className="text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary ml-2 transition-theme" title="編輯姓名">
                   <Edit2 size={20} />
                 </button>
               </div>
             )}
-            <p className="text-xs text-graphite-500 truncate mt-1">{currentUser.email}</p>
+            <p className="text-xs text-graphite-500 dark:text-dark-text-subtle truncate mt-1 transition-theme">{currentUser.email}</p>
           </div>
 
-          <div className="p-4 border-b">
-            <h4 className="text-base font-bold text-graphite-500 uppercase mb-3">通知設定</h4>
+          <div className="p-4 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
+            <h4 className="text-base font-bold text-graphite-500 dark:text-dark-text-subtle uppercase mb-3 transition-theme">通知設定</h4>
             <div className="space-y-3">
               <label htmlFor="notif-new" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
-                <span className="text-sm text-graphite-700">新需求通知</span>
+                <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">新需求通知</span>
                 {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
                   <input type="checkbox" id="notif-new" disabled={!isApproved} checked={notificationPref} onChange={(e) => handlePreferenceChange('wantsNewRequestNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600"/>
                 }
               </label>
                <label htmlFor="notif-complete" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
-                <span className="text-sm text-graphite-700">購買完成通知</span>
+                <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">購買完成通知</span>
                  {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
                   <input type="checkbox" id="notif-complete" disabled={!isApproved} checked={purchaseCompletePref} onChange={(e) => handlePreferenceChange('wantsPurchaseCompleteNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600"/>
                 }
               </label>
             </div>
-             {!isApproved && <p className="text-xs text-warning-600 mt-2">需管理員審核後才能設定</p>}
-             {prefsError && <p className="text-xs text-danger-500 mt-2">{prefsError}</p>}
+             {!isApproved && <p className="text-xs text-warning-600 dark:text-warning-dark mt-2">需管理員審核後才能設定</p>}
+             {prefsError && <p className="text-xs text-danger-500 dark:text-danger-dark mt-2">{prefsError}</p>}
+          </div>
+
+          <div className="p-4 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
+            <h4 className="text-base font-bold text-graphite-500 dark:text-dark-text-subtle uppercase mb-3 transition-theme">外觀設定</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">深色模式</span>
+              <ThemeSwitcher />
+            </div>
           </div>
 
           <div className="p-2">
             <button 
               onClick={handleLogout}
-              className="w-full text-left flex items-center gap-2 text-sm text-danger-600 hover:bg-danger-50 rounded-md px-3 py-2 transition-colors"
+              className="w-full text-left flex items-center gap-2 text-sm text-danger-600 dark:text-danger-dark hover:bg-danger-50 dark:hover:bg-dark-background rounded-md px-3 py-2 transition-theme"
             >
               <LogOut size={16} />
               登出

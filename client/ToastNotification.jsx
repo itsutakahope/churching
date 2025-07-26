@@ -34,44 +34,44 @@ const ToastNotification = ({
 
   const getIcon = () => {
     if (type === 'success') {
-      return <CheckCircle size={20} className="text-success-600 flex-shrink-0" />;
+      return <CheckCircle size={20} className="text-success-600 dark:text-success-400 flex-shrink-0 transition-theme" />;
     }
     
     if (type === 'error') {
       switch (errorType) {
         case 'network':
         case 'timeout':
-          return <WifiOff size={20} className="text-danger-600 flex-shrink-0" />;
+          return <WifiOff size={20} className="text-danger-600 dark:text-danger-400 flex-shrink-0 transition-theme" />;
         case 'permission':
         case 'auth':
-          return <Shield size={20} className="text-danger-600 flex-shrink-0" />;
+          return <Shield size={20} className="text-danger-600 dark:text-danger-400 flex-shrink-0 transition-theme" />;
         case 'validation':
         case 'not_found':
-          return <UserX size={20} className="text-danger-600 flex-shrink-0" />;
+          return <UserX size={20} className="text-danger-600 dark:text-danger-400 flex-shrink-0 transition-theme" />;
         default:
-          return <AlertCircle size={20} className="text-danger-600 flex-shrink-0" />;
+          return <AlertCircle size={20} className="text-danger-600 dark:text-danger-400 flex-shrink-0 transition-theme" />;
       }
     }
     
     if (type === 'warning') {
-      return <AlertCircle size={20} className="text-holy-gold-600 flex-shrink-0" />;
+      return <AlertCircle size={20} className="text-warning-600 dark:text-warning-400 flex-shrink-0 transition-theme" />;
     }
     
-    // 資訊類型通知使用榮耀紅色系
-    return <AlertCircle size={20} className="text-glory-red-600 flex-shrink-0" />;
+    // 資訊類型通知使用主色系
+    return <AlertCircle size={20} className="text-primary dark:text-dark-primary flex-shrink-0 transition-theme" />;
   };
 
   const getStyles = () => {
     switch (type) {
       case 'success':
-        return 'bg-success-50 border-success-100 text-success-700';
+        return 'bg-success-50 dark:bg-success-900/20 border-success-100 dark:border-success-800 text-success-700 dark:text-success-300';
       case 'error':
-        return 'bg-danger-50 border-danger-100 text-danger-700';
+        return 'bg-danger-50 dark:bg-danger-900/20 border-danger-100 dark:border-danger-800 text-danger-700 dark:text-danger-300';
       case 'warning':
-        return 'bg-holy-gold-50 border-holy-gold-100 text-holy-gold-700';
+        return 'bg-warning-50 dark:bg-warning-900/20 border-warning-100 dark:border-warning-800 text-warning-700 dark:text-warning-300';
       default:
-        // 資訊類型通知使用榮耀紅色系
-        return 'bg-glory-red-50 border-glory-red-200 text-glory-red-800';
+        // 資訊類型通知使用主色系
+        return 'bg-primary/10 dark:bg-dark-primary/20 border-primary/20 dark:border-dark-primary/30 text-primary dark:text-dark-primary';
     }
   };
 
@@ -81,7 +81,7 @@ const ToastNotification = ({
     <div className={`fixed top-4 right-4 z-50 transition-all duration-300 ease-in-out transform ${
       isShowing ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
     }`}>
-      <div className={`max-w-sm w-full border rounded-lg shadow-lg p-4 ${getStyles()}`}>
+      <div className={`max-w-sm w-full border rounded-lg shadow-lg p-4 transition-theme ${getStyles()}`}>
         <div className="flex items-start gap-3">
           {getIcon()}
           <div className="flex-1 min-w-0">
@@ -89,7 +89,7 @@ const ToastNotification = ({
             {showRetry && onRetry && (
               <button
                 onClick={onRetry}
-                className="mt-2 text-xs px-3 py-1 bg-white bg-opacity-50 rounded hover:bg-opacity-75 transition-all duration-200"
+                className="mt-2 text-xs px-3 py-1 bg-surface dark:bg-dark-surface bg-opacity-50 dark:bg-opacity-50 rounded hover:bg-opacity-75 dark:hover:bg-opacity-75 transition-theme"
               >
                 重試
               </button>
@@ -97,7 +97,7 @@ const ToastNotification = ({
           </div>
           <button
             onClick={handleClose}
-            className="text-current opacity-50 hover:opacity-75 transition-opacity"
+            className="text-current opacity-50 hover:opacity-75 transition-theme"
           >
             <X size={16} />
           </button>

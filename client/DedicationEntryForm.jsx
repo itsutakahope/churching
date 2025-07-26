@@ -47,39 +47,39 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Dedication Date */}
         <div className="flex flex-col">
-          <label htmlFor="dedicationDate" className="text-sm font-medium text-graphite-500 mb-1">奉獻日期</label>
+          <label htmlFor="dedicationDate" className="text-sm font-medium text-graphite-500 dark:text-dark-text-main mb-1 transition-theme">奉獻日期</label>
           <input
             id="dedicationDate"
             type="date"
             value={dedicationDate}
             onChange={(e) => setDedicationDate(e.target.value)}
-            className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="p-2 border border-gray-300 dark:border-graphite-600 rounded-md shadow-sm focus:ring-glory-red-500 dark:focus:ring-glory-red-400 focus:border-glory-red-500 dark:focus:border-glory-red-400 dark:bg-graphite-700 dark:text-dark-text-main transition-theme"
             required
           />
         </div>
 
         {/* Dedicator ID */}
         <div className="flex flex-col">
-          <label htmlFor="dedicatorId" className="text-sm font-medium text-graphite-500 mb-1">奉獻者代號</label>
+          <label htmlFor="dedicatorId" className="text-sm font-medium text-graphite-500 dark:text-dark-text-main mb-1 transition-theme">奉獻者代號</label>
           <input
             id="dedicatorId"
             type="text"
             value={dedicatorId}
             onChange={(e) => setDedicatorId(e.target.value)}
             placeholder="例如：B0001"
-            className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="p-2 border border-gray-300 dark:border-graphite-600 rounded-md shadow-sm focus:ring-glory-red-500 dark:focus:ring-glory-red-400 focus:border-glory-red-500 dark:focus:border-glory-red-400 dark:bg-graphite-700 dark:text-dark-text-main transition-theme"
             required
           />
         </div>
 
         {/* Dedication Category */}
         <div className="flex flex-col">
-          <label htmlFor="dedicationCategory" className="text-sm font-medium text-graphite-500 mb-1">奉獻科目</label>
+          <label htmlFor="dedicationCategory" className="text-sm font-medium text-graphite-500 dark:text-dark-text-main mb-1 transition-theme">奉獻科目</label>
           <select
             id="dedicationCategory"
             value={dedicationCategory}
             onChange={(e) => setDedicationCategory(e.target.value)}
-            className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="p-2 border border-gray-300 dark:border-graphite-600 rounded-md shadow-sm focus:ring-glory-red-500 dark:focus:ring-glory-red-400 focus:border-glory-red-500 dark:focus:border-glory-red-400 dark:bg-graphite-700 dark:text-dark-text-main transition-theme"
           >
             {DEDICATION_CATEGORIES.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
@@ -89,40 +89,40 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
 
         {/* Amount */}
         <div className="flex flex-col">
-          <label htmlFor="amount" className="text-sm font-medium text-graphite-500 mb-1">奉獻數額</label>
+          <label htmlFor="amount" className="text-sm font-medium text-graphite-500 dark:text-dark-text-main mb-1 transition-theme">奉獻數額</label>
           <input
             id="amount"
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="例如：1000"
-            className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            className="p-2 border border-gray-300 dark:border-graphite-600 rounded-md shadow-sm focus:ring-glory-red-500 dark:focus:ring-glory-red-400 focus:border-glory-red-500 dark:focus:border-glory-red-400 dark:bg-graphite-700 dark:text-dark-text-main transition-theme"
             required
           />
         </div>
 
         {/* Method */}
         <div className="flex flex-col justify-center">
-           <label className="text-sm font-medium text-graphite-500 mb-1">奉獻方式</label>
+           <label className="text-sm font-medium text-graphite-500 dark:text-dark-text-main mb-1 transition-theme">奉獻方式</label>
           <div className="flex items-center space-x-4 pt-2">
             <label className="flex items-center">
-              <input type="radio" name="method" value="cash" checked={method === 'cash'} onChange={() => setMethod('cash')} className="focus:ring-glory-red-500 h-4 w-4 text-glory-red-600 border-graphite-300"/>
-              <span className="ml-2 text-sm text-graphite-700">現金</span>
+              <input type="radio" name="method" value="cash" checked={method === 'cash'} onChange={() => setMethod('cash')} className="focus:ring-glory-red-500 dark:focus:ring-glory-red-400 h-4 w-4 text-glory-red-600 border-graphite-300 dark:border-graphite-600 transition-theme"/>
+              <span className="ml-2 text-sm text-graphite-700 dark:text-dark-text-main transition-theme">現金</span>
             </label>
             <label className="flex items-center">
-              <input type="radio" name="method" value="cheque" checked={method === 'cheque'} onChange={() => setMethod('cheque')} className="focus:ring-glory-red-500 h-4 w-4 text-glory-red-600 border-graphite-300"/>
-              <span className="ml-2 text-sm text-graphite-700">支票</span>
+              <input type="radio" name="method" value="cheque" checked={method === 'cheque'} onChange={() => setMethod('cheque')} className="focus:ring-glory-red-500 dark:focus:ring-glory-red-400 h-4 w-4 text-glory-red-600 border-graphite-300 dark:border-graphite-600 transition-theme"/>
+              <span className="ml-2 text-sm text-graphite-700 dark:text-dark-text-main transition-theme">支票</span>
             </label>
           </div>
         </div>
       </div>
       
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-danger-500 transition-theme">{error}</p>}
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full flex items-center justify-center gap-2 bg-success-600 hover:bg-success-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:bg-graphite-400"
+        className="w-full flex items-center justify-center gap-2 bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600 text-white font-bold py-2 px-4 rounded-lg transition-theme disabled:bg-graphite-400 dark:disabled:bg-graphite-600"
       >
         <Plus size={20} />
         {isSubmitting ? '新增中...' : '新增此筆'}

@@ -107,31 +107,31 @@ const LoginModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        <div className="bg-glory-red-500 text-white p-4 rounded-t-lg flex justify-between items-center">
+      <div className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl w-full max-w-md transition-theme">
+        <div className="bg-primary dark:bg-dark-primary text-white p-4 rounded-t-lg flex justify-between items-center transition-theme">
           {/* 👇 3. 標題根據模式改變 */}
           <h2 className="text-lg font-semibold">{mode === 'login' ? '登入' : '註冊新帳號'}</h2>
-          <button onClick={onClose} className="text-white hover:bg-glory-red-600 p-1 rounded-full transition-colors">
+          <button onClick={onClose} className="text-white hover:bg-primary/80 dark:hover:bg-dark-primary/80 p-1 rounded-full transition-theme">
             <X size={20} />
           </button>
         </div>
         
         <div className="p-6">
-          {error && <p className="text-red-500 text-sm bg-red-100 p-3 rounded-md text-center mb-4">{error}</p>}
+          {error && <p className="text-danger-700 dark:text-danger-300 text-sm bg-danger-100 dark:bg-danger-900/20 p-3 rounded-md text-center mb-4 transition-theme">{error}</p>}
           
           <button 
             onClick={handleGoogleLogin} // 現在這個函式存在了
             disabled={isSubmitting}
-            className="w-full border border-graphite-300 hover:bg-graphite-50 text-graphite-700 font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-3 transition-colors disabled:opacity-50"
+            className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface hover:bg-graphite-50 dark:hover:bg-graphite-700 text-text-subtle dark:text-dark-text-subtle font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-3 transition-theme disabled:opacity-50"
           >
             <GoogleIcon />
             使用 Google 帳號登入
           </button>
 
           <div className="my-4 flex items-center">
-            <div className="flex-grow border-t border-gray-300"></div>
-            <span className="flex-shrink mx-4 text-gray-400 text-sm">或</span>
-            <div className="flex-grow border-t border-gray-300"></div>
+            <div className="flex-grow border-t border-graphite-300 dark:border-graphite-600 transition-theme"></div>
+            <span className="flex-shrink mx-4 text-text-subtle dark:text-dark-text-subtle text-sm transition-theme">或</span>
+            <div className="flex-grow border-t border-graphite-300 dark:border-graphite-600 transition-theme"></div>
           </div>
 
           {/* 👇 4. 將表單提交事件綁定到 handleSubmit */}
@@ -139,30 +139,30 @@ const LoginModal = ({ isOpen, onClose }) => {
             {/* 👇 5. 根據模式條件性渲染註冊欄位 */}
             {mode === 'register' && (
               <div>
-                <label className="block text-sm font-medium text-graphite-700 mb-1">姓名*</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="您的姓名" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
+                <label className="block text-sm font-medium text-text-subtle dark:text-dark-text-subtle mb-1 transition-theme">姓名*</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="您的姓名" className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-theme" required />
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-graphite-700 mb-1">Email*</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="test@example.com" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
+              <label className="block text-sm font-medium text-text-subtle dark:text-dark-text-subtle mb-1 transition-theme">Email*</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="test@example.com" className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-theme" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-graphite-700 mb-1">密碼*</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少6位數" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
+              <label className="block text-sm font-medium text-text-subtle dark:text-dark-text-subtle mb-1 transition-theme">密碼*</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少6位數" className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-theme" required />
             </div>
              {mode === 'register' && (
               <div>
-                <label className="block text-sm font-medium text-graphite-700 mb-1">確認密碼*</label>
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="再次輸入密碼" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500" required />
+                <label className="block text-sm font-medium text-text-subtle dark:text-dark-text-subtle mb-1 transition-theme">確認密碼*</label>
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="再次輸入密碼" className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-theme" required />
               </div>
             )}
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={onClose} className="flex-1 bg-graphite-300 hover:bg-graphite-400 text-graphite-700 py-2 px-4 rounded-lg transition-colors">
+              <button type="button" onClick={onClose} className="flex-1 bg-graphite-300 dark:bg-graphite-600 hover:bg-graphite-400 dark:hover:bg-graphite-500 text-text-main dark:text-dark-text-main py-2 px-4 rounded-lg transition-theme">
                 取消
               </button>
               {/* 👇 6. 按鈕也根據模式改變 */}
-              <button type="submit" disabled={isSubmitting} className="flex-1 bg-glory-red-500 hover:bg-glory-red-600 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
+              <button type="submit" disabled={isSubmitting} className="flex-1 bg-primary dark:bg-dark-primary hover:bg-primary/90 dark:hover:bg-dark-primary/90 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-theme">
                 {isSubmitting ? (mode === 'login' ? '登入中...' : '註冊中...') : (
                   mode === 'login' ? <><LogIn size={16} /> 登入</> : <><UserPlus size={16} /> 註冊</>
                 )}
@@ -172,7 +172,7 @@ const LoginModal = ({ isOpen, onClose }) => {
 
           {/* 👇 7. 新增模式切換的連結 */}
           <div className="text-center mt-4">
-            <button onClick={handleModeSwitch} className="text-sm text-glory-red-600 hover:underline focus:outline-none transition-all duration-200">
+            <button onClick={handleModeSwitch} className="text-sm text-primary dark:text-dark-primary hover:underline focus:outline-none transition-theme">
               {mode === 'login' ? '還沒有帳號？點此註冊' : '已經有帳號？點此登入'}
             </button>
           </div>

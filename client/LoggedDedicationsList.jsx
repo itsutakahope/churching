@@ -31,39 +31,39 @@ const LoggedDedicationsList = ({ taskId }) => {
   }, [taskId]);
 
   if (loading) {
-    return <p className="text-center text-graphite-500">正在載入奉獻記錄...</p>;
+    return <p className="text-center text-graphite-500 dark:text-dark-text-subtle transition-theme">正在載入奉獻記錄...</p>;
   }
 
   if (error) {
-    return <p className="text-center text-danger-500">{error}</p>;
+    return <p className="text-center text-danger-500 transition-theme">{error}</p>;
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white">
-        <thead className="bg-graphite-200">
+    <div className="overflow-x-auto dark:bg-dark-surface transition-theme">
+      <table className="min-w-full bg-white dark:bg-dark-surface transition-theme">
+        <thead className="bg-graphite-200 dark:bg-graphite-800 transition-theme">
           <tr>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻日期</th>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻者代號</th>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">奉獻科目</th>
-            <th className="py-3 px-4 text-right text-sm font-semibold text-graphite-500">金額</th>
-            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">方式</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500 dark:text-dark-text-main transition-theme">奉獻日期</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500 dark:text-dark-text-main transition-theme">奉獻者代號</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500 dark:text-dark-text-main transition-theme">奉獻科目</th>
+            <th className="py-3 px-4 text-right text-sm font-semibold text-graphite-500 dark:text-dark-text-main transition-theme">金額</th>
+            <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500 dark:text-dark-text-main transition-theme">方式</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="bg-white dark:bg-dark-surface transition-theme">
           {dedications.length > 0 ? (
             dedications.map(item => (
-              <tr key={item.id} className="border-b hover:bg-graphite-50">
-                <td className="py-3 px-4">{item.dedicationDate}</td>
-                <td className="py-3 px-4">{item.dedicatorId}</td>
-                <td className="py-3 px-4">{item.dedicationCategory}</td>
-                <td className="py-3 px-4 text-right">{item.amount.toLocaleString()}</td>
-                <td className="py-3 px-4">{item.method === 'cash' ? '現金' : '支票'}</td>
+              <tr key={item.id} className="border-b border-gray-200 dark:border-graphite-600 hover:bg-graphite-50 dark:hover:bg-graphite-700 transition-theme">
+                <td className="py-3 px-4 dark:text-dark-text-main transition-theme">{item.dedicationDate}</td>
+                <td className="py-3 px-4 dark:text-dark-text-main transition-theme">{item.dedicatorId}</td>
+                <td className="py-3 px-4 dark:text-dark-text-main transition-theme">{item.dedicationCategory}</td>
+                <td className="py-3 px-4 text-right dark:text-dark-text-main transition-theme">{item.amount.toLocaleString()}</td>
+                <td className="py-3 px-4 dark:text-dark-text-main transition-theme">{item.method === 'cash' ? '現金' : '支票'}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="5" className="py-6 px-4 text-center text-graphite-500">
+              <td colSpan="5" className="py-6 px-4 text-center text-graphite-500 dark:text-dark-text-subtle transition-theme">
                 尚未新增任何奉獻記錄。
               </td>
             </tr>

@@ -19,16 +19,16 @@ const SelectFinanceStaffModal = ({ isOpen, onClose, staffList, onConfirm, loadin
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h3 className="text-xl font-bold mb-4">選擇財務同工</h3>
+      <div className="bg-surface dark:bg-dark-surface p-6 rounded-lg shadow-xl w-full max-w-md transition-theme">
+        <h3 className="text-xl font-bold mb-4 text-text-main dark:text-dark-text-main">選擇財務同工</h3>
         {loading ? (
-          <p>載入同工名單中...</p>
+          <p className="text-text-subtle dark:text-dark-text-subtle">載入同工名單中...</p>
         ) : (
           <>
             <select
               value={selectedStaff}
               onChange={(e) => setSelectedStaff(e.target.value)}
-              className="w-full p-2 border rounded-md mb-6"
+              className="w-full p-2 border border-graphite-300 dark:border-gray-600 rounded-md mb-6 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main transition-theme"
             >
               {staffList.length > 0 ? (
                 staffList.map(staff => (
@@ -43,14 +43,14 @@ const SelectFinanceStaffModal = ({ isOpen, onClose, staffList, onConfirm, loadin
             <div className="flex justify-end gap-4">
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-graphite-300 text-graphite-900 rounded-md hover:bg-graphite-400 transition-colors"
+                className="px-4 py-2 bg-graphite-300 dark:bg-gray-600 text-graphite-900 dark:text-dark-text-main rounded-md hover:bg-graphite-400 dark:hover:bg-gray-500 transition-theme"
               >
                 取消
               </button>
               <button
                 onClick={() => onConfirm(selectedStaff)}
                 disabled={!selectedStaff}
-                className="px-4 py-2 bg-glory-red-500 text-white rounded-md hover:bg-glory-red-600 disabled:bg-graphite-300 disabled:text-graphite-500 transition-colors"
+                className="px-4 py-2 bg-primary dark:bg-dark-primary text-white rounded-md hover:bg-primary/90 dark:hover:bg-dark-primary/90 disabled:bg-graphite-300 dark:disabled:bg-gray-600 disabled:text-graphite-500 dark:disabled:text-gray-400 transition-theme"
               >
                 確認新增
               </button>
@@ -241,7 +241,7 @@ const TithingTaskList = () => {
 
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6">
+    <div className="bg-surface dark:bg-dark-surface shadow-md rounded-lg p-6 transition-theme">
       <SelectFinanceStaffModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -250,45 +250,45 @@ const TithingTaskList = () => {
         loading={isStaffListLoading}
       />
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-graphite-900">任務列表</h2>
+        <h2 className="text-2xl font-bold text-text-main dark:text-dark-text-main">任務列表</h2>
         <button
           onClick={handleAddNewTask}
-          className="bg-glory-red-500 hover:bg-glory-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
+          className="bg-primary dark:bg-dark-primary hover:bg-primary/90 dark:hover:bg-dark-primary/90 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-theme"
         >
           <PlusCircle size={20} />
           新增任務
         </button>
       </div>
 
-      {loading && <p className="text-center text-graphite-500">載入中...</p>}
-      {error && <p className="text-center text-danger-500">{error}</p>}
+      {loading && <p className="text-center text-text-subtle dark:text-dark-text-subtle">載入中...</p>}
+      {error && <p className="text-center text-danger-500 dark:text-danger-dark">{error}</p>}
       
       {!loading && !error && (
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead className="bg-graphite-200">
+          <table className="min-w-full bg-surface dark:bg-dark-surface transition-theme">
+            <thead className="bg-background dark:bg-dark-background">
               <tr>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">計算日期</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">司庫</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">財務同工</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">狀態</th>
-                <th className="py-3 px-4 text-left text-sm font-semibold text-graphite-500">操作</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-text-subtle dark:text-dark-text-subtle">計算日期</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-text-subtle dark:text-dark-text-subtle">司庫</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-text-subtle dark:text-dark-text-subtle">財務同工</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-text-subtle dark:text-dark-text-subtle">狀態</th>
+                <th className="py-3 px-4 text-left text-sm font-semibold text-text-subtle dark:text-dark-text-subtle">操作</th>
               </tr>
             </thead>
             <tbody>
               {tasks.length > 0 ? (
                 tasks.map(task => (
-                  <tr key={task.id} className="border-b hover:bg-graphite-50">
-                    <td className="py-3 px-4">
+                  <tr key={task.id} className="border-b border-graphite-200 dark:border-gray-600 hover:bg-background dark:hover:bg-dark-background transition-theme">
+                    <td className="py-3 px-4 text-text-main dark:text-dark-text-main">
                     {task.calculationTimestamp && new Date(task.calculationTimestamp).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </td>
-                    <td className="py-3 px-4">{task.treasurerName || task.treasurerEmail || 'N/A'}</td>
-                    <td className="py-3 px-4">{task.financeStaffName || task.financeStaffEmail || 'N/A'}</td>
+                    <td className="py-3 px-4 text-text-main dark:text-dark-text-main">{task.treasurerName || task.treasurerEmail || 'N/A'}</td>
+                    <td className="py-3 px-4 text-text-main dark:text-dark-text-main">{task.financeStaffName || task.financeStaffEmail || 'N/A'}</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         task.status === 'completed' 
-                          ? 'bg-success-100 text-success-800' 
-                          : 'bg-holy-gold-100 text-holy-gold-800'
+                          ? 'bg-success-100 dark:bg-success-dark/20 text-success-700 dark:text-success-dark' 
+                          : 'bg-holy-gold-100 dark:bg-dark-accent/20 text-holy-gold-800 dark:text-dark-accent'
                       }`}>
                         {task.status === 'completed' ? '已完成' : '進行中'}
                       </span>
@@ -296,7 +296,7 @@ const TithingTaskList = () => {
                     <td className="py-3 px-4">
                       <Link 
                         to={`/tithing/${task.id}`}
-                        className="text-glory-red-600 hover:underline"
+                        className="text-primary dark:text-dark-primary hover:underline transition-theme"
                       >
                         查看詳情
                       </Link>
@@ -305,7 +305,7 @@ const TithingTaskList = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="py-6 px-4 text-center text-graphite-500">
+                  <td colSpan="5" className="py-6 px-4 text-center text-text-subtle dark:text-dark-text-subtle">
                     目前沒有任何計算任務。
                   </td>
                 </tr>
