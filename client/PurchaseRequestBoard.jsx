@@ -8,6 +8,7 @@ import CategorySelector from './CategorySelector';
 import Linkify from 'react-linkify';
 import { generateVoucherPDF } from './pdfGenerator.js';
 import TransferReimbursementModal from './TransferReimbursementModal.jsx';
+import EditCategoryModal from './EditCategoryModal.jsx';
 import ToastNotification from './ToastNotification.jsx';
 
 // Simple Spinner Icon Component
@@ -186,6 +187,14 @@ const PurchaseRequestBoard = () => {
   const [toastErrorType, setToastErrorType] = useState('');
   const [showToast, setShowToast] = useState(false);
   // --- Toast 狀態新增結束 ---
+
+  // --- 👇 新增：編輯會計科目相關狀態 ---
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
+  const [selectedRecordForCategoryEdit, setSelectedRecordForCategoryEdit] = useState(null);
+  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false);
+  const [editCategoryError, setEditCategoryError] = useState('');
+  const [tempCategoryValue, setTempCategoryValue] = useState('');
+  // --- 編輯會計科目狀態新增結束 ---
 
 
   const [formData, setFormData] = useState({
@@ -923,6 +932,164 @@ const PurchaseRequestBoard = () => {
   };
   // --- 轉交功能處理函式結束 ---
 
+  // --- 👇 新增：編輯會計科目的處理函式 ---
+  const handleOpenEditCategoryModal = (record) => {
+    setEditCategoryError('');
+    setSelectedRecordForCategoryEdit(record);
+    setTempCategoryValue(record.accountingCategory || '');
+    setShowEditCategoryModal(true);
+  };
+
+  // 檢查記錄是否正在更新會計科目
+  const isRecordCategoryUpdating = (recordId) => {
+    return isUpdatingCategory && selectedRecordForCategoryEdit?.id === recordId;
+  };
+
+  const handleCloseEditCategoryModal = () => {
+    // 如果正在更新中，不允許關閉
+    if (isUpdatingCategory) return;
+    
+    setShowEditCategoryModal(false);
+    setSelectedRecordForCategoryEdit(null);
+    setEditCategoryError('');
+    setTempCategoryValue('');
+  };
+
+  const handleSaveCategory = async (newCategoryValue) => {
+    if (!selectedRecordForCategoryEdit) return;
+    
+    // 如果沒有傳遞新值，使用暫存值
+    const categoryValue = newCategoryValue !== undefined ? newCategoryValue : tempCategoryValue;
+    const trimmedCategoryValue = categoryValue.trim();
+    
+    // 如果值沒有改變，直接關閉模態框
+    if (trimmedCategoryValue === (selectedRecordForCategoryEdit.accountingCategory || '')) {
+      handleCloseEditCategoryModal();
+      return;
+    }
+    
+    setIsUpdatingCategory(true);
+    setEditCategoryError('');
+    
+    // 保存原始值用於回滾
+    const originalCategory = selectedRecordForCategoryEdit.accountingCategory;
+    const recordId = selectedRecordForCategoryEdit.id;
+    
+    // 樂觀更新策略：立即更新前端狀態
+    const optimisticUpdate = (category) => {
+      // 更新 requests 列表
+      setRequests(prevRequests =>
+        prevRequests.map(req =>
+          req.id === recordId 
+            ? { ...req, accountingCategory: category }
+            : req
+        )
+      );
+      
+      // 更新 purchaseRecords 列表
+      setPurchaseRecords(prevRecords =>
+        prevRecords.map(record =>
+          record.id === recordId
+            ? { ...record, accountingCategory: category }
+            : record
+        )
+      );
+      
+      // 如果主要詳情彈窗正在顯示同一個記錄，也要更新它
+      if (selectedRequestForDetail && selectedRequestForDetail.id === recordId) {
+        setSelectedRequestForDetail(prev => ({ ...prev, accountingCategory: category }));
+      }
+      
+      // 如果購買紀錄詳情彈窗正在顯示同一個記錄，也要更新它
+      if (selectedRecordForDetail && selectedRecordForDetail.id === recordId) {
+        setSelectedRecordForDetail(prev => ({ ...prev, accountingCategory: category }));
+      }
+      
+      // 更新編輯模態框中的記錄
+      setSelectedRecordForCategoryEdit(prev => ({ ...prev, accountingCategory: category }));
+    };
+    
+    // 立即執行樂觀更新
+    optimisticUpdate(trimmedCategoryValue);
+    
+    try {
+      const token = await currentUser.getIdToken();
+      const payload = {
+        accountingCategory: trimmedCategoryValue
+      };
+      
+      const response = await axios.put(`/api/requirements/${recordId}`, payload, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      // API 成功回應後，確保狀態與後端一致
+      const updatedRecord = response.data;
+      if (updatedRecord && updatedRecord.accountingCategory !== undefined) {
+        // 如果後端回傳的值與樂觀更新的值不同，再次更新
+        if (updatedRecord.accountingCategory !== trimmedCategoryValue) {
+          optimisticUpdate(updatedRecord.accountingCategory);
+        }
+      }
+      
+      // 顯示成功通知
+      showToastNotification('會計科目已成功更新', 'success');
+      
+      // 關閉模態框
+      handleCloseEditCategoryModal();
+      
+    } catch (error) {
+      console.error('Error updating accounting category:', error);
+      
+      // 失敗回滾機制：恢復原始狀態
+      optimisticUpdate(originalCategory);
+      
+      let errorMessage = '更新會計科目時發生錯誤，請稍後再試。';
+      let errorType = 'unknown';
+      
+      if (error.response) {
+        const status = error.response.status;
+        const backendMessage = error.response.data?.message;
+        
+        switch (status) {
+          case 401:
+            errorMessage = '登入已過期，請重新登入後再試。';
+            errorType = 'auth';
+            break;
+          case 403:
+            errorMessage = '權限不足，只有報帳負責人可以編輯會計科目。';
+            errorType = 'permission';
+            break;
+          case 404:
+            errorMessage = '找不到該筆購買紀錄。';
+            errorType = 'not_found';
+            break;
+          case 409:
+            errorMessage = '資料已被其他人修改，請重新整理後再試。';
+            errorType = 'conflict';
+            // 對於衝突錯誤，建議重新整理頁面
+            setTimeout(() => {
+              if (window.confirm('資料已被其他人修改，是否重新整理頁面以獲取最新資料？')) {
+                window.location.reload();
+              }
+            }, 2000);
+            break;
+          default:
+            errorMessage = backendMessage || errorMessage;
+            errorType = 'api';
+        }
+      } else if (error.request) {
+        errorMessage = '無法連線至伺服器，請檢查您的網路連線。';
+        errorType = 'network';
+      }
+      
+      setEditCategoryError(errorMessage);
+      showToastNotification(errorMessage, 'error', errorType);
+    } finally {
+      setIsUpdatingCategory(false);
+    }
+  };
+  // --- 編輯會計科目處理函式結束 ---
+
   const toggleCardExpansion = (id) => {
     setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -937,6 +1104,7 @@ const PurchaseRequestBoard = () => {
         if (showRecordDetailModal) handleCloseRecordDetailModal();
         if (showDetailModal) setShowDetailModal(false);
         if (showTransferModal) handleCloseTransferModal();
+        if (showEditCategoryModal) handleCloseEditCategoryModal();
       }
     };
     document.addEventListener('keydown', handleEscapeKey);
@@ -944,7 +1112,7 @@ const PurchaseRequestBoard = () => {
       commenterNameInputRef.current.focus();
     }
     return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, showRecordDetailModal, showDetailModal, showTransferModal, closeCommentModal, commenterName, currentUser]);
+  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, showRecordDetailModal, showDetailModal, showTransferModal, showEditCategoryModal, closeCommentModal, commenterName, currentUser]);
 
   const exportPurchaseRecordsToCSV = () => {
     if (filteredPurchaseRecords.length === 0) { alert("沒有可匯出的購買記錄。"); return; }
@@ -2206,7 +2374,33 @@ const PurchaseRequestBoard = () => {
                                     </button>
                                   )}
                                 </div>
-                                {record.accountingCategory && (<div><span className="text-graphite-500">會計類別：</span><span className="font-medium">{record.accountingCategory}</span></div>)}
+                                {/* 會計科目顯示區域 - 支援編輯功能 */}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Tag size={16} className="text-graphite-500 dark:text-dark-text-subtle transition-theme" />
+                                    <span className="text-sm text-graphite-500 dark:text-dark-text-subtle transition-theme">會計類別：</span>
+                                    <span className="text-sm font-medium text-text-main dark:text-dark-text-main transition-theme">
+                                      {record.accountingCategory || '未分類'}
+                                    </span>
+                                    {/* 更新狀態指示器 */}
+                                    {isRecordCategoryUpdating(record.id) && (
+                                      <SpinnerIcon className="text-glory-red-500 dark:text-dark-primary" />
+                                    )}
+                                  </div>
+                                  
+                                  {/* 編輯按鈕 - 僅報帳負責人可見 */}
+                                  {isCurrentUserReimburser(record) && (
+                                    <button
+                                      onClick={() => handleOpenEditCategoryModal(record)}
+                                      disabled={isRecordCategoryUpdating(record.id)}
+                                      className="p-1 text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary disabled:opacity-50 disabled:cursor-not-allowed transition-theme focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary rounded"
+                                      title="編輯會計科目"
+                                      aria-label="編輯會計科目"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                             {/* 新增：顯示購買備註 */}
@@ -2426,7 +2620,14 @@ const PurchaseRequestBoard = () => {
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-text-subtle dark:text-dark-text-subtle my-4 py-4 border-t border-b border-graphite-200 dark:border-graphite-600 transition-theme">
                         <div className="flex items-center gap-2"> <Calendar size={16} /> <span><b>提出日期:</b> {new Date(request.createdAt).toLocaleDateString()}</span> </div>
                         <div className="flex items-center gap-2"> <User size={16} /> <span><b>提出者:</b> {request.requesterName}</span> </div>
-                        <div className="flex items-center gap-2 col-span-2"> <Tag size={16} className="text-graphite-500 dark:text-dark-text-subtle transition-theme" /> <span><b>會計類別:</b> {request.accountingCategory || '未分類'}</span> </div>
+                        <div className="flex items-center gap-2 col-span-2"> 
+                          <Tag size={16} className="text-graphite-500 dark:text-dark-text-subtle transition-theme" /> 
+                          <span><b>會計類別:</b> {request.accountingCategory || '未分類'}</span>
+                          {/* 更新狀態指示器 */}
+                          {isRecordCategoryUpdating(request.id) && (
+                            <SpinnerIcon className="text-glory-red-500 dark:text-dark-primary" />
+                          )}
+                        </div>
                       </div>
 
                       {request.status === 'purchased' && request.purchaseAmount && (
@@ -2557,18 +2758,42 @@ const PurchaseRequestBoard = () => {
                           )}
                         </span>
                       </div>
-                      {record.accountingCategory && (
-                        <div className="flex items-center gap-2 col-span-2">
+                      {/* 會計科目顯示區域 - 支援編輯功能 */}
+                      <div className="flex items-center justify-between col-span-2">
+                        <div className="flex items-center gap-2">
                           <Tag size={16} className="text-text-subtle dark:text-dark-text-subtle transition-theme" />
-                          <span className="text-text-main dark:text-dark-text-main transition-theme"><strong>會計類別:</strong> {record.accountingCategory}</span>
+                          <span className="text-text-main dark:text-dark-text-main transition-theme">
+                            <strong>會計類別:</strong> {record.accountingCategory || '未分類'}
+                          </span>
+                          {/* 更新狀態指示器 */}
+                          {isRecordCategoryUpdating(record.id) && (
+                            <SpinnerIcon className="text-glory-red-500 dark:text-dark-primary" />
+                          )}
                         </div>
-                      )}
+                        
+                        {/* 編輯按鈕 - 僅報帳負責人可見 */}
+                        {isCurrentUserReimburser(record) && (
+                          <button
+                            onClick={() => {
+                              handleCloseRecordDetailModal();
+                              handleOpenEditCategoryModal(record);
+                            }}
+                            disabled={isRecordCategoryUpdating(record.id)}
+                            className="flex items-center gap-1 text-sm text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary disabled:opacity-50 disabled:cursor-not-allowed transition-theme focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary rounded px-2 py-1"
+                            title="編輯會計科目"
+                            aria-label="編輯會計科目"
+                          >
+                            <Edit size={16} />
+                            <span>編輯</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* 購買備註 */}
                     {record.purchaseNotes && (
                       <div className="bg-success-50 dark:bg-graphite-800/30 border border-success-200 dark:border-success-700/50 rounded-lg p-4 mb-4 transition-theme">
-                        <h4 className="text-sm font-semibold text-success-800 dark:text-success-400 mb-2 transition-theme">購買備註</h4>
+                        <h4 className="text-sm font-semibold text-success-800 dark:text-dark-text-main mb-2 transition-theme">購買備註：</h4>
                         <p className="text-sm text-success-700 dark:text-success-500 whitespace-pre-wrap break-words transition-theme">
                           <Linkify componentDecorator={componentDecorator}>
                             {record.purchaseNotes}
@@ -2616,6 +2841,16 @@ const PurchaseRequestBoard = () => {
 
       {/* ... (Other modals JSX remains the same) ... */}
       {isCommentModalOpen && currentRequestForComment && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out" onClick={closeCommentModal} > <div className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl w-full max-w-md p-6 space-y-4 transform transition-all duration-300 ease-in-out scale-100" onClick={(e) => e.stopPropagation()} > <div className="flex justify-between items-center"> <h2 className="text-xl font-semibold text-graphite-900 dark:text-dark-text-main transition-theme"> 發表留言於：<span className="font-bold truncate max-w-xs inline-block align-bottom">{currentRequestForComment?.title || currentRequestForComment?.text || '需求'}</span> </h2> <button onClick={closeCommentModal} className="text-graphite-400 hover:text-graphite-500 p-1 rounded-full transition-colors" title="關閉" > <X size={24} /> </button> </div> {updateError && <p className="text-red-500 text-sm mb-2 bg-red-100 p-2 rounded text-center">{updateError}</p>} <div className="space-y-4"> <div> <label htmlFor="commenterNameModal" className="block text-sm font-medium text-gray-700 dark:text-dark-text-main mb-1 transition-theme">您的姓名*</label> <input id="commenterNameModal" ref={commenterNameInputRef} type="text" value={commenterName} onChange={(e) => setCommenterName(e.target.value)} placeholder="請輸入您的姓名..." className={`w-full border border-gray-300 dark:border-graphite-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:bg-dark-surface dark:text-dark-text-main transition-theme ${currentUser?.displayName ? 'bg-gray-100 dark:bg-graphite-700' : ''}`} readOnly={!!currentUser?.displayName} /> </div> <div> <label htmlFor="newCommentModal" className="block text-sm font-medium text-gray-700 dark:text-dark-text-main mb-1 transition-theme">留言內容*</label> <textarea id="newCommentModal" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="請輸入留言內容..." rows="4" className="w-full border border-gray-300 dark:border-graphite-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:bg-dark-surface dark:text-dark-text-main resize-none transition-theme" /> </div> </div> <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-graphite-600 mt-4 transition-theme"> <button type="button" onClick={closeCommentModal} className="bg-graphite-200 hover:bg-graphite-300 text-graphite-700 py-2 px-4 rounded-lg transition-colors text-sm font-medium" disabled={isAddingComment}> 取消 </button> <button type="button" onClick={() => { if (currentRequestForComment) { addComment(currentRequestForComment.id); } }} className="bg-glory-red-500 hover:bg-glory-red-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" disabled={isAddingComment || !newComment.trim()} > {isAddingComment && <SpinnerIcon />} {isAddingComment ? '傳送中...' : '送出留言'} </button> </div> </div> </div>)}
+
+      {/* 編輯會計科目彈窗 */}
+      <EditCategoryModal
+        isOpen={showEditCategoryModal}
+        onClose={handleCloseEditCategoryModal}
+        record={selectedRecordForCategoryEdit}
+        onSave={handleSaveCategory}
+        isLoading={isUpdatingCategory}
+        error={editCategoryError}
+      />
 
       {/* 轉交報帳彈窗 */}
       <TransferReimbursementModal
