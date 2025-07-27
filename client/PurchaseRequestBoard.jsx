@@ -1506,24 +1506,24 @@ const PurchaseRequestBoard = () => {
                       </div>
                       )}
 
-                      {request.status === 'purchased' && request.purchaseAmount && (
-                        <div className="bg-success-50 border border-success-200 rounded-lg p-3 mb-4">
-                          <div className="flex items-center gap-2 text-success-800">
+{request.status === 'purchased' && request.purchaseAmount && (
+                        <div className="bg-success-50 dark:bg-graphite-800/30 border border-success-200 dark:border-success-700/50 rounded-lg p-3 mb-4 transition-theme">
+                          <div className="flex items-center gap-2 text-success-800 dark:text-dark-text-main transition-theme">
                             <DollarSign size={16} />
                             <span className="font-medium">金額：NT$ {request.purchaseAmount.toLocaleString()}</span>
                           </div>
-                          <div className="text-sm text-success-600 mt-1">
+                          <div className="text-sm text-success-700 dark:text-success-500 mt-1 transition-theme">
                             購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}
                           </div>
                           {request.purchaserName && (
-                            <div className="text-sm text-success-600 mt-1">
+                            <div className="text-sm text-success-700 dark:text-success-500 mt-1 transition-theme">
                               購買人：{request.purchaserName}
                             </div>
                           )}
                           {request.purchaseNotes && (
-                            <div className="mt-2 pt-2 border-t border-success-200">
-                              <p className="text-xs text-success-700 font-medium">備註：</p>
-                              <p className="text-sm text-success-800 whitespace-pre-wrap break-words">
+                            <div className="mt-2 pt-2 border-t border-success-200 dark:border-success-700 transition-theme">
+                              <p className="text-xs text-success-700 dark:text-success-400 font-medium transition-theme">備註：</p>
+                              <p className="text-sm text-success-800 dark:text-dark-text-main whitespace-pre-wrap break-words transition-theme">
                                 <Linkify componentDecorator={componentDecorator}>{request.purchaseNotes}</Linkify>
                               </p>
                             </div>
