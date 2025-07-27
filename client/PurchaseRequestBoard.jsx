@@ -1125,7 +1125,7 @@ const PurchaseRequestBoard = () => {
               <button
                 onClick={() => setShowRecordsModal(true)}
                 disabled={!currentUser}
-                className="w-full whitespace-nowrap bg-holy-gold-500 dark:bg-dark-accent text-success-500 dark:text-success-300 px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-graphite-600 disabled:cursor-not-allowed hover:bg-holy-gold-600 dark:hover:bg-dark-accent/90 focus:outline-none focus:ring-2 focus:ring-holy-gold-500 dark:focus:ring-dark-accent focus:ring-offset-2"
+                className="w-full bg-primary dark:bg-dark-primary text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-graphite-600 disabled:cursor-not-allowed hover:bg-primary/90 dark:hover:bg-dark-primary/90 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary focus:ring-offset-2"
                 title={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
                 aria-label={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
               >
@@ -2431,7 +2431,7 @@ const PurchaseRequestBoard = () => {
 
                       {request.status === 'purchased' && request.purchaseAmount && (
                         <div className="bg-success-50 dark:bg-graphite-800/30 border border-success-200 dark:border-success-700/50 rounded-lg p-4 my-4 transition-theme">
-                          <div className="flex items-center gap-2 text-success-800 dark:text-success-400 mb-2 transition-theme"> <DollarSign size={18} /> <span className="font-semibold text-lg">金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
+                          <div className="flex items-center gap-2 text-success-800 dark:text-dark-text-main mb-2 transition-theme"> <DollarSign size={18} /> <span className="font-semibold text-lg">金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
                           <div className="text-sm text-success-700 dark:text-success-500 grid grid-cols-2 gap-1 transition-theme">
                             <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div>
                             {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)}
@@ -2444,7 +2444,7 @@ const PurchaseRequestBoard = () => {
                           {request.purchaseNotes && (
                             <div className="mt-2 pt-2 border-t border-success-200 dark:border-success-700 transition-theme">
                               <p className="text-xs text-success-700 dark:text-success-400 font-medium transition-theme">備註：</p>
-                              <p className="text-sm text-success-800 dark:text-success-300 whitespace-pre-wrap break-words transition-theme">
+                              <p className="text-sm text-success-800 dark:text-dark-text-main whitespace-pre-wrap break-words transition-theme">
                                 <Linkify componentDecorator={componentDecorator}>{request.purchaseNotes}</Linkify></p>
                             </div>
                           )}
