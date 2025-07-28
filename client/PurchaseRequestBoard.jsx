@@ -202,6 +202,7 @@ const PurchaseRequestBoard = () => {
   // --- 👇 新增：編輯需求模態框相關狀態 ---
   const [showEditRequestModal, setShowEditRequestModal] = useState(false);
   const [selectedRequestForEdit, setSelectedRequestForEdit] = useState(null);
+  const [wasEditingFromDetail, setWasEditingFromDetail] = useState(false);
   // --- 編輯需求模態框狀態新增結束 ---
 
   // --- 👇 新增：權限檢查函式 ---
@@ -1144,6 +1145,13 @@ const PurchaseRequestBoard = () => {
   const handleCloseEditRequestModal = () => {
     setShowEditRequestModal(false);
     setSelectedRequestForEdit(null);
+
+     // 如果編輯是從詳情視窗發起的，則在關閉編輯窗後重新打開詳情窗
+     if (wasEditingFromDetail) {
+      setShowDetailModal(true);
+      setWasEditingFromDetail(false); // 重置狀態
+    }
+
   };
 
   const handleEditRequestComplete = (updatedRequest) => {
@@ -1153,6 +1161,11 @@ const PurchaseRequestBoard = () => {
         req.id === updatedRequest.id ? updatedRequest : req
       )
     );
+
+    // 如果是從詳情視窗編輯的，也要更新詳情視窗的資料
+    if (wasEditingFromDetail) {
+      setSelectedRequestForDetail(updatedRequest);
+    }
 
     // 顯示成功通知
     showToastNotification('需求已成功更新', 'success');
@@ -2728,6 +2741,7 @@ const PurchaseRequestBoard = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          setWasEditingFromDetail(true); // 標記編輯來源
                           setShowDetailModal(false); // 先關閉詳情彈窗
                           handleOpenEditRequestModal(request); // 再打開編輯彈窗
                         }}
