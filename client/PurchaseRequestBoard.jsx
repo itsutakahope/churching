@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck, ArrowRightLeft, Filter, ChevronDown, ChevronUp, ArrowRight, ArrowUpDown } from 'lucide-react'; // 新增 CheckSquare icon 和 ArrowRightLeft icon
+import { Plus, MessageCircle, Edit, Trash2, X, Send, Calendar, User, RotateCcw, Receipt, DollarSign, Tag, Download, Loader2, CheckSquare, AlertTriangle, LayoutGrid, List, UserCheck, ArrowRightLeft, Filter, ChevronDown, ChevronUp, ArrowRight, ArrowUpDown, ClipboardPenLine } from 'lucide-react'; // 新增 CheckSquare icon、ArrowRightLeft icon 和 ClipboardPenLine icon
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 import { collection, query, onSnapshot } from "firebase/firestore";
@@ -9,6 +9,7 @@ import Linkify from 'react-linkify';
 import { generateVoucherPDF } from './pdfGenerator.js';
 import TransferReimbursementModal from './TransferReimbursementModal.jsx';
 import EditCategoryModal from './EditCategoryModal.jsx';
+import EditRequestModal from './EditRequestModal.jsx';
 import ToastNotification from './ToastNotification.jsx';
 
 // Simple Spinner Icon Component
@@ -127,6 +128,8 @@ const PurchaseRequestBoard = () => {
   const [updateError, setUpdateError] = useState(null);
   const [isDeletingRequest, setIsDeletingRequest] = useState(false);
   const [isAddingComment, setIsAddingComment] = useState(false);
+  const [isEditingRequest, setIsEditingRequest] = useState(false);
+  const [editingRequestId, setEditingRequestId] = useState(null);
   const [newStatusForUpdate, setNewStatusForUpdate] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -196,6 +199,48 @@ const PurchaseRequestBoard = () => {
   const [tempCategoryValue, setTempCategoryValue] = useState('');
   // --- 編輯會計科目狀態新增結束 ---
 
+  // --- 👇 新增：編輯需求模態框相關狀態 ---
+  const [showEditRequestModal, setShowEditRequestModal] = useState(false);
+  const [selectedRequestForEdit, setSelectedRequestForEdit] = useState(null);
+  // --- 編輯需求模態框狀態新增結束 ---
+
+  // --- 👇 新增：權限檢查函式 ---
+  /**
+   * 檢查當前用戶是否可以編輯指定的採購需求
+   * @param {Object} request - 採購需求物件
+   * @param {Object} currentUser - 當前登入用戶
+   * @returns {boolean} - 是否有編輯權限
+   */
+  const canEditRequest = useCallback((request, currentUser) => {
+    // 邊界條件檢查
+    if (!currentUser || !request) {
+      return false;
+    }
+
+    // 安全性檢查：確保必要的屬性存在
+    if (!currentUser.uid || !request.userId) {
+      return false;
+    }
+
+    // 1. 提出者可以編輯
+    if (request.userId === currentUser.uid) {
+      return true;
+    }
+
+    // 2. 購買者可以編輯（如果已購買）
+    if (request.status === 'purchased' && request.purchaserId === currentUser.uid) {
+      return true;
+    }
+
+    // 3. 報帳代理人可以編輯（如果有指定報帳代理人）
+    if (request.reimbursementerId === currentUser.uid) {
+      return true;
+    }
+
+    // 其他情況都不允許編輯
+    return false;
+  }, []);
+  // --- 權限檢查函式新增結束 ---
 
   const [formData, setFormData] = useState({
     title: '',
@@ -1090,6 +1135,35 @@ const PurchaseRequestBoard = () => {
   };
   // --- 編輯會計科目處理函式結束 ---
 
+  // --- 👇 新增：編輯需求的處理函式 ---
+  const handleOpenEditRequestModal = (request) => {
+    setSelectedRequestForEdit(request);
+    setShowEditRequestModal(true);
+  };
+
+  const handleCloseEditRequestModal = () => {
+    setShowEditRequestModal(false);
+    setSelectedRequestForEdit(null);
+  };
+
+  const handleEditRequestComplete = (updatedRequest) => {
+    // 更新 requests 列表中的資料
+    setRequests(prevRequests => 
+      prevRequests.map(req => 
+        req.id === updatedRequest.id ? updatedRequest : req
+      )
+    );
+
+    // 顯示成功通知
+    showToastNotification('需求已成功更新', 'success');
+  };
+
+  const handleEditRequestError = (errorMessage, errorType) => {
+    // 顯示錯誤通知
+    showToastNotification(errorMessage, 'error', errorType);
+  };
+  // --- 編輯需求處理函式結束 ---
+
   const toggleCardExpansion = (id) => {
     setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -1105,6 +1179,7 @@ const PurchaseRequestBoard = () => {
         if (showDetailModal) setShowDetailModal(false);
         if (showTransferModal) handleCloseTransferModal();
         if (showEditCategoryModal) handleCloseEditCategoryModal();
+        if (showEditRequestModal) handleCloseEditRequestModal();
       }
     };
     document.addEventListener('keydown', handleEscapeKey);
@@ -1112,7 +1187,7 @@ const PurchaseRequestBoard = () => {
       commenterNameInputRef.current.focus();
     }
     return () => document.removeEventListener('keydown', handleEscapeKey);
-  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, showRecordDetailModal, showDetailModal, showTransferModal, showEditCategoryModal, closeCommentModal, commenterName, currentUser]);
+  }, [isCommentModalOpen, showModal, showPurchaseModal, showRecordsModal, showRecordDetailModal, showDetailModal, showTransferModal, showEditCategoryModal, showEditRequestModal, closeCommentModal, commenterName, currentUser]);
 
   const exportPurchaseRecordsToCSV = () => {
     if (filteredPurchaseRecords.length === 0) { alert("沒有可匯出的購買記錄。"); return; }
@@ -1468,7 +1543,24 @@ const PurchaseRequestBoard = () => {
                 const isLongText = request.description && request.description.length > 50;
                 const isUrgent = request.priority === 'urgent';
                 return (
-                  <div key={request.id} className={`bg-surface dark:bg-dark-surface rounded-lg shadow-sm border overflow-hidden transition-theme ${isUrgent ? 'border-danger-400 dark:border-danger-500' : 'border-graphite-200 dark:border-graphite-600'} ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  <div key={request.id} className={`bg-surface dark:bg-dark-surface rounded-lg shadow-sm border overflow-hidden transition-theme relative ${isUrgent ? 'border-danger-400 dark:border-danger-500' : 'border-graphite-200 dark:border-graphite-600'} ${(isUpdatingRequest || isDeletingRequest) && selectedRequestId === request.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    {/* 編輯按鈕 - 絕對定位在右上角 */}
+                    {canEditRequest(request, currentUser) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEditRequestModal(request);
+                        }}
+                        className="absolute top-2 right-2 z-10 p-2 text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary hover:bg-graphite-100 dark:hover:bg-dark-surface rounded-lg transition-theme focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:ring-offset-2"
+                        title="編輯需求"
+                        aria-label="編輯需求"
+                        disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
+                      >
+                        <ClipboardPenLine size={16} />
+                        <span className="hidden sm:inline ml-1 text-xs">編輯</span>
+                      </button>
+                    )}
+                    
                     <div className="p-4 pb-0 flex justify-between items-start">
                       <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-graphite-100 text-graphite-800 dark:bg-graphite-700 dark:text-dark-text-main transition-theme'}`}>
                         {statusLabels[request.status]?.text || request.status}
@@ -1621,45 +1713,65 @@ const PurchaseRequestBoard = () => {
                 {sortedRequests.map(request => {
                   const isUrgent = request.priority === 'urgent';
                   return (
-                    <button
+                    <div
                       key={request.id}
-                      onClick={() => handleShowDetails(request)}
-                      className={`w-full text-left bg-surface dark:bg-dark-surface rounded-lg shadow-sm border p-3 transition-theme hover:shadow-md hover:border-primary dark:hover:border-dark-primary focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary focus:ring-offset-2 flex items-center justify-between gap-3 ${isUrgent ? 'border-danger-400 dark:border-danger-500' : 'border-graphite-200 dark:border-graphite-600'}`}
-                      aria-label={`查看採購需求詳情: ${request.title || request.text}${isUrgent ? ' (緊急)' : ''}`}
-                      aria-describedby={`request-status-${request.id} request-date-${request.id}`}
+                      className={`w-full text-left bg-surface dark:bg-dark-surface rounded-lg shadow-sm border p-3 transition-theme hover:shadow-md hover:border-primary dark:hover:border-dark-primary relative ${isUrgent ? 'border-danger-400 dark:border-danger-500' : 'border-graphite-200 dark:border-graphite-600'}`}
                     >
-                      {/* Left-aligned info for small screens */}
-                      <div className="flex items-center gap-3 min-w-0 flex-grow">
-                        {isUrgent && (
-                          <div className="flex-shrink-0" title="緊急需求">
-                            <AlertTriangle size={20} className="text-danger-500" />
+                      {/* 編輯按鈕 - 絕對定位在右上角 */}
+                      {canEditRequest(request, currentUser) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditRequestModal(request);
+                          }}
+                          className="absolute top-2 right-2 z-10 p-1.5 text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary hover:bg-graphite-100 dark:hover:bg-dark-surface rounded-lg transition-theme focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:ring-offset-2"
+                          title="編輯需求"
+                          aria-label="編輯需求"
+                          disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
+                        >
+                          <ClipboardPenLine size={14} />
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => handleShowDetails(request)}
+                        className="w-full text-left flex items-center justify-between gap-3 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary focus:ring-offset-2 rounded"
+                        aria-label={`查看採購需求詳情: ${request.title || request.text}${isUrgent ? ' (緊急)' : ''}`}
+                        aria-describedby={`request-status-${request.id} request-date-${request.id}`}
+                      >
+                        {/* Left-aligned info for small screens */}
+                        <div className="flex items-center gap-3 min-w-0 flex-grow">
+                          {isUrgent && (
+                            <div className="flex-shrink-0" title="緊急需求">
+                              <AlertTriangle size={20} className="text-danger-500" />
+                            </div>
+                          )}
+                          <div className="flex-shrink-0">
+                            <span
+                              id={`request-status-${request.id}`}
+                              className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-graphite-100 text-graphite-800 dark:bg-graphite-700 dark:text-dark-text-main transition-theme'}`}
+                            >
+                              {statusLabels[request.status]?.shortText || request.status}
+                            </span>
                           </div>
-                        )}
-                        <div className="flex-shrink-0">
-                          <span
-                            id={`request-status-${request.id}`}
-                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-graphite-100 text-graphite-800 dark:bg-graphite-700 dark:text-dark-text-main transition-theme'}`}
-                          >
-                            {statusLabels[request.status]?.shortText || request.status}
+                          <div className="min-w-0">
+                            <h3 className="text-md font-semibold text-graphite-900 dark:text-dark-text-main transition-theme truncate" title={request.title || request.text}>
+                              {request.title || request.text}
+                            </h3>
+                          </div>
+                        </div>
+                        {/* Right-aligned date for small screens */}
+                        <div className="flex-shrink-0 flex items-center gap-1.5 text-sm text-text-subtle dark:text-dark-text-subtle transition-theme" id={`request-date-${request.id}`}>
+                          <Calendar size={16} aria-hidden="true" />
+                          <span>
+                            {(() => {
+                              const d = new Date(request.createdAt);
+                              return `${d.getMonth() + 1}/${d.getDate()}`;
+                            })()}
                           </span>
                         </div>
-                        <div className="min-w-0">
-                          <h3 className="text-md font-semibold text-graphite-900 dark:text-dark-text-main transition-theme truncate" title={request.title || request.text}>
-                            {request.title || request.text}
-                          </h3>
-                        </div>
-                      </div>
-                      {/* Right-aligned date for small screens */}
-                      <div className="flex-shrink-0 flex items-center gap-1.5 text-sm text-text-subtle dark:text-dark-text-subtle transition-theme" id={`request-date-${request.id}`}>
-                        <Calendar size={16} aria-hidden="true" />
-                        <span>
-                          {(() => {
-                            const d = new Date(request.createdAt);
-                            return `${d.getMonth() + 1}/${d.getDate()}`;
-                          })()}
-                        </span>
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   )
                 })}
               </div>
@@ -1699,6 +1811,19 @@ const PurchaseRequestBoard = () => {
                       </div>
                       {/* Col 4: Actions */}
                       <div className="col-span-2 flex items-center justify-end gap-1.5">
+                        {canEditRequest(request, currentUser) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditRequestModal(request);
+                            }}
+                            className="p-2 text-text-subtle dark:text-dark-text-subtle hover:bg-primary/10 dark:hover:bg-dark-primary/20 hover:text-primary dark:hover:text-dark-primary rounded-full transition-theme disabled:opacity-50"
+                            title="編輯需求"
+                            disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
+                          >
+                            <ClipboardPenLine size={16} />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => { e.stopPropagation(); openCommentModal(request); }}
                           className="p-2 text-text-subtle dark:text-dark-text-subtle hover:bg-holy-gold-100 dark:hover:bg-dark-accent/20 hover:text-holy-gold-600 dark:hover:text-dark-accent rounded-full transition-theme disabled:opacity-50"
@@ -2858,6 +2983,15 @@ const PurchaseRequestBoard = () => {
         onClose={handleCloseTransferModal}
         currentRequest={selectedRequestForTransfer}
         onTransferComplete={handleTransferComplete}
+      />
+
+      {/* 編輯需求彈窗 */}
+      <EditRequestModal
+        isOpen={showEditRequestModal}
+        onClose={handleCloseEditRequestModal}
+        request={selectedRequestForEdit}
+        onUpdateComplete={handleEditRequestComplete}
+        onError={handleEditRequestError}
       />
 
       {/* Toast 通知 */}
