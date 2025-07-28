@@ -1557,7 +1557,7 @@ const PurchaseRequestBoard = () => {
                         disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
                       >
                         <ClipboardPenLine size={16} />
-                        <span className="hidden sm:inline ml-1 text-xs">編輯</span>
+                        <span className="hidden sm:inline ml-0.01 text-xs">編輯</span>
                       </button>
                     )}
                     
@@ -2722,7 +2722,24 @@ const PurchaseRequestBoard = () => {
                 const isLongText = request.description && request.description.length > 50;
                 const isUrgent = request.priority === 'urgent';
                 return (
-                  <div className={`bg-surface dark:bg-dark-surface rounded-b-lg overflow-hidden transition-theme`}>
+                  <div className={`bg-surface dark:bg-dark-surface rounded-b-lg overflow-hidden transition-theme relative`}>
+                    {/* 編輯按鈕 - 絕對定位在右上角 */}
+                    {canEditRequest(request, currentUser) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDetailModal(false); // 先關閉詳情彈窗
+                          handleOpenEditRequestModal(request); // 再打開編輯彈窗
+                        }}
+                        className="absolute top-4 right-1 z-10 p-2 text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary hover:bg-graphite-100 dark:hover:bg-dark-surface rounded-lg transition-theme focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:ring-offset-2"
+                        title="編輯需求"
+                        aria-label="編輯需求"
+                        disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
+                      >
+                        <ClipboardPenLine size={18} />
+                        <span className="hidden sm:inline ml-0.01 text-xs">編輯</span>
+                      </button>
+                    )}
                     <div className="p-5 pb-0 flex justify-between items-start">
                       <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-graphite-100 text-graphite-800 dark:bg-graphite-700 dark:text-dark-text-main transition-theme'}`}>
                         {statusLabels[request.status]?.text || request.status}

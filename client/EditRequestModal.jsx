@@ -340,13 +340,13 @@ const EditRequestModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
       <div 
         ref={modalRef}
-        className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto transition-theme"
+        className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl w-full max-w-md max-h-[95vh] sm:max-h-[90vh] overflow-y-auto transition-theme"
       >
         {/* 標題列 */}
-        <div className="flex items-center justify-between p-4 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
           <h2 className="text-lg font-semibold text-text-main dark:text-dark-text-main flex items-center gap-2 transition-theme">
             <ClipboardPenLine size={20} />
             編輯採購需求
@@ -362,13 +362,13 @@ const EditRequestModal = ({
         </div>
 
         {/* 表單內容 */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 relative">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
           {/* 載入覆蓋層 */}
           {isSubmitting && (
-            <div className="absolute inset-0 bg-surface/50 dark:bg-dark-surface/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
-              <div className="bg-surface dark:bg-dark-surface border border-graphite-200 dark:border-graphite-600 rounded-lg p-4 shadow-lg flex items-center gap-3">
-                <Loader2 size={20} className="animate-spin text-primary dark:text-dark-primary" />
-                <span className="text-text-main dark:text-dark-text-main font-medium">正在更新需求...</span>
+            <div className="absolute inset-0 bg-surface/50 dark:bg-dark-surface/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg transition-theme">
+              <div className="bg-surface dark:bg-dark-surface border border-graphite-200 dark:border-graphite-600 rounded-lg p-4 shadow-lg flex items-center gap-3 transition-theme">
+                <Loader2 size={20} className="animate-spin text-primary dark:text-dark-primary transition-theme" />
+                <span className="text-text-main dark:text-dark-text-main font-medium transition-theme">正在更新需求...</span>
               </div>
             </div>
           )}
@@ -382,7 +382,7 @@ const EditRequestModal = ({
               type="text"
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
-              className={`w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-glory-red-400 focus:border-glory-red-500 dark:focus:border-glory-red-400 transition-theme ${
+              className={`w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-3 sm:py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:border-glory-red-500 dark:focus:border-dark-primary transition-theme touch-manipulation ${
                 isSubmitting ? 'opacity-60 cursor-not-allowed' : ''
               }`}
               placeholder="請輸入需求標題"
@@ -416,7 +416,7 @@ const EditRequestModal = ({
             <label className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
               緊急程度
             </label>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
               {[
                 { 
                   value: 'general', 
@@ -426,7 +426,7 @@ const EditRequestModal = ({
                 { 
                   value: 'urgent', 
                   label: '緊急', 
-                  color: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-300' 
+                  color: 'bg-danger-100 text-danger-700 dark:bg-danger-dark/20 dark:text-danger-dark' 
                 }
               ].map(option => (
                 <label key={option.value} className="flex items-center cursor-pointer">
@@ -439,7 +439,7 @@ const EditRequestModal = ({
                     className="sr-only"
                     disabled={isSubmitting}
                   />
-                  <span className={`px-3 py-2 rounded-full text-sm font-medium transition-theme ${
+                  <span className={`px-4 py-3 sm:px-3 sm:py-2 rounded-full text-sm font-medium transition-theme touch-manipulation ${
                     formData.priority === option.value 
                       ? option.color 
                       : 'bg-graphite-200 dark:bg-graphite-600 text-graphite-600 dark:text-dark-text-subtle hover:bg-graphite-300 dark:hover:bg-graphite-500'
@@ -460,7 +460,7 @@ const EditRequestModal = ({
               id="editDescription"
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              className={`w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-glory-red-400 focus:border-glory-red-500 dark:focus:border-glory-red-400 resize-y transition-theme ${
+              className={`w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-3 sm:py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:border-glory-red-500 dark:focus:border-dark-primary resize-y transition-theme touch-manipulation ${
                 isSubmitting ? 'opacity-60 cursor-not-allowed' : ''
               }`}
               placeholder="請輸入詳細描述（選填）"
@@ -497,12 +497,12 @@ const EditRequestModal = ({
           </div>
 
           {/* 按鈕區域 */}
-          <div className="flex gap-3 pt-4 border-t border-graphite-200 dark:border-graphite-600 transition-theme">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-graphite-200 dark:border-graphite-600 transition-theme">
             <button
               type="button"
               onClick={handleCancel}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 text-text-main dark:text-dark-text-main bg-surface dark:bg-dark-surface border border-graphite-300 dark:border-graphite-600 rounded-lg hover:bg-background dark:hover:bg-dark-background transition-theme disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:flex-1 px-4 py-3 sm:py-2 text-text-main dark:text-dark-text-main bg-surface dark:bg-dark-surface border border-graphite-300 dark:border-graphite-600 rounded-lg hover:bg-background dark:hover:bg-dark-background focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:ring-offset-2 dark:focus:ring-offset-dark-surface transition-theme disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               title={isSubmitting ? '正在更新中，請稍候...' : '取消編輯'}
             >
               取消
@@ -510,7 +510,7 @@ const EditRequestModal = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-primary dark:bg-dark-primary text-white rounded-lg hover:bg-primary/90 dark:hover:bg-dark-primary/90 transition-theme disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full sm:flex-1 px-4 py-3 sm:py-2 bg-primary dark:bg-dark-primary text-white rounded-lg hover:bg-primary/90 dark:hover:bg-dark-primary/90 focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:ring-offset-2 dark:focus:ring-offset-dark-surface transition-theme disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation"
               title={isSubmitting ? '正在更新中，請稍候...' : '儲存變更'}
             >
               {isSubmitting ? (
