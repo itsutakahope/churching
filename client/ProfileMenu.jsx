@@ -164,12 +164,19 @@ const ProfileMenu = () => {
           </div>
 
           <div className="p-4 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
-            <h4 className="text-base font-bold text-graphite-500 dark:text-dark-text-subtle uppercase mb-3 transition-theme">外觀設定</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">深色模式</span>
-              <ThemeSwitcher />
-            </div>
-          </div>
+  <div className="flex items-center justify-between">
+    {/* 左側：外觀設定 */}
+    <h4 className="text-base font-bold text-graphite-500 dark:text-dark-text-subtle uppercase transition-theme">
+      外觀設定
+    </h4>
+    {/* 右側：三個元素 */}
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">淺色</span>
+      <ThemeSwitcher />
+      <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">深色</span>
+    </div>
+  </div>
+</div>
 
           <div className="p-2">
             <button 
