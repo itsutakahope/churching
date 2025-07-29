@@ -273,8 +273,8 @@ const TransferReimbursementModal = ({
           {/* 目前購買需求資訊 */}
           {currentRequest && (
             <div className="mb-4 p-3 bg-background dark:bg-dark-background rounded-lg transition-theme">
-              <p className="text-sm text-text-subtle dark:text-dark-text-subtle mb-1">購買項目：</p>
-              <p className="font-medium text-text-main dark:text-dark-text-main">{currentRequest.text}</p>
+              <p className="text-sm text-text-subtle dark:text-dark-text-subtle mb-1">購買項目：{currentRequest.text}</p>
+              <p className="font-medium text-text-main dark:text-dark-text-main">金額：NT$ {currentRequest.purchaseAmount}</p>
               <p className="text-sm text-text-subtle dark:text-dark-text-subtle mt-2">
                 目前報帳負責人：{currentRequest.reimbursementerName}
               </p>

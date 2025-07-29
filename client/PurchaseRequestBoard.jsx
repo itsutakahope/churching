@@ -37,6 +37,7 @@ const PurchaseRequestBoard = () => {
   const [shouldRestoreRecordsModal, setShouldRestoreRecordsModal] = useState(false);
   const [isFilterPanelExpanded, setIsFilterPanelExpanded] = useState(false);
   // --- 新增結束 ---
+  const errorBannerTimer = useRef(null);
 
   const handleRecordSelection = (recordId) => {
     setSelectedRecordIds(prev => {
@@ -807,6 +808,10 @@ const PurchaseRequestBoard = () => {
         }
 
         setUpdateError(errorMessage);
+        if (errorBannerTimer.current) clearTimeout(errorBannerTimer.current);
+        errorBannerTimer.current = setTimeout(() => {
+          setUpdateError(null);
+        }, 5000); // 5 秒後自動隱藏
         showToastNotification(errorMessage, 'error', errorType);
       } finally {
         setIsDeletingRequest(false);
@@ -1011,21 +1016,17 @@ const PurchaseRequestBoard = () => {
   // 檢查當前使用者是否為指定需求的報帳負責人
   const isCurrentUserReimburser = (request) => {
     if (!currentUser || !request) {
-      console.log('isCurrentUserReimburser: 缺少 currentUser 或 request', { currentUser: !!currentUser, request: !!request });
       return false;
     }
 
     // 如果有明確指定的報帳負責人，檢查是否為當前使用者
     if (request.reimbursementerId) {
-      const isReimburser = request.reimbursementerId === currentUser.uid;
-      console.log('有指定報帳負責人:', { isReimburser });
-      return isReimburser;
+      return request.reimbursementerId === currentUser.uid;   
     }
 
     // 如果沒有明確指定報帳負責人，則預設為購買者負責報帳
-    const isPurchaser = request.purchaserId === currentUser.uid;
-    console.log('預設購買者負責報帳:', { isPurchaser });
-    return isPurchaser;
+    return request.purchaserId === currentUser.uid;
+    
   };
   // --- 轉交功能處理函式結束 ---
 
