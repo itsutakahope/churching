@@ -1739,21 +1739,24 @@ const PurchaseRequestBoard = () => {
                       </div>
                       {request.comments?.length > 0 && (
                         <div className="border-t pt-3 mt-3">
-                          <h4 className="text-sm font-semibold text-graphite-700 mb-2">留言列表：</h4>
-                          <div className="space-y-2 max-h-32 overflow-y-auto"> {request.comments.map((comment) => (
-                            <div key={comment.id} className="bg-graphite-50 rounded p-2 group relative">
-                              <div className="flex justify-between items-start mb-1">
-                                <div>
-                                  <span className="font-medium text-sm text-gray-900">{comment.authorName || comment.userId}</span>
-                                  <span className="text-xs text-graphite-500 ml-2">{new Date(comment.createdAt).toLocaleString()}</span>
+                          <h4 className="text-base font-semibold text-text-main dark:text-dark-text-main mb-3 transition-theme">留言列表：</h4>
+                          <div className="space-y-2 max-h-32 overflow-y-auto"> 
+                          {request.comments.map((comment) => (
+                              <div key={comment.id} className="bg-graphite-50 dark:bg-graphite-800 rounded-lg p-3 group relative transition-theme">
+                                <div className="flex justify-between items-start mb-1">
+                                  <div>
+                                    <span className="font-medium text-sm text-text-main dark:text-dark-text-main transition-theme">{comment.authorName || comment.userId}</span>
+                                    <span className="text-xs text-text-subtle dark:text-dark-text-subtle ml-2 transition-theme">{new Date(comment.createdAt).toLocaleString()}</span>
+                                  </div>
+                                  {currentUser && comment.userId === currentUser.uid && (<button onClick={() => { setShowDetailModal(false); handleDeleteComment(request.id, comment.id); }} className="text-graphite-400 dark:text-dark-text-subtle hover:text-danger-500 dark:hover:text-danger-400 opacity-0 group-hover:opacity-100 transition-all p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button>)}
                                 </div>
-                                {currentUser && comment.userId === currentUser.uid && (<button onClick={() => handleDeleteComment(request.id, comment.id)} className="text-graphite-400 hover:text-danger-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 -mr-1 -mt-1" title="刪除留言" disabled={isDeletingRequest || isUpdatingRequest || isAddingComment}> <Trash2 size={14} /> </button>)} </div>
-                              <p className="text-sm text-graphite-700 whitespace-pre-wrap break-words">
-                                <Linkify componentDecorator={componentDecorator}>
-                                  {comment.text}
-                                </Linkify>
-                              </p>
-                            </div>))} </div> </div>)}
+                                <p className="text-sm text-text-subtle dark:text-dark-text-subtle whitespace-pre-wrap break-words transition-theme">
+                                  <Linkify componentDecorator={componentDecorator}>
+                                    {comment.text}
+                                  </Linkify>
+                                </p>
+                              </div>
+                            ))} </div> </div>)}
                     </div>
                   </div>
                 )
@@ -1788,7 +1791,7 @@ const PurchaseRequestBoard = () => {
                             e.stopPropagation();
                             handleOpenEditRequestModal(request);
                           }}
-                          className="absolute top-2 right-2 z-10 p-1.5 text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary hover:bg-graphite-100 dark:hover:bg-dark-surface rounded-lg transition-theme focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:ring-offset-2"
+                          className="absolute top-2 right-2 z-10 p-1.5 text-graphite-500 dark:text-dark-text-subtle hover:text-glory-red-600 dark:hover:text-dark-primary hover:bg-graphite-100 dark:hover:bg-dark-surface rounded-lg transition-theme focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:ring-offset-2 hidden md:block"
                           title="編輯需求"
                           aria-label="編輯需求"
                           disabled={isUpdatingRequest || isDeletingRequest || isAddingComment}
@@ -1805,11 +1808,7 @@ const PurchaseRequestBoard = () => {
                       >
                         {/* Left-aligned info for small screens */}
                         <div className="flex items-center gap-3 min-w-0 flex-grow">
-                          {isUrgent && (
-                            <div className="flex-shrink-0" title="緊急需求">
-                              <AlertTriangle size={20} className="text-danger-500" />
-                            </div>
-                          )}
+                          
                           <div className="flex-shrink-0">
                             <span
                               id={`request-status-${request.id}`}
@@ -1818,6 +1817,11 @@ const PurchaseRequestBoard = () => {
                               {statusLabels[request.status]?.shortText || request.status}
                             </span>
                           </div>
+                          {isUrgent && (
+                            <div className="flex-shrink-0" title="緊急需求">
+                              <AlertTriangle size={20} className="text-danger-500" />
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <h3 className="text-md font-semibold text-graphite-900 dark:text-dark-text-main transition-theme truncate" title={request.title || request.text}>
                               {request.title || request.text}
@@ -2021,7 +2025,7 @@ const PurchaseRequestBoard = () => {
                 <label className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
                   緊急程度
                 </label>
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                <div className="flex flex-row sm:flex-row gap-6 sm:gap-4">
                   {[
                     { value: 'general', label: '一般' },
                     { value: 'urgent', label: '緊急' }

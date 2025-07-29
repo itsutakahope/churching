@@ -111,7 +111,7 @@ const ProfileMenu = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 bg-surface dark:bg-dark-surface rounded-lg shadow-xl border border-graphite-200 dark:border-graphite-600 z-10 transition-theme">
+        <div className="absolute right-0 mt-2 w-72 bg-surface dark:bg-dark-surface rounded-lg shadow-xl border border-graphite-200 dark:border-graphite-600 z-50 transition-theme">
           <div className="p-4 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
             {isEditing ? (
               <div className="space-y-2">

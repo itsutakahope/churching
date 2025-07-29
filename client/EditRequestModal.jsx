@@ -416,7 +416,7 @@ const EditRequestModal = ({
             <label className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
               緊急程度
               </label>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+            <div className="flex flex-row sm:flex-row gap-6 sm:gap-4">
               {[
                 { value: 'general', label: '一般' },
                 { value: 'urgent', label: '緊急' }
@@ -489,7 +489,7 @@ const EditRequestModal = ({
           </div>
 
           {/* 按鈕區域 */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-graphite-200 dark:border-graphite-600 transition-theme">
+          <div className="flex flex-row sm:flex-row gap-1 sm:gap-3 pt-3 sm:pt-4 border-t border-graphite-200 dark:border-graphite-600 transition-theme">
             <button
               type="button"
               onClick={handleCancel}
