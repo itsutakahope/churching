@@ -101,7 +101,7 @@ const PurchaseRequestBoard = () => {
 
   const handleBatchExport = () => {
     if (selectedRecordIds.size === 0) {
-      alert("請先勾選至少一筆要匯出的購買紀錄。");
+      alert("請先勾選至少一筆要匯出的購買/代墊紀錄。");
       return;
     }
     const recordsToExport = purchaseRecords.filter(r => selectedRecordIds.has(r.id));
@@ -205,6 +205,9 @@ const PurchaseRequestBoard = () => {
   const [wasEditingFromDetail, setWasEditingFromDetail] = useState(false);
   // --- 編輯需求模態框狀態新增結束 ---
 
+  // --- 👇 新增：表單驗證相關狀態 ---
+  const [validationErrors, setValidationErrors] = useState({});
+
   // --- 👇 新增：權限檢查函式 ---
   /**
    * 檢查當前用戶是否可以編輯指定的採購需求
@@ -242,6 +245,51 @@ const PurchaseRequestBoard = () => {
     return false;
   }, []);
   // --- 權限檢查函式新增結束 ---
+
+   // --- 👇 新增：表單驗證與輸入處理邏輯 ---
+   const validateField = (field, value) => {
+    const errors = {};
+    switch (field) {
+      case 'title':
+        if (!value.trim()) {
+          errors.title = '需求標題為必填項目';
+        } else if (value.trim().length > 100) {
+          errors.title = '需求標題不能超過100個字元';
+        } else if (value.trim().length < 2) {
+          errors.title = '需求標題至少需要2個字元';
+        }
+        break;
+      case 'description':
+        if (value.length > 500) {
+          errors.description = '詳細描述不能超過500個字元';
+        }
+        break;
+    }
+    return errors;
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    const titleErrors = validateField('title', formData.title);
+    if (titleErrors.title) errors.title = titleErrors.title;
+    const descriptionErrors = validateField('description', formData.description);
+    if (descriptionErrors.description) errors.description = descriptionErrors.description;
+    return errors;
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    const fieldErrors = validateField(field, value);
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      if (fieldErrors[field]) {
+        newErrors[field] = fieldErrors[field];
+      }
+      return newErrors;
+    });
+  };
+  // --- 驗證邏輯結束 ---
 
   const [formData, setFormData] = useState({
     title: '',
@@ -445,13 +493,16 @@ const PurchaseRequestBoard = () => {
 
 
   const handleSubmit = async () => {
-    if (!formData.title.trim()) {
-      alert('請填寫需求標題。');
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
+    setValidationErrors({});
+
     // 如果已勾選購買，則必須填寫有效的金額
     if (formData.isAlreadyPurchased && (!formData.purchaseAmount || parseFloat(formData.purchaseAmount) <= 0)) {
-      alert('您已勾選「我已購買此項目」，請輸入有效的購買金額。');
+      alert('您已勾選「我已購買/代墊此項目」，請輸入有效的購買/代墊金額。');
       return;
     }
     // --- 👇 新增：如果需要指定代理人，則必須選擇一個 ---
@@ -586,7 +637,7 @@ const PurchaseRequestBoard = () => {
       setReimbursementContacts([]);
       setShowPurchaseModal(true);
     } else {
-      const confirmed = window.confirm("您確定要撤銷這次的購買紀錄嗎？相關的購買金額與日期將會被清除。");
+      const confirmed = window.confirm("您確定要撤銷這次的購買/代墊紀錄嗎？相關的金額與日期將會被清除。");
       if (confirmed) {
         if (!currentUser) {
           alert("請登入以更新狀態。");
@@ -1205,7 +1256,7 @@ const PurchaseRequestBoard = () => {
   const exportPurchaseRecordsToCSV = () => {
     if (filteredPurchaseRecords.length === 0) { alert("沒有可匯出的購買記錄。"); return; }
     const escapeCSVField = (field) => `"${String(field === null || field === undefined ? '' : field).replace(/"/g, '""')}"`;
-    const headers = ["項目名稱", "提出者", "購買金額", "需求日期", "購買日期", "購買人", "會計類別"];
+    const headers = ["項目名稱", "提出者", "購買/代墊金額", "需求日期", "購買日期", "購買人", "會計類別"];
     let csvContent = "\uFEFF" + headers.map(escapeCSVField).join(',') + '\r\n';
     filteredPurchaseRecords.forEach(record => {
       const row = [
@@ -1374,7 +1425,7 @@ const PurchaseRequestBoard = () => {
       <div className="bg-surface dark:bg-dark-surface rounded-lg shadow-sm p-6 mb-6 transition-theme">
         {/* ... (Header and filter UI remains the same) ... */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-text-main dark:text-dark-text-main text-center sm:text-left transition-theme">Purchase Board</h1>
+          <h1 className="text-2xl font-bold text-text-main dark:text-dark-text-main text-center sm:text-left transition-theme">採購看板</h1>
           <div className="flex gap-3 w-full sm:w-auto">
             {/* --- 修改/新增開始 --- */}
             <div className="relative flex-1 group">
@@ -1382,11 +1433,11 @@ const PurchaseRequestBoard = () => {
                 onClick={() => setShowRecordsModal(true)}
                 disabled={!currentUser}
                 className="w-full bg-primary dark:bg-dark-primary text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-graphite-600 disabled:cursor-not-allowed hover:bg-primary/90 dark:hover:bg-dark-primary/90 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary focus:ring-offset-2"
-                title={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
-                aria-label={currentUser ? "查看所有已購買的記錄" : "請先登入以查看購買記錄"}
+                title={currentUser ? "查看所有已購買/代墊的記錄" : "請先登入以查看購買記錄"}
+                aria-label={currentUser ? "查看所有已購買/代墊的記錄" : "請先登入以查看購買記錄"}
               >
                 <Receipt size={20} aria-hidden="true" />
-                購買記錄
+                代墊記錄
               </button>
               {!currentUser && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
@@ -1574,7 +1625,7 @@ const PurchaseRequestBoard = () => {
                       </button>
                     )}
                     
-                    <div className="p-4 pb-0 flex justify-between items-start">
+                    <div className="p-4 pb-0 flex justify-start items-start gap-2">
                       <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-graphite-100 text-graphite-800 dark:bg-graphite-700 dark:text-dark-text-main transition-theme'}`}>
                         {statusLabels[request.status]?.text || request.status}
                       </span>
@@ -1919,41 +1970,85 @@ const PurchaseRequestBoard = () => {
             </div>
 
             {/* --- 可滾動的內容區域 --- */}
-            <div className="p-6 space-y-2 overflow-y-auto">
+            <div className="p-6 space-y-4 overflow-y-auto">
               {submitError && (
                 <div className="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded relative" role="alert">
                   <strong className="font-bold">提交錯誤!</strong>
                   <span className="block sm:inline"> {submitError}</span>
                 </div>
               )}
+              {/* --- 需求標題 (更新後) --- */}
               <div>
-                <label htmlFor="formTitle" className="block text-sm font-medium text-graphite-700 mb-2">
-                  需求標題*
+                <label htmlFor="formTitle" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
+                  需求標題 *
                 </label>
                 <input
                   id="formTitle"
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="請輸入標題..."
-                  className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-dark-primary transition-theme"
-                  required
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  className={`w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-3 sm:py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:border-glory-red-500 dark:focus:border-dark-primary transition-theme touch-manipulation ${
+                    isSubmittingRequest ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
+                  placeholder="請輸入需求標題"
+                  maxLength={100}
+                  disabled={isSubmittingRequest}
+                  autoFocus
                 />
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-xs text-graphite-400 dark:text-dark-text-subtle transition-theme">
+                    必填項目
+                  </span>
+                  <span className={`text-xs transition-theme ${
+                    formData.title.length > 90 
+                      ? 'text-danger-500 dark:text-danger-400' 
+                      : formData.title.length > 80
+                      ? 'text-warning-500 dark:text-warning-400'
+                      : 'text-graphite-400 dark:text-dark-text-subtle'
+                  }`}>
+                    {formData.title.length}/100
+                  </span>
+                </div>
+                {validationErrors.title && (
+                  <p className="text-danger-500 dark:text-danger-400 text-sm mt-1 transition-theme">
+                    {validationErrors.title}
+                  </p>
+                )}
               </div>
+
+              {/* --- 緊急程度 (更新後) --- */}
               <div>
-                <label htmlFor="formPriority" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
+                <label className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
                   緊急程度
                 </label>
-                <select
-                  id="formPriority"
-                  value={formData.priority}
-                  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-glory-red-400 transition-theme"
-                >
-                  <option value="general">一般</option>
-                  <option value="urgent">緊急</option>
-                </select>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                  {[
+                    { value: 'general', label: '一般' },
+                    { value: 'urgent', label: '緊急' }
+                  ].map(option => (
+                    <label key={option.value} className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="priority"
+                        value={option.value}
+                        checked={formData.priority === option.value}
+                        onChange={(e) => handleInputChange('priority', e.target.value)}
+                        className="sr-only"
+                        disabled={isSubmittingRequest}
+                      />
+                      <span className={`px-4 py-3 sm:px-3 sm:py-2 rounded-full text-sm font-medium transition-theme touch-manipulation ${
+                        formData.priority === option.value 
+                          ? 'bg-primary dark:bg-dark-primary text-white' 
+                          : 'bg-graphite-200 dark:bg-graphite-700 text-text-subtle dark:text-dark-text-subtle hover:bg-graphite-300 dark:hover:bg-graphite-600'
+                      } ${isSubmittingRequest ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        {option.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
+              
+              {/* --- 詳細描述 (更新後) --- */}
               <div>
                 <label htmlFor="formDescription" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
                   詳細描述
@@ -1961,11 +2056,32 @@ const PurchaseRequestBoard = () => {
                 <textarea
                   id="formDescription"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  className={`w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-3 sm:py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-dark-primary focus:border-glory-red-500 dark:focus:border-dark-primary resize-y transition-theme touch-manipulation ${
+                    isSubmittingRequest ? 'opacity-60 cursor-not-allowed' : ''
+                  }`}
                   placeholder="請描述需求的詳細內容：數量、去哪買、可貼連結..."
-                  rows="2"
-                  className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-glory-red-400 resize-none transition-theme"
+                  rows={4}
+                  maxLength={500}
+                  disabled={isSubmittingRequest}
                 />
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-xs text-graphite-500 dark:text-dark-text-subtle transition-theme">
+                    可使用連結和換行
+                  </span>
+                  <span className={`text-xs transition-theme ${
+                    formData.description.length > 450 
+                      ? 'text-danger-500 dark:text-danger-400' 
+                      : 'text-graphite-400 dark:text-dark-text-subtle'
+                  }`}>
+                    {formData.description.length}/500
+                  </span>
+                </div>
+                {validationErrors.description && (
+                  <p className="text-danger-500 dark:text-danger-400 text-sm mt-1 transition-theme">
+                    {validationErrors.description}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="formRequester" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
@@ -2003,21 +2119,21 @@ const PurchaseRequestBoard = () => {
                     }}
                   />
                   <label htmlFor="isAlreadyPurchased" className="ml-3 block text-sm font-medium text-graphite-900 dark:text-dark-text-main transition-theme">
-                    我已購買此項目 (直接登記為「已購買」)
+                    我已購買此項目 (直接登記為「已購買/代墊」)
                   </label>
                 </div>
                 {formData.isAlreadyPurchased && (
                   <div className="mt-4 pl-2 border-l-2 border-graphite-200 dark:border-graphite-600 transition-theme">
                     <div className="mb-4">
                       <label htmlFor="formPurchaseAmount" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
-                        購買總金額 (NT$)*
+                        購買/代墊總金額 (NT$)*
                       </label>
                       <input
                         id="formPurchaseAmount"
                         type="number"
                         value={formData.purchaseAmount}
                         onChange={(e) => setFormData({ ...formData, purchaseAmount: e.target.value })}
-                        placeholder="請輸入購買總金額或代墊金額..."
+                        placeholder="請輸入購買總金額或代墊金額..." min="0" step="1"
                         className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-success-500 dark:focus:ring-success-400 transition-theme"
                         required
                       />
@@ -2107,9 +2223,9 @@ const PurchaseRequestBoard = () => {
       {showPurchaseModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl w-full max-w-md transition-theme">
-            <div className="bg-holy-gold-500 dark:bg-dark-accent text-white p-4 rounded-t-lg flex justify-between items-center transition-theme">
+            <div className="bg-holy-gold-500 dark:bg-bg-holy-gold-700 text-white dark:dark-text-main p-4 rounded-t-lg flex justify-between items-center transition-theme">
               <h2 className="text-lg font-semibold">
-                確認購買
+                購買確認
               </h2>
               <button onClick={() => { setShowPurchaseModal(false); setUpdateError(null); setSelectedRequestId(null); }} className="text-white hover:bg-holy-gold-600 p-1 rounded-full transition-colors"> <X size={20} />
               </button>
@@ -2117,7 +2233,7 @@ const PurchaseRequestBoard = () => {
             <div className="p-6"> {updateError && <p
               className="text-danger-500 dark:text-danger-400 text-sm mb-3 bg-danger-100 dark:bg-danger-900/20 p-2 rounded text-center transition-theme">{updateError}</p>} <p
                 className="text-graphite-700 dark:text-dark-text-main mb-4 transition-theme">
-                請輸入購買金額與購買人以完成採購： </p>
+                請輸入購買/代墊金額以完成採購： </p>
               <div className="mb-4">
                 <label htmlFor="purchaseAmount" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
                   金額 (NT$)*
@@ -2126,13 +2242,13 @@ const PurchaseRequestBoard = () => {
                   type="number"
                   value={purchaseAmount}
                   onChange={(e) => setPurchaseAmount(e.target.value)}
-                  placeholder="請輸入金額..." min="0" step="1"
+                  placeholder="購買/代墊金額只能等於或小於發票金額）" min="0" step="1"
                   className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-success-500 dark:focus:ring-success-400 transition-theme" />
               </div>
               <div className="mb-4">
                 <label htmlFor="purchaserName"
                   className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
-                  購買人*
+                  購買/代墊人*
                 </label>
                 <input id="purchaserName"
                   type="text"
@@ -2234,7 +2350,7 @@ const PurchaseRequestBoard = () => {
                 <button
                   type="button"
                   onClick={confirmPurchase}
-                  className="flex-1 bg-holy-gold-500 dark:bg-dark-accent hover:bg-holy-gold-600 dark:hover:bg-dark-accent/90 text-white py-2 px-4 rounded-lg transition-theme disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 bg-holy-gold-500 dark:bg-holy-gold-500 hover:bg-holy-gold-400 dark:hover:bg-dark-accent text-white dark:dark-text-main py-2 px-4 rounded-lg transition-theme disabled:opacity-50 flex items-center justify-center gap-2"
                   disabled={isUpdatingRequest || (isDifferentReimburser && !selectedReimburserId) || isLoadingContacts}>
                   {isUpdatingRequest && <SpinnerIcon />} {isUpdatingRequest ? '處理中...' : '確認購買'}
                 </button>
@@ -2360,14 +2476,14 @@ const PurchaseRequestBoard = () => {
                   <div className="p-4 bg-graphite-50 dark:bg-graphite-800 rounded-lg border border-graphite-200 dark:border-graphite-600 transition-theme">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
-                        <label htmlFor="filterPurchaser" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-1 transition-theme">購買人</label>
+                        <label htmlFor="filterPurchaser" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-1 transition-theme">購買/代墊人</label>
                         <select
                           id="filterPurchaser"
                           value={filterPurchaserUid}
                           onChange={(e) => setFilterPurchaserUid(e.target.value)}
                           className="w-full border border-graphite-300 dark:border-graphite-600 bg-surface dark:bg-dark-surface text-text-main dark:text-dark-text-main rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-glory-red-500 dark:focus:ring-glory-red-400 transition-theme"
                         >
-                          <option value="">所有購買人</option>
+                          <option value="">所有購買/代墊人</option>
                           {allUsers.map(user => (
                             <option key={user.uid} value={user.uid}>{user.displayName}</option>
                           ))}
@@ -2388,7 +2504,7 @@ const PurchaseRequestBoard = () => {
                         </select>
                       </div>
                       <div>
-                        <label htmlFor="filterSDate" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-1 transition-theme">購買日期 (起)</label>
+                        <label htmlFor="filterSDate" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-1 transition-theme">購買/代墊日期 (起)</label>
                         <input 
                           id="filterSDate" 
                           type="date" 
@@ -2398,7 +2514,7 @@ const PurchaseRequestBoard = () => {
                         />
                       </div>
                       <div>
-                        <label htmlFor="filterEDate" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-1 transition-theme">購買日期 (迄)</label>
+                        <label htmlFor="filterEDate" className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-1 transition-theme">購買/代墊日期 (迄)</label>
                         <input 
                           id="filterEDate" 
                           type="date" 
@@ -2416,7 +2532,7 @@ const PurchaseRequestBoard = () => {
               {filteredPurchaseRecords.length === 0 ? (
                 <div className="text-center py-8">
                   <Receipt size={48} className="mx-auto text-graphite-400 dark:text-dark-text-subtle mb-4 transition-theme" />
-                  <p className="text-graphite-500 dark:text-dark-text-subtle transition-theme">無符合條件的購買記錄</p>
+                  <p className="text-graphite-500 dark:text-dark-text-subtle transition-theme">無符合條件的購買/代墊記錄</p>
                 </div>
               ) : (
                 <>
@@ -2451,7 +2567,7 @@ const PurchaseRequestBoard = () => {
                   </div>
 
                   {/* --- 新增開始：根據視圖模式條件渲染 --- */}
-                  <div id="records-content" role="tabpanel" aria-label="購買紀錄內容">
+                  <div id="records-content" role="tabpanel" aria-label="購買/代墊紀錄內容">
                     {recordsViewMode === 'grid' && (
                       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4" aria-label="網格視圖購買紀錄">
                         {filteredPurchaseRecords.map((record) => (
@@ -2479,7 +2595,7 @@ const PurchaseRequestBoard = () => {
                                 <div><span className="text-text-subtle dark:text-dark-text-subtle transition-theme">金額：</span><span className="font-medium text-success-600 dark:text-success-400 transition-theme">NT$ {(record.purchaseAmount || 0).toLocaleString()}</span></div>
                                 <div><span className="text-text-subtle dark:text-dark-text-subtle transition-theme">需求日期：</span><span className="font-medium text-text-main dark:text-dark-text-main transition-theme">{record.requestDate ? new Date(record.requestDate).toLocaleDateString() : 'N/A'}</span></div>
                                 <div><span className="text-text-subtle dark:text-dark-text-subtle transition-theme">購買日期：</span><span className="font-medium text-text-main dark:text-dark-text-main transition-theme">{record.purchaseDate ? new Date(record.purchaseDate).toLocaleDateString() : 'N/A'}</span></div>
-                                {record.purchaserName && (<div><span className="text-text-subtle dark:text-dark-text-subtle transition-theme">購買人：</span><span className="font-medium text-text-main dark:text-dark-text-main transition-theme">{record.purchaserName}</span></div>)}
+                                {record.purchaserName && (<div><span className="text-text-subtle dark:text-dark-text-subtle transition-theme">購買/代墊人：</span><span className="font-medium text-text-main dark:text-dark-text-main transition-theme">{record.purchaserName}</span></div>)}
                                 {/* --- 👇 修改：顯示請款人 --- */}
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-1">
@@ -2544,7 +2660,7 @@ const PurchaseRequestBoard = () => {
                             {/* 新增：顯示購買備註 */}
                             {record.purchaseNotes && (
                               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-graphite-600 transition-theme">
-                                <p className="text-sm font-medium text-graphite-900 dark:text-dark-text-main mb-1 transition-theme">購買備註：</p>
+                                <p className="text-sm font-medium text-graphite-900 dark:text-dark-text-main mb-1 transition-theme">購買/代墊備註：</p>
                                 <p className="text-sm text-graphite-500 dark:text-dark-text-subtle whitespace-pre-wrap bg-gray-50 dark:bg-graphite-700 p-2 rounded-md transition-theme">
                                   {record.purchaseNotes}
                                 </p>
@@ -2557,7 +2673,7 @@ const PurchaseRequestBoard = () => {
 
                     {/* --- 新增開始：列表視圖 --- */}
                     {recordsViewMode === 'list' && (
-                      <div className="space-y-1" aria-label="列表視圖購買紀錄">
+                      <div className="space-y-1" aria-label="列表視圖購買/代墊紀錄">
                         {/* 列表標題 - 僅在大螢幕顯示 */}
                         <div className="hidden lg:block bg-graphite-50 dark:bg-graphite-800 border border-graphite-200 dark:border-graphite-600 rounded-lg p-2 mb-3 transition-theme">
                           <div className="grid grid-cols-12 gap-3 text-sm font-medium text-graphite-700 dark:text-dark-text-main transition-theme">
@@ -2565,7 +2681,7 @@ const PurchaseRequestBoard = () => {
                             <div className="col-span-2">需求標題</div>
                             <div className="col-span-2">金額</div>
                             <div className="col-span-2">購買日期</div>
-                            <div className="col-span-2">購買人</div>
+                            <div className="col-span-2">購買/代墊人</div>
                             <div className="col-span-2">請款人</div>
                             <div className="col-span-1">轉交報帳</div>
                           </div>
@@ -2663,7 +2779,7 @@ const PurchaseRequestBoard = () => {
                                   <div className="flex justify-between items-center text-sm">
                                     <div className="font-semibold text-success-600 dark:text-success-400 transition-theme">NT$ {(record.purchaseAmount || 0).toLocaleString()}</div>
                                     <div className="flex items-center flex-shrink-0 gap-2">
-                                      <div className="flex items-center text-xs text-text-subtle dark:text-dark-text-subtle transition-theme" title={`購買人：${record.purchaserName}\n請款人：${record.reimbursementerName || record.purchaserName}`}>
+                                      <div className="flex items-center text-xs text-text-subtle dark:text-dark-text-subtle transition-theme" title={`購買/代墊人：${record.purchaserName}\n請款人：${record.reimbursementerName || record.purchaserName}`}>
                                         <span className="truncate max-w-[50px]">{record.purchaserName || 'N/A'}</span>
                                         <ArrowRight size={12} className="mx-0.5 flex-shrink-0" />
                                         <span className="truncate max-w-[70px]">{record.reimbursementerName || record.purchaserName || 'N/A'}</span>
@@ -2754,7 +2870,7 @@ const PurchaseRequestBoard = () => {
                         <span className="hidden sm:inline ml-0.01 text-xs">編輯</span>
                       </button>
                     )}
-                    <div className="p-5 pb-0 flex justify-between items-start">
+                    <div className="p-5 pb-0 flex justify-start items-start gap-2">
                       <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusLabels[request.status]?.color || 'bg-graphite-100 text-graphite-800 dark:bg-graphite-700 dark:text-dark-text-main transition-theme'}`}>
                         {statusLabels[request.status]?.text || request.status}
                       </span>
@@ -2791,7 +2907,7 @@ const PurchaseRequestBoard = () => {
                           <div className="flex items-center gap-2 text-success-800 dark:text-dark-text-main mb-2 transition-theme"> <DollarSign size={18} /> <span className="font-semibold text-lg">金額：NT$ {request.purchaseAmount.toLocaleString()}</span> </div>
                           <div className="text-sm text-success-700 dark:text-success-500 grid grid-cols-2 gap-1 transition-theme">
                             <div>購買日期：{request.purchaseDate ? new Date(request.purchaseDate).toLocaleDateString() : 'N/A'}</div>
-                            {request.purchaserName && (<div>購買人：{request.purchaserName}</div>)}
+                            {request.purchaserName && (<div>購買/代墊人：{request.purchaserName}</div>)}
                             {/* 新增報帳負責人資訊 */}
                             <div className="col-span-2 mt-1">
                               報帳負責人：{request.reimbursementerName || request.purchaserName || '未指定'}
@@ -2865,7 +2981,7 @@ const PurchaseRequestBoard = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-60" onClick={handleCloseRecordDetailModal}>
           <div className="bg-surface dark:bg-dark-surface rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col transition-theme" onClick={(e) => e.stopPropagation()}>
             <div className="bg-graphite-100 dark:bg-graphite-800 p-4 rounded-t-lg flex justify-between items-center flex-shrink-0 border-b border-graphite-200 dark:border-graphite-600 transition-theme">
-              <h2 className="text-lg font-semibold text-text-main dark:text-dark-text-main transition-theme">購買紀錄詳情</h2>
+              <h2 className="text-lg font-semibold text-text-main dark:text-dark-text-main transition-theme">購買/代墊紀錄詳情</h2>
               <button onClick={handleCloseRecordDetailModal} className="text-graphite-500 dark:text-dark-text-subtle hover:bg-graphite-300 dark:hover:bg-graphite-600 p-1 rounded-full transition-theme">
                 <X size={20} />
               </button>
@@ -2903,7 +3019,7 @@ const PurchaseRequestBoard = () => {
                       {record.purchaserName && (
                         <div className="flex items-center gap-2 col-span-2">
                           <User size={16} className="text-text-subtle dark:text-dark-text-subtle transition-theme" />
-                          <span className="text-text-main dark:text-dark-text-main transition-theme"><strong>購買人:</strong> {record.purchaserName}</span>
+                          <span className="text-text-main dark:text-dark-text-main transition-theme"><strong>購買/代墊人:</strong> {record.purchaserName}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-2 col-span-2">

@@ -415,19 +415,11 @@ const EditRequestModal = ({
           <div>
             <label className="block text-sm font-medium text-graphite-700 dark:text-dark-text-main mb-2 transition-theme">
               緊急程度
-            </label>
+              </label>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
               {[
-                { 
-                  value: 'general', 
-                  label: '一般', 
-                  color: 'bg-graphite-100 text-graphite-800 dark:bg-graphite-700 dark:text-dark-text-main' 
-                },
-                { 
-                  value: 'urgent', 
-                  label: '緊急', 
-                  color: 'bg-danger-100 text-danger-700 dark:bg-danger-dark/20 dark:text-danger-dark' 
-                }
+                { value: 'general', label: '一般' },
+                { value: 'urgent', label: '緊急' }
               ].map(option => (
                 <label key={option.value} className="flex items-center cursor-pointer">
                   <input
@@ -441,8 +433,8 @@ const EditRequestModal = ({
                   />
                   <span className={`px-4 py-3 sm:px-3 sm:py-2 rounded-full text-sm font-medium transition-theme touch-manipulation ${
                     formData.priority === option.value 
-                      ? option.color 
-                      : 'bg-graphite-200 dark:bg-graphite-600 text-graphite-600 dark:text-dark-text-subtle hover:bg-graphite-300 dark:hover:bg-graphite-500'
+                      ? 'bg-primary dark:bg-dark-primary text-white' 
+                      : 'bg-graphite-200 dark:bg-graphite-700 text-text-subtle dark:text-dark-text-subtle hover:bg-graphite-300 dark:hover:bg-graphite-600'
                   } ${isSubmitting ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
                     {option.label}
                   </span>

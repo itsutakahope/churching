@@ -144,15 +144,19 @@ const ProfileMenu = () => {
             <div className="space-y-3">
               <label htmlFor="notif-new" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
                 <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">新需求通知</span>
-                {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
-                  <input type="checkbox" id="notif-new" disabled={!isApproved} checked={notificationPref} onChange={(e) => handlePreferenceChange('wantsNewRequestNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600"/>
-                }
+                <div className="w-6 h-6 flex items-center justify-center">
+                  {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin text-graphite-500 dark:text-dark-text-subtle" /> : 
+                    <input type="checkbox" id="notif-new" disabled={!isApproved} checked={notificationPref} onChange={(e) => handlePreferenceChange('wantsNewRequestNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600 focus:ring-glory-red-500/50"/>
+                  }
+                </div>
               </label>
                <label htmlFor="notif-complete" className={`flex items-center justify-between cursor-pointer ${!isApproved ? 'opacity-50' : ''}`}>
                 <span className="text-sm text-graphite-700 dark:text-dark-text-main transition-theme">購買完成通知</span>
-                 {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin" /> : 
-                  <input type="checkbox" id="notif-complete" disabled={!isApproved} checked={purchaseCompletePref} onChange={(e) => handlePreferenceChange('wantsPurchaseCompleteNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600"/>
-                }
+                <div className="w-6 h-6 flex items-center justify-center">
+                  {isUpdatingPrefs ? <Loader2 size={20} className="animate-spin text-graphite-500 dark:text-dark-text-subtle" /> : 
+                   <input type="checkbox" id="notif-complete" disabled={!isApproved} checked={purchaseCompletePref} onChange={(e) => handlePreferenceChange('wantsPurchaseCompleteNotification', e.target.checked)} className="form-checkbox h-6 w-6 rounded text-glory-red-600 focus:ring-glory-red-500/50"/>
+                  }
+                </div>
               </label>
             </div>
              {!isApproved && <p className="text-xs text-warning-600 dark:text-warning-dark mt-2">需管理員審核後才能設定</p>}
