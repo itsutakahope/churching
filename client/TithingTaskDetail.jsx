@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { doc, onSnapshot, collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { doc, onSnapshot, collection, addDoc, serverTimestamp, getDocs, query } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firestore } from './firebaseConfig';
 import DedicationEntryForm from './DedicationEntryForm';
@@ -19,6 +19,7 @@ const TithingTaskDetail = () => {
   const [error, setError] = useState(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [dedications, setDedications] = useState([]);
 
   useEffect(() => {
     setLoading(true);
@@ -36,6 +37,27 @@ const TithingTaskDetail = () => {
       console.error("Error fetching task details:", err);
       setError("無法載入任務詳情。");
       setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [taskId]);
+
+  // 監聽 dedications 資料變化
+  useEffect(() => {
+    if (!taskId) return;
+
+    const dedicationsCollectionRef = collection(firestore, 'tithe', taskId, 'dedications');
+    const q = query(dedicationsCollectionRef);
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const dedicationsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setDedications(dedicationsData);
+    }, (err) => {
+      console.error("Error fetching dedications:", err);
+      // 不設置錯誤狀態，因為這不是關鍵錯誤
     });
 
     return () => unsubscribe();
@@ -142,7 +164,7 @@ const TithingTaskDetail = () => {
               <button
                 onClick={handleExportPdf}
                 disabled={isExporting}
-                className="bg-accent dark:bg-dark-accent hover:bg-holy-gold-600 dark:hover:bg-dark-accent/90 text-white dark:text-success-500 font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-gray-600"
+                className="bg-accent dark:bg-dark-accent hover:bg-holy-gold-600 dark:hover:bg-dark-accent/90 text-white dark:dark-text-main font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-gray-600"
               >
                 <Download size={20} />
                 {isExporting ? '匯出中...' : '匯出PDF'}
@@ -153,7 +175,7 @@ const TithingTaskDetail = () => {
       </div>
 
       {isTaskCompleted && task.summary && (
-        <AggregationSummary summary={task.summary} />
+        <AggregationSummary summary={task.summary} dedications={dedications} />
       )}
 
       {!isTaskCompleted && (

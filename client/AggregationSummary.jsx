@@ -1,12 +1,124 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { calculatePaymentBreakdown, validateCalculationConsistency, formatAmount, handleCalculationError, performHealthCheck, logSystemWarning, logSystemError } from './paymentCalculationUtils';
+import PaymentBreakdownDisplay from './PaymentBreakdownDisplay';
 
-const AggregationSummary = ({ summary }) => {
+const AggregationSummary = ({ summary, dedications = [] }) => {
+  const [paymentBreakdown, setPaymentBreakdown] = useState({
+    cashTotal: 0,
+    chequeTotal: 0,
+    hasCheque: false
+  });
+  const [calculationError, setCalculationError] = useState(null);
+
   if (!summary) {
     return null;
   }
 
   const { totalAmount, byCategory } = summary;
   const categories = Object.keys(byCategory).sort();
+
+  // 計算現金與支票分解
+  useEffect(() => {
+    // 重置錯誤狀態
+    setCalculationError(null);
+
+    // 執行系統健康檢查
+    const healthCheck = performHealthCheck(dedications, totalAmount);
+    
+    if (!healthCheck.isHealthy) {
+      logSystemError('AggregationSummary', 'System health check failed', {
+        healthCheck,
+        dedications: dedications?.length || 0,
+        totalAmount
+      });
+      
+      // 健康檢查失敗時的優雅降級
+      setCalculationError('系統檢查發現資料異常，無法進行計算');
+      setPaymentBreakdown({
+        cashTotal: 0,
+        chequeTotal: 0,
+        hasCheque: false
+      });
+      return;
+    }
+
+    // 如果有警告，記錄但繼續處理
+    if (healthCheck.warnings.length > 0) {
+      logSystemWarning('AggregationSummary', 'System health check warnings detected', {
+        warnings: healthCheck.warnings,
+        stats: healthCheck.stats
+      });
+    }
+
+    // 如果沒有 dedications 資料，設置預設值
+    if (!dedications || dedications.length === 0) {
+      logSystemWarning('AggregationSummary', 'No dedications data provided, using default values');
+      setPaymentBreakdown({
+        cashTotal: 0,
+        chequeTotal: 0,
+        hasCheque: false
+      });
+      return;
+    }
+
+    console.log('AggregationSummary: Starting payment breakdown calculation', {
+      dedicationsCount: dedications.length,
+      summaryTotal: totalAmount,
+      healthCheck: healthCheck.stats
+    });
+
+    try {
+      // 嘗試計算現金與支票分解
+      const breakdown = calculatePaymentBreakdown(dedications);
+      
+      // 驗證計算結果與摘要總額的一致性
+      const consistencyResult = validateCalculationConsistency(breakdown, totalAmount);
+      
+      if (!consistencyResult.isConsistent) {
+        // 一致性驗證失敗，記錄警告但不阻止顯示
+        logSystemWarning('AggregationSummary', 'Calculation consistency check failed', {
+          consistencyResult,
+          breakdown,
+          summaryTotal: totalAmount
+        });
+        
+        // 顯示警告訊息，但仍然顯示計算結果
+        setCalculationError(`計算結果與摘要總額存在差異（${consistencyResult.difference} 元），請檢查資料完整性`);
+      } else {
+        console.log('AggregationSummary: Payment breakdown calculation successful', {
+          breakdown,
+          consistencyResult: {
+            isConsistent: consistencyResult.isConsistent,
+            difference: consistencyResult.difference
+          }
+        });
+      }
+      
+      // 設置計算結果
+      setPaymentBreakdown(breakdown);
+      
+    } catch (error) {
+      // 計算失敗時的優雅降級處理
+      logSystemError('AggregationSummary', 'Payment breakdown calculation failed, activating graceful degradation', {
+        error,
+        dedicationsCount: dedications.length,
+        summaryTotal: totalAmount
+      });
+      
+      const errorInfo = handleCalculationError(error);
+      setCalculationError(errorInfo.message);
+      
+      // 優雅降級：設置預設值以防止 UI 崩潰
+      setPaymentBreakdown({
+        cashTotal: 0,
+        chequeTotal: 0,
+        hasCheque: false
+      });
+      
+      // 記錄降級事件
+      logSystemWarning('AggregationSummary', 'Graceful degradation activated - payment breakdown display will be hidden');
+    }
+  }, [dedications, totalAmount]);
 
   return (
     <div className="bg-success-50 dark:bg-graphite-800/40 border-l-4 border-success-500 dark:border-success-600 p-6 rounded-r-lg transition-theme">
@@ -46,6 +158,21 @@ const AggregationSummary = ({ summary }) => {
           </tfoot>
         </table>
       </div>
+
+      {/* 付款方式明細計算式 */}
+      <PaymentBreakdownDisplay 
+        breakdown={paymentBreakdown} 
+        totalAmount={totalAmount} 
+      />
+
+      {/* 錯誤訊息顯示 */}
+      {calculationError && (
+        <div className="mt-4 p-4 bg-danger-50 dark:bg-danger-dark/20 border border-danger-200 dark:border-danger-dark/40 rounded-lg transition-theme">
+          <p className="text-danger-600 dark:text-danger-dark text-sm transition-theme">
+            <strong>計算錯誤：</strong>{calculationError}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
