@@ -25,7 +25,7 @@ const CategoryItem = ({ item, onSelect, level = 0, parentName = '' }) => {
   }
 
   return (
-    <details className="w-full" open>
+    <details className="w-full">
       <summary 
         className="px-4 py-2 font-semibold cursor-pointer hover:bg-graphite-100 dark:hover:bg-graphite-700 hover:text-glory-red-600 dark:hover:text-glory-red-400 rounded-md flex justify-between items-center transition-theme text-text-main dark:text-dark-text-main"
         style={{ paddingLeft: `${1 + level * 1.5}rem` }}

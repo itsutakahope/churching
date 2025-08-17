@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影音系統設定與問題排除確認清單</title>
+    <style>
+        /* * 全局變數定義，方便統一管理顏色配置。
+         * :root 選擇器可以讓你定義全域的 CSS 變數。
+         */
+        :root {
+            --primary-bg: #f4f7f9;
+            --secondary-bg: #ffffff;
+            --text-color: #333;
+            --accent-color: #007bff;
+            --border-color: #e0e0e0;
+            --completed-color: #888;
+            --danger-color: #dc3545;
+            --danger-hover: #c82333;
+            --light-blue: #e7f3ff;
+        }
+
+        /* 基礎樣式設定 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /* 主要內容容器 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--secondary-bg);
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        /* 標題樣式 */
+        h1 {
+            color: var(--accent-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* 分頁導覽列 */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .tab-link {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            position: relative;
+            color: #555;
+            transition: color 0.3s;
+        }
+        .tab-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent-color);
+            transform: scaleX(0);
+            transition: transform 0.3s ease-in-out;
+        }
+        .tab-link.active {
+            color: var(--accent-color);
+        }
+        .tab-link.active::after {
+            transform: scaleX(1);
+        }
+
+        /* 分頁內容 */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 清單樣式 */
+        ul.checklist {
+            list-style: none;
+            padding: 0;
+        }
+        ul.checklist li {
+            border-bottom: 1px solid var(--border-color);
+        }
+        ul.checklist li:last-child {
+            border-bottom: none;
+        }
+
+        /* 收合元件 <details> 和 <summary> */
+        details {
+            padding: 12px 5px;
+            transition: background-color 0.2s;
+        }
+        details[open] {
+            background-color: var(--light-blue);
+        }
+        summary {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            list-style: none; /* 隱藏 Safari 的預設箭頭 */
+        }
+        summary::-webkit-details-marker {
+            display: none; /* 隱藏 Chrome/Edge 的預設箭頭 */
+        }
+        summary::before { /* 自訂箭頭 */
+            content: '▶';
+            font-size: 0.7em;
+            margin-right: 10px;
+            transition: transform 0.2s;
+        }
+        details[open] > summary::before {
+            transform: rotate(90deg);
+        }
+        
+        /* 複選框樣式 */
+        input[type="checkbox"] {
+            margin-right: 10px;
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        /* 標籤文字（步驟標題） */
+        .step-title {
+            font-weight: bold;
+            flex-grow: 1;
+            transition: color 0.3s;
+        }
+        input[type="checkbox"]:checked + .step-title {
+            text-decoration: line-through;
+            color: var(--completed-color);
+        }
+        
+        /* 詳細說明內容 */
+        .step-description {
+            padding: 10px 0 5px 32px; /* 對齊標題文字 */
+            color: #555;
+            font-size: 0.95em;
+            border-top: 1px dashed var(--border-color);
+            margin-top: 10px;
+        }
+
+        /* 重設按鈕 */
+        .reset-btn {
+            display: block;
+            margin: 20px 0 0 auto;
+            padding: 8px 16px;
+            border: none;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .reset-btn:hover {
+            background-color: var(--danger-hover);
+        }
+
+        /* 頁腳 */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>影音系統設定與問題排除確認清單</h1>
+
+        <!-- 分頁導覽 -->
+        <div class="tabs">
+            <button class="tab-link active" data-tab="tab-1">macOS 音訊介面設定</button>
+            <button class="tab-link" data-tab="tab-2">OBS 副堂轉播音訊問題排除</button>
+        </div>
+
+        <!-- 分頁內容一 -->
+        <div id="tab-1" class="tab-content active">
+            <ul class="checklist" id="checklist-1">
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c1-step1">
+                            <span class="step-title">開啟音訊設定程式</span>
+                        </summary>
+                        <p class="step-description">進入 macOS 的「音訊 MIDI 設定」或相關的第三方音訊介面控制軟體。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c1-step2">
+                            <span class="step-title">檢視並啟用音訊裝置</span>
+                        </summary>
+                        <p class="step-description">在裝置列表中，確保所有需要用到的音訊裝置均為「已啟動」狀態。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c1-step3">
+                            <span class="step-title">調整輸入音量 (Gain)</span>
+                        </summary>
+                        <p class="step-description">逐一調整每個音訊來源的音量，避免音訊過載或過小聲。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c1-step4">
+                            <span class="step-title">設定聲道模式與平衡</span>
+                        </summary>
+                        <p class="step-description">根據需求設定「單聲道」或調整「聲道平衡」拉桿。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c1-step5">
+                            <span class="step-title">設定同步與監聽</span>
+                        </summary>
+                        <p class="step-description">設定「同步位移」(Sync Offset) 解決延遲；選擇正確的「音訊監測」模式。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c1-step6">
+                            <span class="step-title">指派輸出音軌</span>
+                        </summary>
+                        <p class="step-description">在「音軌」欄位，勾選每個音訊來源要對應的輸出音軌。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c1-step7">
+                            <span class="step-title">儲存並套用設定</span>
+                        </summary>
+                        <p class="step-description">點擊「套用」或「關閉」以儲存設定。</p>
+                    </details>
+                </li>
+            </ul>
+            <button class="reset-btn" data-checklist="checklist-1">重設此清單</button>
+        </div>
+
+        <!-- 分頁內容二 -->
+        <div id="tab-2" class="tab-content">
+            <ul class="checklist" id="checklist-2">
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c2-step1">
+                            <span class="step-title">問題診斷</span>
+                        </summary>
+                        <p class="step-description">確認硬體線路（如 HDMI 線）連接正常，將問題鎖定為 OBS 軟體設定。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c2-step2">
+                            <span class="step-title">檢查全域監聽裝置</span>
+                        </summary>
+                        <p class="step-description">進入 OBS `設定` > `音效`，確認「監聽裝置」已設定為 `HDMI TV` 或對應的副堂螢幕。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c2-step3">
+                            <span class="step-title">進入進階音訊屬性</span>
+                        </summary>
+                        <p class="step-description">在「音訊混音器」中找到目標音源（如 `擷取音效輸入`），點擊齒輪圖示，選擇 `進階音訊屬性`。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c2-step4">
+                            <span class="step-title">設定為單聲道 (Mono)</span>
+                        </summary>
+                        <p class="step-description">在進階屬性視窗中，找到該音源並勾選「單聲道」，確保聲音送至左右聲道。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c2-step5">
+                            <span class="step-title">(關鍵) 設定音訊監測模式</span>
+                        </summary>
+                        <p class="step-description">找到「音訊監測」下拉選單。</p>
+                    </details>
+                </li>
+                 <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c2-step6">
+                            <span class="step-title">(關鍵) 變更為「監測和輸出」</span>
+                        </summary>
+                        <p class="step-description">將設定從 `關閉監測` 更改為 `監測和輸出`，將聲音路由至監聽裝置。</p>
+                    </details>
+                </li>
+                <li>
+                    <details>
+                        <summary>
+                            <input type="checkbox" id="c2-step7">
+                            <span class="step-title">完成設定與驗證</span>
+                        </summary>
+                        <p class="step-description">關閉設定視窗，確認副堂已有聲音，問題排除。</p>
+                    </details>
+                </li>
+            </ul>
+            <button class="reset-btn" data-checklist="checklist-2">重設此清單</button>
+        </div>
+
+        <footer>
+            <p id="footer-text"></p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabsContainer = document.querySelector('.tabs');
+            const tabLinks = document.querySelectorAll('.tab-link');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const checklists = document.querySelectorAll('.checklist');
+            const resetButtons = document.querySelectorAll('.reset-btn');
+            const STORAGE_KEY = 'interactiveChecklistState_v2'; // 更新 key 以免與舊版衝突
+
+            // --- 分頁切換功能 ---
+            tabsContainer.addEventListener('click', (e) => {
+                const clickedTab = e.target.closest('.tab-link');
+                if (!clickedTab) return;
+
+                const tabId = clickedTab.dataset.tab;
+
+                // 移除所有分頁的 active 狀態
+                tabLinks.forEach(link => link.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // 為點擊的分頁加上 active 狀態
+                clickedTab.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+
+            // --- 狀態儲存與載入 ---
+            function loadState() {
+                const savedState = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    if (savedState[checkbox.id]) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+
+            function saveState() {
+                const currentState = {};
+                document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    if (checkbox.checked) {
+                        currentState[checkbox.id] = true;
+                    }
+                });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState));
+            }
+            
+            // --- 事件監聽 ---
+            // 監聽勾選框變化以儲存狀態
+            checklists.forEach(list => {
+                list.addEventListener('change', (e) => {
+                    if (e.target.type === 'checkbox') {
+                        saveState();
+                    }
+                });
+            });
+
+            // 重設按鈕功能
+            resetButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const checklistId = button.dataset.checklist;
+                    if (confirm('您確定要重設此清單的所有項目嗎？')) {
+                        const list = document.getElementById(checklistId);
+                        if (list) {
+                            list.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                                checkbox.checked = false;
+                            });
+                            saveState();
+                        }
+                    }
+                });
+            });
+
+            // --- 頁面初始化 ---
+            const footer = document.getElementById('footer-text');
+            const now = new Date();
+            footer.textContent = `清單生成於：${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+            loadState();
+        });
+    </script>
+
+</body>
+</html>
