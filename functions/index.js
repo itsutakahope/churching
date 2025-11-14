@@ -361,6 +361,236 @@ app.get('/api/users', verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// --- Admin API Endpoints ---
+
+// GET /api/admin/users (獲取所有使用者完整資訊) - Admin Only
+app.get('/api/admin/users', verifyFirebaseToken, verifyRole(['admin']), async (req, res) => {
+  try {
+    // 從 Firestore 獲取所有使用者資料
+    const usersSnapshot = await db.collection('users').get();
+    const firestoreUsers = {};
+
+    usersSnapshot.docs.forEach(doc => {
+      firestoreUsers[doc.id] = doc.data();
+    });
+
+    // 從 Authentication 獲取所有使用者
+    const listUsersResult = await admin.auth().listUsers();
+
+    const users = listUsersResult.users.map(userRecord => ({
+      uid: userRecord.uid,
+      email: userRecord.email,
+      displayName: userRecord.displayName || 'N/A',
+      emailVerified: userRecord.emailVerified,
+      disabled: userRecord.disabled,
+      createdAt: userRecord.metadata.creationTime,
+      lastSignInTime: userRecord.metadata.lastSignInTime,
+      // 合併 Firestore 中的資料
+      status: firestoreUsers[userRecord.uid]?.status || 'pending',
+      roles: firestoreUsers[userRecord.uid]?.roles || ['user'],
+      wantsNewRequestNotification: firestoreUsers[userRecord.uid]?.wantsNewRequestNotification || false,
+      wantsPurchaseCompleteNotification: firestoreUsers[userRecord.uid]?.wantsPurchaseCompleteNotification || false,
+    }));
+
+    res.status(200).json(users);
+  } catch (error) {
+    logger.error('Error fetching admin users list:', error);
+    res.status(500).json({ message: 'Error fetching users list', error: error.message });
+  }
+});
+
+// PUT /api/admin/users/:uid/approve (審核使用者) - Admin Only
+app.put('/api/admin/users/:uid/approve', verifyFirebaseToken, verifyRole(['admin']), async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const { status } = req.body; // 'approved' 或 'rejected'
+
+    if (!['approved', 'rejected', 'pending'].includes(status)) {
+      return res.status(400).json({
+        message: '無效的狀態值。必須為 approved、rejected 或 pending。',
+        code: 'INVALID_STATUS'
+      });
+    }
+
+    const userRef = db.collection('users').doc(uid);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({
+        message: '找不到該使用者。',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    await userRef.update({
+      status: status,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      approvedBy: req.user.uid,
+      approvedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    logger.log(`User ${uid} status updated to ${status} by admin ${req.user.uid}`);
+
+    res.status(200).json({
+      success: true,
+      message: '使用者狀態已更新',
+      uid: uid,
+      status: status
+    });
+  } catch (error) {
+    logger.error('Error approving user:', error);
+    res.status(500).json({ message: '更新使用者狀態時發生錯誤', error: error.message });
+  }
+});
+
+// PUT /api/admin/users/:uid/roles (修改使用者角色) - Admin Only
+app.put('/api/admin/users/:uid/roles', verifyFirebaseToken, verifyRole(['admin']), async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const { roles } = req.body;
+
+    if (!Array.isArray(roles) || roles.length === 0) {
+      return res.status(400).json({
+        message: '角色必須是非空陣列。',
+        code: 'INVALID_ROLES'
+      });
+    }
+
+    // 驗證角色是否有效
+    const validRoles = ['admin', 'finance_staff', 'treasurer', 'reimbursementContact', 'user'];
+    const invalidRoles = roles.filter(role => !validRoles.includes(role));
+
+    if (invalidRoles.length > 0) {
+      return res.status(400).json({
+        message: `無效的角色：${invalidRoles.join(', ')}`,
+        code: 'INVALID_ROLES'
+      });
+    }
+
+    const userRef = db.collection('users').doc(uid);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({
+        message: '找不到該使用者。',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    await userRef.update({
+      roles: roles,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      rolesUpdatedBy: req.user.uid,
+    });
+
+    logger.log(`User ${uid} roles updated to [${roles.join(', ')}] by admin ${req.user.uid}`);
+
+    res.status(200).json({
+      success: true,
+      message: '使用者角色已更新',
+      uid: uid,
+      roles: roles
+    });
+  } catch (error) {
+    logger.error('Error updating user roles:', error);
+    res.status(500).json({ message: '更新使用者角色時發生錯誤', error: error.message });
+  }
+});
+
+// GET /api/admin/statistics (獲取系統統計數據) - Admin Only
+app.get('/api/admin/statistics', verifyFirebaseToken, verifyRole(['admin']), async (req, res) => {
+  try {
+    // 統計使用者數據
+    const usersSnapshot = await db.collection('users').get();
+    const userStats = {
+      total: 0,
+      approved: 0,
+      pending: 0,
+      rejected: 0,
+      byRole: {
+        admin: 0,
+        finance_staff: 0,
+        treasurer: 0,
+        reimbursementContact: 0,
+        user: 0,
+      }
+    };
+
+    usersSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      userStats.total++;
+
+      if (data.status === 'approved') userStats.approved++;
+      else if (data.status === 'pending') userStats.pending++;
+      else if (data.status === 'rejected') userStats.rejected++;
+
+      if (Array.isArray(data.roles)) {
+        data.roles.forEach(role => {
+          if (userStats.byRole[role] !== undefined) {
+            userStats.byRole[role]++;
+          }
+        });
+      }
+    });
+
+    // 統計採購需求數據
+    const requirementsSnapshot = await db.collection('requirements').get();
+    const requirementStats = {
+      total: requirementsSnapshot.size,
+      pending: 0,
+      purchased: 0,
+      totalAmount: 0,
+      byCategory: {},
+    };
+
+    requirementsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+
+      if (data.status === 'pending') requirementStats.pending++;
+      else if (data.status === 'purchased') {
+        requirementStats.purchased++;
+        requirementStats.totalAmount += data.purchaseAmount || 0;
+      }
+
+      if (data.accountingCategory) {
+        requirementStats.byCategory[data.accountingCategory] =
+          (requirementStats.byCategory[data.accountingCategory] || 0) + 1;
+      }
+    });
+
+    // 統計奉獻任務數據
+    const titheTasksSnapshot = await db.collection('tithe').get();
+    const titheStats = {
+      total: titheTasksSnapshot.size,
+      inProgress: 0,
+      completed: 0,
+      totalAmount: 0,
+    };
+
+    titheTasksSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+
+      if (data.status === 'in-progress') titheStats.inProgress++;
+      else if (data.status === 'completed') {
+        titheStats.completed++;
+        if (data.summary && data.summary.totalAmount) {
+          titheStats.totalAmount += data.summary.totalAmount;
+        }
+      }
+    });
+
+    res.status(200).json({
+      users: userStats,
+      requirements: requirementStats,
+      tithe: titheStats,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error('Error fetching admin statistics:', error);
+    res.status(500).json({ message: '獲取統計數據時發生錯誤', error: error.message });
+  }
+});
+
 // GET /api/users/reimbursement-contacts (Get All Reimbursement Contacts) - Protected
 app.get('/api/users/reimbursement-contacts', verifyFirebaseToken, async (req, res) => {
   try {
