@@ -1,0 +1,328 @@
+<!-- ==================== 模態框集合 ==================== -->
+
+<!-- 1. 新增採購申請模態框 -->
+<div id="createRequirementModal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeModal('createRequirementModal')"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+    <div class="modal-content pointer-events-auto w-full max-w-2xl">
+      <!-- 標題列 -->
+      <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">新增採購需求</h3>
+        <button onclick="closeModal('createRequirementModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 表單內容 -->
+      <form id="createRequirementForm" onsubmit="handleCreateRequirement(event)" class="p-6 space-y-4">
+        <!-- 品項 -->
+        <div>
+          <label class="form-label" for="createText">品項 <span class="text-red-500">*</span></label>
+          <input type="text" id="createText" required class="form-input" placeholder="例如：影印紙 A4">
+        </div>
+
+        <!-- 規格說明 -->
+        <div>
+          <label class="form-label" for="createDescription">規格說明</label>
+          <textarea id="createDescription" rows="3" class="form-input" placeholder="詳細描述規格、數量等..."></textarea>
+        </div>
+
+        <!-- 會計科目 -->
+        <div>
+          <label class="form-label" for="createCategory">會計科目 <span class="text-red-500">*</span></label>
+          <select id="createCategory" required class="form-input">
+            <option value="">請選擇會計科目</option>
+            <option value="2.3.1 文具印刷">2.3.1 文具印刷</option>
+            <option value="2.3.2 交通費">2.3.2 交通費</option>
+            <option value="2.3.3 郵電費">2.3.3 郵電費</option>
+            <option value="2.3.4 修繕費">2.3.4 修繕費</option>
+            <option value="2.3.5 水電費">2.3.5 水電費</option>
+            <option value="2.4.1 愛宴餐點費">2.4.1 愛宴餐點費</option>
+            <option value="2.4.2 主日">2.4.2 主日</option>
+          </select>
+        </div>
+
+        <!-- 優先級 -->
+        <div>
+          <label class="form-label" for="createPriority">優先級 <span class="text-red-500">*</span></label>
+          <select id="createPriority" required class="form-input">
+            <option value="normal">一般</option>
+            <option value="urgent">緊急</option>
+          </select>
+        </div>
+
+        <!-- 按鈕 -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" onclick="closeModal('createRequirementModal')" class="btn btn-secondary flex-1">
+            取消
+          </button>
+          <button type="submit" class="btn btn-primary flex-1">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            建立採購需求
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 2. 編輯採購申請模態框 -->
+<div id="editRequirementModal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeModal('editRequirementModal')"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+    <div class="modal-content pointer-events-auto w-full max-w-2xl">
+      <!-- 標題列 -->
+      <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">編輯採購需求</h3>
+        <button onclick="closeModal('editRequirementModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 表單內容 -->
+      <form id="editRequirementForm" onsubmit="handleEditRequirement(event)" class="p-6 space-y-4">
+        <input type="hidden" id="editId">
+
+        <!-- 品項 -->
+        <div>
+          <label class="form-label" for="editText">品項 <span class="text-red-500">*</span></label>
+          <input type="text" id="editText" required class="form-input">
+        </div>
+
+        <!-- 規格說明 -->
+        <div>
+          <label class="form-label" for="editDescription">規格說明</label>
+          <textarea id="editDescription" rows="3" class="form-input"></textarea>
+        </div>
+
+        <!-- 會計科目 -->
+        <div>
+          <label class="form-label" for="editCategory">會計科目 <span class="text-red-500">*</span></label>
+          <select id="editCategory" required class="form-input">
+            <option value="">請選擇會計科目</option>
+            <option value="2.3.1 文具印刷">2.3.1 文具印刷</option>
+            <option value="2.3.2 交通費">2.3.2 交通費</option>
+            <option value="2.3.3 郵電費">2.3.3 郵電費</option>
+            <option value="2.3.4 修繕費">2.3.4 修繕費</option>
+            <option value="2.3.5 水電費">2.3.5 水電費</option>
+            <option value="2.4.1 愛宴餐點費">2.4.1 愛宴餐點費</option>
+            <option value="2.4.2 主日">2.4.2 主日</option>
+          </select>
+        </div>
+
+        <!-- 優先級 -->
+        <div>
+          <label class="form-label" for="editPriority">優先級 <span class="text-red-500">*</span></label>
+          <select id="editPriority" required class="form-input">
+            <option value="normal">一般</option>
+            <option value="urgent">緊急</option>
+          </select>
+        </div>
+
+        <!-- 按鈕 -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" onclick="closeModal('editRequirementModal')" class="btn btn-secondary flex-1">
+            取消
+          </button>
+          <button type="submit" class="btn btn-primary flex-1">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            儲存變更
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3. 標記已購買模態框 -->
+<div id="purchaseModal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeModal('purchaseModal')"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+    <div class="modal-content pointer-events-auto w-full max-w-2xl">
+      <!-- 標題列 -->
+      <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">標記為已購買</h3>
+        <button onclick="closeModal('purchaseModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 表單內容 -->
+      <form id="purchaseForm" onsubmit="handleMarkAsPurchased(event)" class="p-6 space-y-4">
+        <input type="hidden" id="purchaseId">
+
+        <!-- 採購資訊 -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+          <h4 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">採購需求</h4>
+          <p id="purchaseItemName" class="text-blue-800 dark:text-blue-400"></p>
+        </div>
+
+        <!-- 購買金額 -->
+        <div>
+          <label class="form-label" for="purchaseAmount">購買金額 (NT$) <span class="text-red-500">*</span></label>
+          <input type="number" id="purchaseAmount" required min="0" step="1" class="form-input" placeholder="0">
+        </div>
+
+        <!-- 購買日期 -->
+        <div>
+          <label class="form-label" for="purchaseDate">購買日期 <span class="text-red-500">*</span></label>
+          <input type="date" id="purchaseDate" required class="form-input">
+        </div>
+
+        <!-- 購買人 -->
+        <div>
+          <label class="form-label" for="purchaserName">購買人 <span class="text-red-500">*</span></label>
+          <input type="text" id="purchaserName" required class="form-input" placeholder="購買人姓名">
+        </div>
+
+        <!-- 報帳人 -->
+        <div>
+          <label class="form-label" for="reimbursementerId">報帳人 <span class="text-red-500">*</span></label>
+          <select id="reimbursementerId" required class="form-input">
+            <option value="">載入中...</option>
+          </select>
+        </div>
+
+        <!-- 購買備註 -->
+        <div>
+          <label class="form-label" for="purchaseNotes">購買備註</label>
+          <textarea id="purchaseNotes" rows="2" class="form-input" placeholder="購買地點、發票資訊等..."></textarea>
+        </div>
+
+        <!-- 按鈕 -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" onclick="closeModal('purchaseModal')" class="btn btn-secondary flex-1">
+            取消
+          </button>
+          <button type="submit" class="btn btn-success flex-1">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            確認已購買
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 查看詳情模態框（含留言系統） -->
+<div id="detailModal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeModal('detailModal')"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+    <div class="modal-content pointer-events-auto w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <!-- 標題列 -->
+      <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">採購需求詳情</h3>
+        <div class="flex items-center gap-2">
+          <!-- 生成 PDF 按鈕 -->
+          <button onclick="generatePDF(currentRequirementId)"
+                  class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  title="生成 PDF">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            下載 PDF
+          </button>
+          <!-- 關閉按鈕 -->
+          <button onclick="closeModal('detailModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 內容區 -->
+      <div class="p-6 space-y-6">
+        <!-- 基本資訊 -->
+        <div id="detailContent">
+          <!-- 動態載入 -->
+        </div>
+
+        <!-- 留言區 -->
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+            留言
+          </h4>
+
+          <!-- 留言列表 -->
+          <div id="commentsList" class="space-y-3 mb-4">
+            <!-- 動態載入 -->
+          </div>
+
+          <!-- 新增留言表單 -->
+          <form id="addCommentForm" onsubmit="handleAddComment(event)" class="flex gap-2">
+            <input type="hidden" id="commentRequirementId">
+            <input type="text" id="commentText" required class="form-input flex-1" placeholder="輸入留言...">
+            <button type="submit" class="btn btn-primary">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. 轉移報帳人模態框 -->
+<div id="transferModal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeModal('transferModal')"></div>
+  <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+    <div class="modal-content pointer-events-auto w-full max-w-md">
+      <!-- 標題列 -->
+      <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">轉移報帳人</h3>
+        <button onclick="closeModal('transferModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 表單內容 -->
+      <form id="transferForm" onsubmit="handleTransferReimbursement(event)" class="p-6 space-y-4">
+        <input type="hidden" id="transferId">
+
+        <!-- 目前報帳人 -->
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">目前報帳人</p>
+          <p id="currentReimbursementer" class="font-medium text-gray-900 dark:text-white"></p>
+        </div>
+
+        <!-- 新報帳人 -->
+        <div>
+          <label class="form-label" for="newReimbursementerId">新報帳人 <span class="text-red-500">*</span></label>
+          <select id="newReimbursementerId" required class="form-input">
+            <option value="">載入中...</option>
+          </select>
+        </div>
+
+        <!-- 按鈕 -->
+        <div class="flex gap-3 pt-4">
+          <button type="button" onclick="closeModal('transferModal')" class="btn btn-secondary flex-1">
+            取消
+          </button>
+          <button type="submit" class="btn btn-primary flex-1">
+            確認轉移
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

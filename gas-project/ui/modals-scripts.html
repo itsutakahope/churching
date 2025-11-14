@@ -1,0 +1,469 @@
+<script>
+// ==================== 模態框管理系統 ====================
+let reimbursementContacts = [];
+let currentRequirementId = null;
+
+// 開啟模態框
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+// 關閉模態框
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
+}
+
+// 載入報帳聯絡人列表
+async function loadReimbursementContacts() {
+  try {
+    const response = await callAPI('getReimbursementContacts', {});
+    if (response.success) {
+      reimbursementContacts = response.data || [];
+      return reimbursementContacts;
+    }
+  } catch (error) {
+    console.error('載入報帳聯絡人失敗:', error);
+  }
+  return [];
+}
+
+// 填充報帳聯絡人下拉選單
+function populateReimbursementSelect(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  select.innerHTML = '<option value="">請選擇報帳人</option>';
+  reimbursementContacts.forEach(contact => {
+    const option = document.createElement('option');
+    option.value = contact.id;
+    option.textContent = contact.displayName;
+    select.appendChild(option);
+  });
+}
+
+// ==================== 1. 新增採購申請 ====================
+async function openNewRequirementModal() {
+  document.getElementById('createRequirementForm').reset();
+  openModal('createRequirementModal');
+}
+
+async function handleCreateRequirement(event) {
+  event.preventDefault();
+
+  const formData = {
+    text: document.getElementById('createText').value,
+    description: document.getElementById('createDescription').value,
+    accountingCategory: document.getElementById('createCategory').value,
+    priority: document.getElementById('createPriority').value
+  };
+
+  try {
+    const response = await callAPI('createRequirement', formData);
+    if (response.success) {
+      showToast('採購需求已建立！', 'success');
+      closeModal('createRequirementModal');
+      loadRequirements();
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('建立失敗: ' + error.message, 'error');
+  }
+}
+
+// ==================== 2. 編輯採購申請 ====================
+async function openEditModal(id) {
+  const requirement = requirements.find(r => r.id === id);
+  if (!requirement) {
+    showToast('找不到採購需求', 'error');
+    return;
+  }
+
+  document.getElementById('editId').value = requirement.id;
+  document.getElementById('editText').value = requirement.text;
+  document.getElementById('editDescription').value = requirement.description || '';
+  document.getElementById('editCategory').value = requirement.accountingCategory;
+  document.getElementById('editPriority').value = requirement.priority;
+
+  openModal('editRequirementModal');
+}
+
+async function handleEditRequirement(event) {
+  event.preventDefault();
+
+  const id = document.getElementById('editId').value;
+  const updates = {
+    text: document.getElementById('editText').value,
+    description: document.getElementById('editDescription').value,
+    accountingCategory: document.getElementById('editCategory').value,
+    priority: document.getElementById('editPriority').value
+  };
+
+  try {
+    const response = await callAPI('updateRequirement', { id, updates });
+    if (response.success) {
+      showToast('已儲存變更！', 'success');
+      closeModal('editRequirementModal');
+      loadRequirements();
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('儲存失敗: ' + error.message, 'error');
+  }
+}
+
+// ==================== 3. 標記已購買 ====================
+async function openPurchaseModal(id) {
+  const requirement = requirements.find(r => r.id === id);
+  if (!requirement) {
+    showToast('找不到採購需求', 'error');
+    return;
+  }
+
+  if (reimbursementContacts.length === 0) {
+    await loadReimbursementContacts();
+  }
+
+  document.getElementById('purchaseId').value = requirement.id;
+  document.getElementById('purchaseItemName').textContent = requirement.text;
+  document.getElementById('purchaseAmount').value = '';
+  document.getElementById('purchaseDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('purchaserName').value = currentUser.displayName;
+  document.getElementById('purchaseNotes').value = '';
+
+  populateReimbursementSelect('reimbursementerId');
+  openModal('purchaseModal');
+}
+
+async function handleMarkAsPurchased(event) {
+  event.preventDefault();
+
+  const id = document.getElementById('purchaseId').value;
+  const reimbursementerId = document.getElementById('reimbursementerId').value;
+  const reimbursementerName = reimbursementContacts.find(c => c.id === reimbursementerId)?.displayName || '';
+
+  const updates = {
+    status: 'purchased',
+    purchaseAmount: parseFloat(document.getElementById('purchaseAmount').value),
+    purchaseDate: document.getElementById('purchaseDate').value,
+    purchaserId: currentUser.id,
+    purchaserName: document.getElementById('purchaserName').value,
+    purchaseNotes: document.getElementById('purchaseNotes').value,
+    reimbursementerId: reimbursementerId,
+    reimbursementerName: reimbursementerName
+  };
+
+  try {
+    const response = await callAPI('updateRequirement', { id, updates });
+    if (response.success) {
+      showToast('已標記為已購買！', 'success');
+      closeModal('purchaseModal');
+      loadRequirements();
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('標記失敗: ' + error.message, 'error');
+  }
+}
+
+// ==================== 4. 查看詳情（含留言系統） ====================
+async function openDetailModal(id) {
+  currentRequirementId = id;
+  const requirement = requirements.find(r => r.id === id);
+
+  if (!requirement) {
+    showToast('找不到採購需求', 'error');
+    return;
+  }
+
+  document.getElementById('detailContent').innerHTML = renderRequirementDetail(requirement);
+  document.getElementById('commentRequirementId').value = id;
+
+  await loadComments(id);
+  openModal('detailModal');
+}
+
+function renderRequirementDetail(req) {
+  const statusClass = req.status === 'pending' ? 'badge-pending' : req.status === 'purchased' ? 'badge-purchased' : 'badge-cancelled';
+  const statusText = req.status === 'pending' ? '待購買' : req.status === 'purchased' ? '已購買' : '已取消';
+
+  return `
+    <div class="space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="badge ${statusClass}">${statusText}</span>
+        ${req.priority === 'urgent' ? '<span class="badge badge-urgent">緊急</span>' : ''}
+      </div>
+
+      <div>
+        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">品項</h4>
+        <p class="text-lg font-semibold text-gray-900 dark:text-white">${escapeHtml(req.text)}</p>
+      </div>
+
+      ${req.description ? `
+        <div>
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">規格說明</h4>
+          <p class="text-gray-700 dark:text-gray-300">${escapeHtml(req.description)}</p>
+        </div>
+      ` : ''}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">申請人</h4>
+          <p class="text-gray-900 dark:text-white">${escapeHtml(req.requesterName)}</p>
+        </div>
+        <div>
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">會計科目</h4>
+          <p class="text-gray-900 dark:text-white">${escapeHtml(req.accountingCategory)}</p>
+        </div>
+        <div>
+          <h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">建立時間</h4>
+          <p class="text-gray-900 dark:text-white">${formatDate(req.createdAt)}</p>
+        </div>
+      </div>
+
+      ${req.status === 'purchased' ? `
+        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+          <h4 class="text-sm font-semibold text-green-900 dark:text-green-300 mb-3">購買資訊</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div>
+              <span class="text-green-700 dark:text-green-400 font-medium">購買金額：</span>
+              <span class="text-green-900 dark:text-green-200">NT$ ${req.purchaseAmount}</span>
+            </div>
+            <div>
+              <span class="text-green-700 dark:text-green-400 font-medium">購買日期：</span>
+              <span class="text-green-900 dark:text-green-200">${req.purchaseDate}</span>
+            </div>
+            <div>
+              <span class="text-green-700 dark:text-green-400 font-medium">購買人：</span>
+              <span class="text-green-900 dark:text-green-200">${escapeHtml(req.purchaserName)}</span>
+            </div>
+            <div>
+              <span class="text-green-700 dark:text-green-400 font-medium">報帳人：</span>
+              <span class="text-green-900 dark:text-green-200">${escapeHtml(req.reimbursementerName)}</span>
+            </div>
+            ${req.purchaseNotes ? `
+              <div class="col-span-2">
+                <span class="text-green-700 dark:text-green-400 font-medium">購買備註：</span>
+                <p class="text-green-900 dark:text-green-200 mt-1">${escapeHtml(req.purchaseNotes)}</p>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+async function loadComments(requirementId) {
+  try {
+    const response = await callAPI('getComments', { requirementId });
+    if (response.success) {
+      const comments = response.data || [];
+      renderComments(comments);
+    }
+  } catch (error) {
+    console.error('載入留言失敗:', error);
+    showToast('載入留言失敗: ' + error.message, 'error');
+  }
+}
+
+function renderComments(comments) {
+  const container = document.getElementById('commentsList');
+
+  if (comments.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm text-center py-4">尚無留言</p>';
+    return;
+  }
+
+  container.innerHTML = comments.map(comment => `
+    <div class="comment-bubble">
+      <div class="flex items-start justify-between mb-1">
+        <div class="flex items-center gap-2">
+          <span class="font-medium text-gray-900 dark:text-white">${escapeHtml(comment.authorName)}</span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">${formatDate(comment.createdAt)}</span>
+        </div>
+        ${comment.userId === currentUser.id || currentUser.roles.includes('admin') ? `
+          <button onclick="deleteComment('${comment.id}')" class="text-gray-400 hover:text-red-600 dark:hover:text-red-400" title="刪除留言">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </button>
+        ` : ''}
+      </div>
+      <p class="text-gray-700 dark:text-gray-300">${escapeHtml(comment.text)}</p>
+    </div>
+  `).join('');
+}
+
+async function handleAddComment(event) {
+  event.preventDefault();
+
+  const requirementId = document.getElementById('commentRequirementId').value;
+  const text = document.getElementById('commentText').value;
+
+  if (!text.trim()) return;
+
+  try {
+    const response = await callAPI('addComment', { requirementId, text });
+    if (response.success) {
+      document.getElementById('commentText').value = '';
+      await loadComments(requirementId);
+      showToast('留言已新增', 'success');
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('新增留言失敗: ' + error.message, 'error');
+  }
+}
+
+async function deleteComment(commentId) {
+  if (!confirm('確定要刪除這則留言嗎？')) return;
+
+  try {
+    const response = await callAPI('deleteComment', { id: commentId });
+    if (response.success) {
+      await loadComments(currentRequirementId);
+      showToast('留言已刪除', 'success');
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('刪除失敗: ' + error.message, 'error');
+  }
+}
+
+// ==================== 5. 轉移報帳人 ====================
+async function openTransferModal(id) {
+  const requirement = requirements.find(r => r.id === id);
+  if (!requirement) {
+    showToast('找不到採購需求', 'error');
+    return;
+  }
+
+  if (requirement.status !== 'purchased') {
+    showToast('只有已購買的申請才能轉移報帳人', 'warning');
+    return;
+  }
+
+  if (reimbursementContacts.length === 0) {
+    await loadReimbursementContacts();
+  }
+
+  document.getElementById('transferId').value = requirement.id;
+  document.getElementById('currentReimbursementer').textContent = requirement.reimbursementerName;
+
+  populateReimbursementSelect('newReimbursementerId');
+  openModal('transferModal');
+}
+
+async function handleTransferReimbursement(event) {
+  event.preventDefault();
+
+  const id = document.getElementById('transferId').value;
+  const newReimbursementerId = document.getElementById('newReimbursementerId').value;
+  const newReimbursementerName = reimbursementContacts.find(c => c.id === newReimbursementerId)?.displayName || '';
+
+  try {
+    const response = await callAPI('transferReimbursement', {
+      id,
+      newReimbursementerId,
+      newReimbursementerName
+    });
+
+    if (response.success) {
+      showToast('報帳人已轉移！', 'success');
+      closeModal('transferModal');
+      loadRequirements();
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('轉移失敗: ' + error.message, 'error');
+  }
+}
+
+// ==================== 偏好設定 ====================
+function openPreferences() {
+  showToast('偏好設定功能開發中...', 'info');
+}
+
+// ==================== 6. PDF 生成 ====================
+/**
+ * 生成單一採購需求的 PDF
+ * @param {string} requirementId - 採購需求 ID
+ */
+async function generatePDF(requirementId) {
+  if (!requirementId) {
+    showToast('無效的採購需求 ID', 'error');
+    return;
+  }
+
+  try {
+    showToast('正在生成 PDF，請稍候...', 'info');
+
+    const response = await callAPI('generateRequirementPDF', { requirementId });
+
+    if (response.success) {
+      const pdfInfo = response.data;
+
+      // 顯示成功訊息
+      showToast('PDF 已生成！', 'success');
+
+      // 自動下載 PDF
+      window.open(pdfInfo.downloadUrl, '_blank');
+
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('生成 PDF 失敗: ' + error.message, 'error');
+  }
+}
+
+/**
+ * 生成摘要報告 PDF
+ */
+async function generateSummaryPDF() {
+  try {
+    // 取得當前篩選條件
+    const filters = {
+      status: document.getElementById('statusFilter')?.value || '',
+      priority: document.getElementById('priorityFilter')?.value || ''
+    };
+
+    // 移除空值
+    Object.keys(filters).forEach(key => {
+      if (!filters[key]) delete filters[key];
+    });
+
+    showToast('正在生成摘要報告，請稍候...', 'info');
+
+    const response = await callAPI('generateRequirementsSummaryPDF', filters);
+
+    if (response.success) {
+      const pdfInfo = response.data;
+
+      showToast('摘要報告已生成！', 'success');
+
+      // 自動下載 PDF
+      window.open(pdfInfo.downloadUrl, '_blank');
+
+    } else {
+      throw new Error(response.error.message);
+    }
+  } catch (error) {
+    showToast('生成摘要報告失敗: ' + error.message, 'error');
+  }
+}
+</script>

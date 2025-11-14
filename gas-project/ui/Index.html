@@ -145,6 +145,14 @@
             </button>
           </div>
 
+          <!-- 生成摘要 PDF 按鈕 -->
+          <button onclick="generateSummaryPDF()" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-sm transition-all" title="生成當前篩選條件的摘要報告">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            匯出 PDF
+          </button>
+
           <!-- 新增採購按鈕 -->
           <button onclick="openNewRequirementModal()" class="inline-flex items-center px-4 py-2 bg-primary hover:bg-blue-600 text-white font-semibold rounded-lg shadow-sm transition-all transform hover:scale-105">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,10 +188,12 @@
   <!-- Toast 通知容器 -->
   <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
-  <!-- 模態框會在 scripts.html 中定義 -->
+  <!-- 模態框 -->
+  <?!= include('modals'); ?>
 
   <!-- JavaScript -->
   <?!= include('scripts'); ?>
+  <?!= include('modals-scripts'); ?>
 
   <script>
     // 當前使用者資訊

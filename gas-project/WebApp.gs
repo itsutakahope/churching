@@ -141,6 +141,11 @@ function routeRequest(request, user) {
     'getComments': getComments,
     'searchComments': searchComments,
 
+    // PDF 生成 API
+    'generateRequirementPDF': generateRequirementPDFAPI,
+    'generateRequirementsSummaryPDF': generateRequirementsSummaryPDFAPI,
+    'generateMultipleRequirementsPDF': generateMultipleRequirementsPDFAPI,
+
     // 使用者 API
     'getUsers': getUsers,
     'getReimbursementContacts': getReimbursementContacts,
