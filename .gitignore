@@ -42,8 +42,6 @@ tasks/
 .windsurf/
 .env.example
 .roomodes
-AGENTS.md
-CLAUDE.md
 PRD.txt
 TESTgemini.md
 .github/instructions/
