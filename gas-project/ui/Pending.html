@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>等待批准 - 教會管理系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4285F4',
+            secondary: '#34A853',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .pulse-slow {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-md w-full">
+    <!-- 圖示 -->
+    <div class="text-center mb-8">
+      <div class="inline-block p-4 bg-white dark:bg-gray-800 rounded-full shadow-lg mb-4 pulse-slow">
+        <svg class="w-20 h-20 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">等待批准中</h1>
+    </div>
+
+    <!-- 資訊卡片 -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+      <div class="text-center mb-6">
+        <p class="text-lg text-gray-700 dark:text-gray-300 mb-4">
+          您的帳號已建立成功！
+        </p>
+        <p class="text-gray-600 dark:text-gray-400">
+          請等待管理員審核批准後才能使用系統功能
+        </p>
+      </div>
+
+      <!-- 帳號資訊 -->
+      <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+        <h3 class="font-semibold text-gray-800 dark:text-gray-200 mb-3">您的帳號資訊</h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">Email:</span>
+            <span class="font-medium text-gray-800 dark:text-gray-200" id="userEmail">載入中...</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">狀態:</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+              待批准
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 下一步說明 -->
+      <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <h3 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">接下來</h3>
+        <ul class="text-sm text-blue-800 dark:text-blue-400 space-y-2">
+          <li class="flex items-start">
+            <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span>管理員會在收到通知後盡快處理您的申請</span>
+          </li>
+          <li class="flex items-start">
+            <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span>批准後您會收到 Email 通知</span>
+          </li>
+          <li class="flex items-start">
+            <svg class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span>重新整理此頁面即可登入系統</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 按鈕 -->
+      <div class="mt-6 flex gap-3">
+        <button onclick="location.reload()"
+                class="flex-1 bg-primary hover:bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200">
+          重新整理
+        </button>
+        <button onclick="logout()"
+                class="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200">
+          登出
+        </button>
+      </div>
+    </div>
+
+    <!-- 聯絡資訊 -->
+    <div class="text-center mt-6">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        如有問題，請聯絡系統管理員
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // 深色模式初始化
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+
+    // 取得使用者 Email（需要從後端取得）
+    window.addEventListener('DOMContentLoaded', function() {
+      // 這裡應該從後端取得使用者資訊
+      const userEmail = Session.getActiveUser().getEmail();
+      if (userEmail) {
+        document.getElementById('userEmail').textContent = userEmail;
+      }
+    });
+
+    // 登出函式
+    function logout() {
+      if (confirm('確定要登出嗎？')) {
+        // Google Apps Script 的登出需要導向登出 URL
+        window.location.href = 'https://accounts.google.com/Logout';
+      }
+    }
+
+    // 每 30 秒自動檢查狀態
+    setInterval(function() {
+      console.log('檢查使用者狀態...');
+      // 可以在這裡加入自動檢查狀態的邏輯
+    }, 30000);
+  </script>
+</body>
+</html>

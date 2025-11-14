@@ -205,4 +205,31 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
+/**
+ * 處理前端的 API 請求
+ * 這個函式會被前端的 google.script.run 呼叫
+ * @param {object} request - 請求物件 {action, data}
+ * @returns {object} 回應物件
+ */
+function handleAPIRequest(request) {
+  try {
+    // 記錄 API 請求
+    logInfo('前端 API 請求', {
+      action: request.action,
+      user: getCurrentUserEmail()
+    });
+
+    // 檢查身份驗證
+    const user = checkAuth();
+
+    // 路由到對應的 API 處理函式
+    const response = routeRequest(request, user);
+
+    return response;
+  } catch (error) {
+    logError('handleAPIRequest', error);
+    return createErrorResponse(error);
+  }
+}
+
 // --- ▲▲▲ WebApp.gs 結束 ▲▲▲ ---
