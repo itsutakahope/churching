@@ -11,7 +11,8 @@
 - ✅ **前端基礎**: 100% 完成
 - ✅ **模態框系統**: 100% 完成
 - ✅ **PDF 生成服務**: 100% 完成
-- ⏳ **奉獻計算系統**: 待實作
+- ✅ **奉獻計算系統（後端）**: 100% 完成
+- ⏳ **奉獻計算系統（前端）**: 待實作（已提供實作指南）
 - ⏳ **資料遷移**: 待執行
 - ⏳ **測試與部署**: 待執行
 
@@ -31,23 +32,29 @@
 - ✅ `dao/UserDAO.gs` (222 行) - 使用者資料存取
 - ✅ `dao/RequirementDAO.gs` (349 行) - 採購需求資料存取
 - ✅ `dao/CommentDAO.gs` (173 行) - 留言資料存取
+- ✅ `dao/TitheDAO.gs` (152 行) - 奉獻任務資料存取
+- ✅ `dao/DedicationDAO.gs` (232 行) - 奉獻記錄資料存取
 
 #### 服務層
 - ✅ `services/AuthService.gs` (186 行) - 身份驗證服務
 - ✅ `services/EmailService.gs` (241 行) - Email 通知服務
-- ✅ `services/PDFService.gs` (441 行) - PDF 生成服務
+- ✅ `services/PDFService.gs` (441 行) - 採購板 PDF 生成服務
+- ✅ `services/TithePDFService.gs` (338 行) - 奉獻 PDF 生成服務
 
 #### API 層
 - ✅ `api/RequirementAPI.gs` (293 行) - 9 個採購需求 API
 - ✅ `api/CommentAPI.gs` (97 行) - 4 個留言 API
 - ✅ `api/UserAPI.gs` (231 行) - 8 個使用者 API
-- ✅ `api/PDFAPI.gs` (259 行) - 3 個 PDF 生成 API
+- ✅ `api/PDFAPI.gs` (259 行) - 3 個採購板 PDF API
+- ✅ `api/TitheAPI.gs` (580 行) - 10 個奉獻計算 API
+- ✅ `api/TithePDFAPI.gs` (92 行) - 2 個奉獻 PDF API
 
 #### 主要端點
-- ✅ `WebApp.gs` (236 行) - HTTP 請求處理器（doGet/doPost）
+- ✅ `WebApp.gs` (248 行) - HTTP 請求處理器（doGet/doPost）
 - ✅ `Code.gs` (334 行) - 初始化與設定
+- ✅ `InitializeDatabase.gs` (464 行) - 資料庫初始化腳本
 
-**API 端點總數**: 26 個
+**API 端點總數**: 38 個（採購板 26 個 + 奉獻系統 12 個）
 
 ---
 
@@ -144,23 +151,24 @@
 ## 📋 待辦事項
 
 ### 1. 奉獻計算系統（優先級：中）
-- ⏳ 實作奉獻任務 DAO
-- ⏳ 實作奉獻記錄 DAO
-- ⏳ 實作奉獻計算 API
-- ⏳ 實作奉獻計算前端介面
-- ⏳ 實作奉獻 PDF 生成
+- ✅ 實作奉獻任務 DAO - **完成**
+- ✅ 實作奉獻記錄 DAO - **完成**
+- ✅ 實作奉獻計算 API - **完成** (10 個 API 端點)
+- ✅ 實作奉獻 PDF 生成 - **完成** (2 個 PDF API)
+- ⏳ 實作奉獻計算前端介面 - **待實作** (已提供詳細實作指南)
 
 ### 2. 資料遷移（優先級：高）
-- ⏳ 建立 Google Sheets 資料庫結構
+- ✅ 建立 Google Sheets 資料庫結構 - **完成** (InitializeDatabase.gs)
 - ⏳ 撰寫 Firestore → Sheets 遷移腳本
 - ⏳ 執行資料遷移
 - ⏳ 驗證資料完整性
 
 ### 3. 測試與部署（優先級：高）
+- ✅ 撰寫測試計劃 - **完成** (INTEGRATION_TEST_PLAN.md)
+- ✅ 撰寫部署文件 - **完成** (DEPLOYMENT_GUIDE.md, QUICK_START.md)
 - ⏳ 前後端整合測試
 - ⏳ 使用者驗收測試
 - ⏳ 效能測試
-- ⏳ 撰寫部署文件
 - ⏳ 執行正式部署
 
 ---
@@ -168,31 +176,94 @@
 ## 📈 程式碼統計
 
 ### 後端
-- **檔案數**: 13 個
-- **程式碼行數**: ~3,500 行
-- **API 端點**: 26 個
-- **DAO 類別**: 4 個
-- **服務類別**: 3 個
+- **檔案數**: 19 個
+- **程式碼行數**: ~5,400 行
+- **API 端點**: 38 個（採購板 26 + 奉獻系統 12）
+- **DAO 類別**: 6 個（Base, User, Requirement, Comment, Tithe, Dedication）
+- **服務類別**: 4 個（Auth, Email, PDF, TithePDF）
 
 ### 前端
 - **頁面數**: 3 個（Login, Pending, Index）
-- **模態框數**: 5 個
+- **模態框數**: 5 個（採購板）
 - **程式碼行數**: ~1,900 行
 - **JavaScript 函式**: ~50 個
 
+### 文件
+- **測試文件**: 1 個（INTEGRATION_TEST_PLAN.md ~600 行）
+- **部署文件**: 2 個（DEPLOYMENT_GUIDE.md ~470 行, QUICK_START.md ~290 行）
+- **實作指南**: 1 個（TITHE_FRONTEND_IMPLEMENTATION.md ~830 行）
+- **測試腳本**: 1 個（APITests.gs ~650 行）
+
 ### 總計
-- **總檔案數**: 16 個
-- **總程式碼行數**: ~5,400 行
-- **功能模組**: 8 個主要模組
+- **總檔案數**: 20 個（程式碼）+ 4 個（文件）= 24 個
+- **總程式碼行數**: ~7,950 行
+- **功能模組**: 10 個主要模組（採購板 5 + 奉獻系統 5）
 
 ---
 
 ## 🎯 下一步行動
 
-1. **立即**: 前後端整合測試
-2. **短期**: 建立 Google Sheets 資料庫結構
-3. **中期**: 實作奉獻計算系統
-4. **長期**: 資料遷移與正式部署
+1. **立即**: 實作奉獻系統前端（參考 TITHE_FRONTEND_IMPLEMENTATION.md）
+2. **短期**: 前後端整合測試
+3. **中期**: 執行資料遷移（Firestore → Google Sheets）
+4. **長期**: 正式部署與使用者培訓
+
+---
+
+## 🎁 新增：奉獻計算系統（後端）
+
+### 資料模型
+
+#### 奉獻任務 (Tithe)
+- id, taskName, calculationTimestamp
+- treasurerUid, treasurerName (會計)
+- financeStaffUid, financeStaffName (財務人員)
+- status (in-progress | completed)
+- totalAmount, totalCount
+- createdAt, completedAt
+
+#### 奉獻記錄 (Dedication)
+- id, titheTaskId
+- 献金者, 奉獻類別, 金額
+- 入帳日期, 備註, createdAt
+
+### API 端點 (12 個)
+
+**資料管理 (10 個)**:
+1. createTitheTask - 建立任務
+2. getTitheTasks - 任務列表
+3. getTitheTask - 單一任務
+4. addDedication - 新增記錄
+5. batchAddDedications - 批次新增
+6. getDedications - 記錄列表
+7. updateDedication - 更新記錄
+8. deleteDedication - 刪除記錄
+9. completeTitheTask - 完成任務
+10. getTitheStatistics - 統計資料
+
+**PDF 生成 (2 個)**:
+11. generateTithePDF - 生成任務 PDF
+12. generateTitheSummaryPDF - 生成摘要 PDF
+
+### 功能特點
+
+- ✅ 完整的權限控制（finance_staff、treasurer、admin）
+- ✅ 任務狀態管理（進行中/已完成）
+- ✅ 批次新增奉獻記錄
+- ✅ 多維度統計（按類別、按奉獻者、按金額）
+- ✅ 資料驗證與完整性保護
+- ✅ PDF 報告生成（含統計圖表）
+- ✅ 日期範圍查詢
+- ✅ 搜尋與篩選功能
+
+### 前端實作指南
+
+詳細的前端實作指南已完成：
+- 📄 **TITHE_FRONTEND_IMPLEMENTATION.md** (~830 行)
+- 包含完整的 HTML/CSS/JavaScript 範例程式碼
+- 兩個主要頁面：任務列表、任務詳情
+- 路由設計、樣式指南、響應式佈局
+- 實作檢查清單與順序建議
 
 ---
 
@@ -204,7 +275,10 @@
 - ✅ 完整的錯誤處理與日誌記錄
 - ✅ 響應式設計支援行動裝置
 - ✅ 深色模式完整支援
+- ✅ 奉獻系統後端 100% 完成
+- ⏳ 奉獻系統前端待實作（已提供完整實作指南）
 
 ---
 
 **報告結束**
+**最後更新**: 2025-11-14 - 新增奉獻計算系統後端
