@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>奉獻任務詳情 - 教會管理系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6'
+          }
+        }
+      }
+    }
+  </script>
+  <?!= include('styles'); ?>
+  <style>
+    /* 任務卡片樣式 */
+    .task-card {
+      transition: all 0.3s ease;
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+    }
+
+    /* 統計卡片 */
+    .stat-card {
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    /* 表格樣式 */
+    table th {
+      background-color: #f3f4f6;
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.875rem;
+    }
+
+    .dark table th {
+      background-color: #374151;
+    }
+
+    .dark table td {
+      border-bottom-color: #4b5563;
+    }
+
+    /* 狀態徽章 - 奉獻系統 */
+    .badge-in-progress {
+      @apply bg-blue-100 text-blue-800;
+    }
+
+    .dark .badge-in-progress {
+      @apply bg-blue-900/30 text-blue-300;
+    }
+
+    .badge-completed {
+      @apply bg-green-100 text-green-800;
+    }
+
+    .dark .badge-completed {
+      @apply bg-green-900/30 text-green-300;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+
+  <!-- 導航列 -->
+  <nav class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between">
+        <!-- 左側：返回按鈕和標題 -->
+        <div class="flex items-center gap-4">
+          <a href="?page=tithe" class="btn btn-secondary btn-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            返回列表
+          </a>
+          <h1 id="taskTitle" class="text-xl font-bold">奉獻任務詳情</h1>
+          <span id="statusBadge" class="badge"></span>
+        </div>
+
+        <!-- 右側：操作按鈕 -->
+        <div class="flex items-center gap-2">
+          <button onclick="generatePDF()" class="btn btn-secondary btn-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            下載 PDF
+          </button>
+          <button onclick="completeTask()" id="completeBtn" class="btn btn-success btn-sm" style="display: none;">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            完成任務
+          </button>
+          <button onclick="toggleDarkMode()" class="btn btn-secondary btn-sm">
+            <svg id="darkModeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主要內容 -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- 左側：任務資訊和統計 -->
+      <div class="lg:col-span-1 space-y-6">
+
+        <!-- 任務資訊卡片 -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            任務資訊
+          </h2>
+          <div id="taskInfo" class="space-y-3 text-sm">
+            <!-- 動態載入 -->
+            <div class="flex items-center justify-center py-8">
+              <div class="spinner w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 統計資訊卡片 -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            統計資訊
+          </h2>
+          <div id="statistics" class="space-y-4">
+            <!-- 動態載入 -->
+            <div class="flex items-center justify-center py-8">
+              <div class="spinner w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 右側：奉獻記錄 -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- 新增奉獻記錄表單 -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6" id="addDedicationForm" style="display: none;">
+          <h2 class="text-lg font-semibold mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            新增奉獻記錄
+          </h2>
+          <form onsubmit="handleAddDedication(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">奉獻者 *</label>
+              <input type="text" id="donor" class="form-input" required placeholder="請輸入奉獻者姓名">
+            </div>
+            <div>
+              <label class="form-label">奉獻類別 *</label>
+              <select id="category" class="form-input" required>
+                <option value="">請選擇類別</option>
+                <option value="十一">十一</option>
+                <option value="感恩">感恩</option>
+                <option value="主日">主日</option>
+                <option value="宣教">宣教</option>
+                <option value="特別">特別</option>
+                <option value="專案">專案</option>
+                <option value="裝潢">裝潢</option>
+                <option value="指定">指定</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">金額 (元) *</label>
+              <input type="number" id="amount" class="form-input" required min="1" step="1" placeholder="0">
+            </div>
+            <div>
+              <label class="form-label">入帳日期 *</label>
+              <input type="date" id="date" class="form-input" required>
+            </div>
+            <div class="md:col-span-2">
+              <label class="form-label">備註</label>
+              <input type="text" id="notes" class="form-input" placeholder="選填">
+            </div>
+            <div class="md:col-span-2 flex gap-2">
+              <button type="submit" class="btn btn-primary flex-1">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                新增記錄
+              </button>
+              <button type="button" onclick="document.getElementById('addDedicationForm').querySelector('form').reset()" class="btn btn-secondary">
+                清除
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 奉獻記錄列表 -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            <h2 class="text-lg font-semibold flex items-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+              奉獻記錄列表
+              <span id="recordCount" class="ml-2 text-sm text-gray-500 dark:text-gray-400"></span>
+            </h2>
+            <div class="flex gap-2 w-full sm:w-auto">
+              <input type="text" id="searchInput" placeholder="搜尋奉獻者..."
+                class="form-input text-sm py-2 flex-1 sm:flex-none sm:w-48"
+                oninput="filterDedications()">
+              <select id="categoryFilter" class="form-input text-sm py-2" onchange="filterDedications()">
+                <option value="">所有類別</option>
+                <option value="十一">十一</option>
+                <option value="感恩">感恩</option>
+                <option value="主日">主日</option>
+                <option value="宣教">宣教</option>
+                <option value="特別">特別</option>
+                <option value="專案">專案</option>
+                <option value="裝潢">裝潢</option>
+                <option value="指定">指定</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 表格 -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="w-12">#</th>
+                  <th>奉獻者</th>
+                  <th>類別</th>
+                  <th class="text-right">金額</th>
+                  <th>入帳日期</th>
+                  <th class="hide-mobile">備註</th>
+                  <th class="w-24" id="actionsHeader">操作</th>
+                </tr>
+              </thead>
+              <tbody id="dedicationsTable">
+                <!-- 動態載入 -->
+                <tr>
+                  <td colspan="7" class="text-center py-8">
+                    <div class="flex items-center justify-center">
+                      <div class="spinner w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 分頁 -->
+          <div id="pagination" class="mt-4 flex justify-center gap-2">
+            <!-- 動態載入 -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- 編輯記錄模態框 -->
+  <div id="editDedicationModal" class="modal hidden">
+    <div class="fixed inset-0 bg-black bg-opacity-50 modal-backdrop" onclick="closeEditModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="modal-content w-full max-w-2xl p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">編輯奉獻記錄</h3>
+          <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <form onsubmit="handleUpdateDedication(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="hidden" id="editDedicationId">
+          <div>
+            <label class="form-label">奉獻者 *</label>
+            <input type="text" id="editDonor" class="form-input" required>
+          </div>
+          <div>
+            <label class="form-label">奉獻類別 *</label>
+            <select id="editCategory" class="form-input" required>
+              <option value="">請選擇類別</option>
+              <option value="十一">十一</option>
+              <option value="感恩">感恩</option>
+              <option value="主日">主日</option>
+              <option value="宣教">宣教</option>
+              <option value="特別">特別</option>
+              <option value="專案">專案</option>
+              <option value="裝潢">裝潢</option>
+              <option value="指定">指定</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">金額 (元) *</label>
+            <input type="number" id="editAmount" class="form-input" required min="1" step="1">
+          </div>
+          <div>
+            <label class="form-label">入帳日期 *</label>
+            <input type="date" id="editDate" class="form-input" required>
+          </div>
+          <div class="md:col-span-2">
+            <label class="form-label">備註</label>
+            <input type="text" id="editNotes" class="form-input">
+          </div>
+          <div class="md:col-span-2 flex gap-2 justify-end">
+            <button type="button" onclick="closeEditModal()" class="btn btn-secondary">取消</button>
+            <button type="submit" class="btn btn-primary">儲存變更</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast 通知容器 -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2" style="pointer-events: none;">
+    <!-- Toast 訊息會動態加入這裡 -->
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // 從 URL 取得 taskId
+    const taskId = '<?= taskId ?>';
+
+    let currentTask = null;
+    let allDedications = [];
+    let filteredDedications = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
+
+    // --- ▼▼▼ API 呼叫包裝函式 ▼▼▼ ---
+    function callAPI(action, data = {}) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .handleAPIRequest({ action, ...data });
+      });
+    }
+
+    // --- ▼▼▼ Toast 通知函式 ▼▼▼ ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type} p-4 flex items-start gap-3 pointer-events-auto`;
+
+      const icons = {
+        success: '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
+        error: '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
+        info: '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+        warning: '<svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>'
+      };
+
+      toast.innerHTML = `
+        ${icons[type] || icons.info}
+        <div class="flex-1">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">${message}</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+      }, 5000);
+    }
+
+    // --- ▼▼▼ 日期格式化 ▼▼▼ ---
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    }
+
+    // --- ▼▼▼ 金額格式化 ▼▼▼ ---
+    function formatCurrency(amount) {
+      return 'NT$ ' + parseFloat(amount).toLocaleString();
+    }
+
+    // --- ▼▼▼ 深色模式切換 ▼▼▼ ---
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      localStorage.setItem('darkMode', isDark ? 'dark' : 'light');
+
+      const icon = document.getElementById('darkModeIcon');
+      if (isDark) {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
+      } else {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>';
+      }
+    }
+
+    // --- ▼▼▼ 載入任務資訊 ▼▼▼ ---
+    async function loadTaskInfo() {
+      try {
+        const response = await callAPI('getTitheTask', { id: taskId });
+        if (response.success) {
+          currentTask = response.data;
+          renderTaskInfo(currentTask);
+
+          // 更新標題和狀態徽章
+          document.getElementById('taskTitle').textContent = currentTask.taskName;
+          const statusBadge = document.getElementById('statusBadge');
+          if (currentTask.status === 'in-progress') {
+            statusBadge.textContent = '進行中';
+            statusBadge.className = 'badge badge-in-progress';
+            // 顯示新增表單和完成按鈕
+            document.getElementById('addDedicationForm').style.display = 'block';
+            document.getElementById('completeBtn').style.display = 'inline-flex';
+            // 顯示操作欄
+            document.getElementById('actionsHeader').style.display = 'table-cell';
+          } else {
+            statusBadge.textContent = '已完成';
+            statusBadge.className = 'badge badge-completed';
+            // 隱藏新增表單和完成按鈕
+            document.getElementById('addDedicationForm').style.display = 'none';
+            document.getElementById('completeBtn').style.display = 'none';
+            // 隱藏操作欄
+            document.getElementById('actionsHeader').style.display = 'none';
+          }
+        } else {
+          showToast(response.message || '載入任務失敗', 'error');
+        }
+      } catch (error) {
+        console.error('載入任務失敗:', error);
+        showToast('載入任務失敗', 'error');
+      }
+    }
+
+    // --- ▼▼▼ 渲染任務資訊 ▼▼▼ ---
+    function renderTaskInfo(task) {
+      const container = document.getElementById('taskInfo');
+      container.innerHTML = `
+        <div class="space-y-2">
+          <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+            <span class="text-gray-500 dark:text-gray-400">任務名稱</span>
+            <span class="font-medium">${task.taskName}</span>
+          </div>
+          <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+            <span class="text-gray-500 dark:text-gray-400">計算時間</span>
+            <span class="font-medium">${formatDate(task.calculationTimestamp)}</span>
+          </div>
+          <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+            <span class="text-gray-500 dark:text-gray-400">會計</span>
+            <span class="font-medium">${task.treasurerName}</span>
+          </div>
+          <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+            <span class="text-gray-500 dark:text-gray-400">財務人員</span>
+            <span class="font-medium">${task.financeStaffName}</span>
+          </div>
+          <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+            <span class="text-gray-500 dark:text-gray-400">建立時間</span>
+            <span class="font-medium">${formatDate(task.createdAt)}</span>
+          </div>
+          ${task.completedAt ? `
+          <div class="flex justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+            <span class="text-gray-500 dark:text-gray-400">完成時間</span>
+            <span class="font-medium">${formatDate(task.completedAt)}</span>
+          </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // --- ▼▼▼ 載入奉獻記錄 ▼▼▼ ---
+    async function loadDedications() {
+      try {
+        const response = await callAPI('getDedications', { titheTaskId: taskId });
+        if (response.success) {
+          allDedications = response.data;
+          filteredDedications = allDedications;
+          renderDedications();
+        } else {
+          showToast(response.message || '載入記錄失敗', 'error');
+        }
+      } catch (error) {
+        console.error('載入記錄失敗:', error);
+        showToast('載入記錄失敗', 'error');
+      }
+    }
+
+    // --- ▼▼▼ 篩選奉獻記錄 ▼▼▼ ---
+    function filterDedications() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const categoryFilter = document.getElementById('categoryFilter').value;
+
+      filteredDedications = allDedications.filter(dedication => {
+        const matchesSearch = dedication['献金者'].toLowerCase().includes(searchTerm);
+        const matchesCategory = !categoryFilter || dedication['奉獻類別'] === categoryFilter;
+        return matchesSearch && matchesCategory;
+      });
+
+      currentPage = 1;
+      renderDedications();
+    }
+
+    // --- ▼▼▼ 渲染奉獻記錄 ▼▼▼ ---
+    function renderDedications() {
+      const tbody = document.getElementById('dedicationsTable');
+      const recordCount = document.getElementById('recordCount');
+
+      if (filteredDedications.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-8 text-gray-500 dark:text-gray-400">
+              沒有符合條件的記錄
+            </td>
+          </tr>
+        `;
+        recordCount.textContent = '(0 筆)';
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+
+      // 計算分頁
+      const totalPages = Math.ceil(filteredDedications.length / itemsPerPage);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const pageData = filteredDedications.slice(startIndex, endIndex);
+
+      recordCount.textContent = `(${filteredDedications.length} 筆)`;
+
+      // 渲染表格行
+      const isCompleted = currentTask && currentTask.status === 'completed';
+      tbody.innerHTML = pageData.map((dedication, index) => `
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+          <td class="text-gray-500">${startIndex + index + 1}</td>
+          <td class="font-medium">${dedication['献金者']}</td>
+          <td><span class="badge badge-normal">${dedication['奉獻類別']}</span></td>
+          <td class="text-right font-semibold">${formatCurrency(dedication['金額'])}</td>
+          <td>${dedication['入帳日期']}</td>
+          <td class="hide-mobile text-gray-500">${dedication['備註'] || '-'}</td>
+          ${!isCompleted ? `
+          <td>
+            <div class="flex gap-1">
+              <button onclick="editDedication('${dedication.id}')" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 p-1" title="編輯">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+              </button>
+              <button onclick="deleteDedication('${dedication.id}')" class="text-red-600 hover:text-red-800 dark:text-red-400 p-1" title="刪除">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+          ` : ''}
+        </tr>
+      `).join('');
+
+      // 渲染分頁
+      renderPagination(totalPages);
+    }
+
+    // --- ▼▼▼ 渲染分頁 ▼▼▼ ---
+    function renderPagination(totalPages) {
+      const container = document.getElementById('pagination');
+
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let buttons = [];
+
+      // 上一頁按鈕
+      buttons.push(`
+        <button onclick="changePage(${currentPage - 1})"
+          ${currentPage === 1 ? 'disabled' : ''}
+          class="btn btn-secondary btn-sm ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}">
+          上一頁
+        </button>
+      `);
+
+      // 頁碼按鈕
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+          buttons.push(`
+            <button onclick="changePage(${i})"
+              class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-secondary'}">
+              ${i}
+            </button>
+          `);
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+          buttons.push('<span class="px-2">...</span>');
+        }
+      }
+
+      // 下一頁按鈕
+      buttons.push(`
+        <button onclick="changePage(${currentPage + 1})"
+          ${currentPage === totalPages ? 'disabled' : ''}
+          class="btn btn-secondary btn-sm ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">
+          下一頁
+        </button>
+      `);
+
+      container.innerHTML = buttons.join('');
+    }
+
+    // --- ▼▼▼ 換頁 ▼▼▼ ---
+    function changePage(page) {
+      const totalPages = Math.ceil(filteredDedications.length / itemsPerPage);
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      renderDedications();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- ▼▼▼ 載入統計資料 ▼▼▼ ---
+    async function loadStatistics() {
+      try {
+        const response = await callAPI('getTitheStatistics', { titheTaskId: taskId });
+        if (response.success) {
+          renderStatistics(response.data);
+        } else {
+          console.error('載入統計失敗:', response.message);
+        }
+      } catch (error) {
+        console.error('載入統計失敗:', error);
+      }
+    }
+
+    // --- ▼▼▼ 渲染統計資料 ▼▼▼ ---
+    function renderStatistics(stats) {
+      const container = document.getElementById('statistics');
+
+      // 總計
+      let html = `
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+            <div class="text-sm text-gray-600 dark:text-gray-400">總筆數</div>
+            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">${stats.totalCount}</div>
+          </div>
+          <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+            <div class="text-sm text-gray-600 dark:text-gray-400">總金額</div>
+            <div class="text-xl font-bold text-green-600 dark:text-green-400">${formatCurrency(stats.totalAmount)}</div>
+          </div>
+        </div>
+      `;
+
+      // 按類別統計
+      if (stats.byCategory && Object.keys(stats.byCategory).length > 0) {
+        html += `
+          <div class="mb-4">
+            <h3 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">按類別統計</h3>
+            <div class="space-y-2">
+        `;
+
+        Object.keys(stats.byCategory).sort().forEach(category => {
+          const catStats = stats.byCategory[category];
+          html += `
+            <div class="flex justify-between items-center text-sm py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-gray-600 dark:text-gray-400">${category}</span>
+              <div class="text-right">
+                <div class="font-semibold">${formatCurrency(catStats.amount)}</div>
+                <div class="text-xs text-gray-500">${catStats.count} 筆</div>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      // 按奉獻者統計（前 10 名）
+      if (stats.byDonor && Object.keys(stats.byDonor).length > 0) {
+        const sortedDonors = Object.keys(stats.byDonor)
+          .sort((a, b) => stats.byDonor[b].amount - stats.byDonor[a].amount)
+          .slice(0, 10);
+
+        html += `
+          <div>
+            <h3 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">奉獻者排行（前 10 名）</h3>
+            <div class="space-y-2">
+        `;
+
+        sortedDonors.forEach((donor, index) => {
+          const donorStats = stats.byDonor[donor];
+          html += `
+            <div class="flex justify-between items-center text-sm py-2 border-b border-gray-200 dark:border-gray-700">
+              <span class="text-gray-600 dark:text-gray-400">
+                <span class="font-semibold text-primary mr-2">#${index + 1}</span>
+                ${donor}
+              </span>
+              <div class="text-right">
+                <div class="font-semibold">${formatCurrency(donorStats.amount)}</div>
+                <div class="text-xs text-gray-500">${donorStats.count} 筆</div>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // --- ▼▼▼ 新增奉獻記錄 ▼▼▼ ---
+    async function handleAddDedication(event) {
+      event.preventDefault();
+
+      const data = {
+        titheTaskId: taskId,
+        献金者: document.getElementById('donor').value,
+        奉獻類別: document.getElementById('category').value,
+        金額: parseFloat(document.getElementById('amount').value),
+        入帳日期: document.getElementById('date').value,
+        備註: document.getElementById('notes').value
+      };
+
+      try {
+        const response = await callAPI('addDedication', data);
+        if (response.success) {
+          showToast('記錄已新增', 'success');
+          event.target.reset();
+          // 重新載入資料
+          await loadDedications();
+          await loadStatistics();
+        } else {
+          showToast(response.message || '新增失敗', 'error');
+        }
+      } catch (error) {
+        console.error('新增失敗:', error);
+        showToast('新增失敗', 'error');
+      }
+    }
+
+    // --- ▼▼▼ 編輯奉獻記錄 ▼▼▼ ---
+    function editDedication(dedicationId) {
+      const dedication = allDedications.find(d => d.id === dedicationId);
+      if (!dedication) return;
+
+      document.getElementById('editDedicationId').value = dedication.id;
+      document.getElementById('editDonor').value = dedication['献金者'];
+      document.getElementById('editCategory').value = dedication['奉獻類別'];
+      document.getElementById('editAmount').value = dedication['金額'];
+      document.getElementById('editDate').value = dedication['入帳日期'];
+      document.getElementById('editNotes').value = dedication['備註'] || '';
+
+      document.getElementById('editDedicationModal').classList.remove('hidden');
+    }
+
+    // --- ▼▼▼ 關閉編輯模態框 ▼▼▼ ---
+    function closeEditModal() {
+      document.getElementById('editDedicationModal').classList.add('hidden');
+    }
+
+    // --- ▼▼▼ 更新奉獻記錄 ▼▼▼ ---
+    async function handleUpdateDedication(event) {
+      event.preventDefault();
+
+      const data = {
+        id: document.getElementById('editDedicationId').value,
+        献金者: document.getElementById('editDonor').value,
+        奉獻類別: document.getElementById('editCategory').value,
+        金額: parseFloat(document.getElementById('editAmount').value),
+        入帳日期: document.getElementById('editDate').value,
+        備註: document.getElementById('editNotes').value
+      };
+
+      try {
+        const response = await callAPI('updateDedication', data);
+        if (response.success) {
+          showToast('記錄已更新', 'success');
+          closeEditModal();
+          // 重新載入資料
+          await loadDedications();
+          await loadStatistics();
+        } else {
+          showToast(response.message || '更新失敗', 'error');
+        }
+      } catch (error) {
+        console.error('更新失敗:', error);
+        showToast('更新失敗', 'error');
+      }
+    }
+
+    // --- ▼▼▼ 刪除奉獻記錄 ▼▼▼ ---
+    async function deleteDedication(dedicationId) {
+      if (!confirm('確定要刪除這筆記錄嗎？此操作無法復原。')) {
+        return;
+      }
+
+      try {
+        const response = await callAPI('deleteDedication', { id: dedicationId });
+        if (response.success) {
+          showToast('記錄已刪除', 'success');
+          // 重新載入資料
+          await loadDedications();
+          await loadStatistics();
+        } else {
+          showToast(response.message || '刪除失敗', 'error');
+        }
+      } catch (error) {
+        console.error('刪除失敗:', error);
+        showToast('刪除失敗', 'error');
+      }
+    }
+
+    // --- ▼▼▼ 完成任務 ▼▼▼ ---
+    async function completeTask() {
+      if (!confirm('確定要完成此任務嗎？完成後將無法再修改記錄。')) {
+        return;
+      }
+
+      try {
+        const response = await callAPI('completeTitheTask', { id: taskId });
+        if (response.success) {
+          showToast('任務已完成', 'success');
+          setTimeout(() => {
+            window.location.href = '?page=tithe';
+          }, 1500);
+        } else {
+          showToast(response.message || '完成失敗', 'error');
+        }
+      } catch (error) {
+        console.error('完成失敗:', error);
+        showToast('完成失敗', 'error');
+      }
+    }
+
+    // --- ▼▼▼ 生成 PDF ▼▼▼ ---
+    async function generatePDF() {
+      try {
+        showToast('正在生成 PDF...', 'info');
+        const response = await callAPI('generateTithePDF', { titheTaskId: taskId });
+        if (response.success) {
+          showToast('PDF 已生成', 'success');
+          // 開啟 PDF
+          window.open(response.data.url, '_blank');
+        } else {
+          showToast(response.message || 'PDF 生成失敗', 'error');
+        }
+      } catch (error) {
+        console.error('PDF 生成失敗:', error);
+        showToast('PDF 生成失敗', 'error');
+      }
+    }
+
+    // --- ▼▼▼ 初始化 ▼▼▼ ---
+    document.addEventListener('DOMContentLoaded', function() {
+      // 檢查 taskId
+      if (!taskId || taskId === 'undefined') {
+        showToast('缺少任務 ID', 'error');
+        setTimeout(() => {
+          window.location.href = '?page=tithe';
+        }, 1500);
+        return;
+      }
+
+      // 載入深色模式偏好
+      const darkMode = localStorage.getItem('darkMode');
+      if (darkMode === 'dark') {
+        document.documentElement.classList.add('dark');
+        const icon = document.getElementById('darkModeIcon');
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
+      }
+
+      // 設定今天日期為預設
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('date').value = today;
+
+      // 載入所有資料
+      loadTaskInfo();
+      loadDedications();
+      loadStatistics();
+    });
+  </script>
+
+</body>
+</html>
