@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>奉獻計算 - 教會管理系統</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4285F4',
+            secondary: '#34A853',
+            danger: '#EA4335',
+            warning: '#FBBC05',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 自訂樣式 -->
+  <?!= include('styles'); ?>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+
+  <!-- 導航列 -->
+  <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo 和標題 -->
+        <div class="flex items-center space-x-3">
+          <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div>
+            <h1 class="text-xl font-bold text-gray-800 dark:text-white">教會管理系統</h1>
+            <p class="text-xs text-gray-500 dark:text-gray-400">奉獻計算</p>
+          </div>
+        </div>
+
+        <!-- 導航連結 -->
+        <div class="hidden md:flex items-center space-x-6">
+          <a href="?page=purchase" class="text-sm text-gray-600 dark:text-gray-300 hover:text-primary transition">
+            採購板
+          </a>
+          <a href="?page=tithe" class="text-sm text-primary dark:text-blue-400 font-semibold">
+            奉獻計算
+          </a>
+        </div>
+
+        <!-- 右側選單 -->
+        <div class="flex items-center space-x-4">
+          <!-- 深色模式切換 -->
+          <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="切換深色模式">
+            <svg id="sunIcon" class="w-5 h-5 text-gray-600 dark:text-gray-300 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <svg id="moonIcon" class="w-5 h-5 text-gray-600 dark:text-gray-300 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+            </svg>
+          </button>
+
+          <!-- 使用者選單 -->
+          <div class="relative" id="userMenuContainer">
+            <button id="userMenuButton" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
+                <?= user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U' ?>
+              </div>
+              <span class="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <?= user.displayName || 'User' ?>
+              </span>
+              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+
+            <!-- 下拉選單 -->
+            <div id="userMenu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+              <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <p class="text-sm font-medium text-gray-900 dark:text-white"><?= user.displayName ?></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate"><?= user.email ?></p>
+              </div>
+              <a href="https://accounts.google.com/Logout" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                登出
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主要內容 -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- 工具列 -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <!-- 狀態篩選 -->
+          <select id="statusFilter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            <option value="">所有狀態</option>
+            <option value="in-progress">進行中</option>
+            <option value="completed">已完成</option>
+          </select>
+
+          <!-- 生成摘要報告按鈕 -->
+          <button onclick="generateSummaryPDF()" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-sm transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            匯出摘要 PDF
+          </button>
+        </div>
+
+        <!-- 新增任務按鈕 -->
+        <button onclick="openCreateTaskModal()" class="inline-flex items-center px-4 py-2 bg-primary hover:bg-blue-600 text-white font-semibold rounded-lg shadow-sm transition-all transform hover:scale-105">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          新增奉獻任務
+        </button>
+      </div>
+    </div>
+
+    <!-- 載入中 -->
+    <div id="loading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+      <p class="mt-4 text-gray-600 dark:text-gray-400">載入中...</p>
+    </div>
+
+    <!-- 任務列表 -->
+    <div id="tasksList" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- 任務卡片由 JavaScript 動態生成 -->
+    </div>
+
+    <!-- 無資料 -->
+    <div id="noData" class="hidden text-center py-12">
+      <svg class="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">沒有奉獻任務</h3>
+      <p class="mt-2 text-gray-500 dark:text-gray-400">點擊「新增奉獻任務」按鈕開始建立</p>
+    </div>
+  </main>
+
+  <!-- Toast 通知容器 -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+  <!-- 新增任務模態框 -->
+  <div id="createTaskModal" class="modal hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="modal-backdrop fixed inset-0 bg-black bg-opacity-50" onclick="closeModal('createTaskModal')"></div>
+    <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
+      <div class="modal-content pointer-events-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+        <!-- 標題列 -->
+        <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">新增奉獻任務</h3>
+          <button onclick="closeModal('createTaskModal')" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 表單內容 -->
+        <form id="createTaskForm" onsubmit="handleCreateTask(event)" class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              任務名稱 <span class="text-red-500">*</span>
+            </label>
+            <input type="text" id="taskName" required
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                   placeholder="例如：2025年1月奉獻">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              計算時間 <span class="text-red-500">*</span>
+            </label>
+            <input type="datetime-local" id="calculationTimestamp" required
+                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              會計 <span class="text-red-500">*</span>
+            </label>
+            <select id="treasurerUid" required
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+              <option value="">載入中...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              財務人員 <span class="text-red-500">*</span>
+            </label>
+            <select id="financeStaffUid" required
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+              <option value="">載入中...</option>
+            </select>
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="button" onclick="closeModal('createTaskModal')"
+                    class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+              取消
+            </button>
+            <button type="submit"
+                    class="flex-1 px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors">
+              建立任務
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <?!= include('scripts'); ?>
+
+  <script>
+    const currentUser = {
+      id: '<?= user.id ?>',
+      email: '<?= user.email ?>',
+      displayName: '<?= user.displayName ?>',
+      roles: '<?= user.roles ?>'.split(',')
+    };
+
+    let tasks = [];
+    let financeStaff = [];
+
+    // API 包裝函式
+    function callAPI(action, data = {}) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          .handleAPIRequest({ action, ...data });
+      });
+    }
+
+    // 載入任務列表
+    async function loadTasks() {
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('tasksList').classList.add('hidden');
+        document.getElementById('noData').classList.add('hidden');
+
+        const status = document.getElementById('statusFilter').value;
+        const response = await callAPI('getTitheTasks', { status });
+
+        if (response.success) {
+          tasks = response.data;
+          renderTasks(tasks);
+        } else {
+          throw new Error(response.error?.message || '載入失敗');
+        }
+      } catch (error) {
+        console.error('載入任務失敗:', error);
+        showToast('載入失敗: ' + error.message, 'error');
+      } finally {
+        document.getElementById('loading').classList.add('hidden');
+      }
+    }
+
+    // 渲染任務列表
+    function renderTasks(tasks) {
+      const container = document.getElementById('tasksList');
+      const noData = document.getElementById('noData');
+
+      if (tasks.length === 0) {
+        container.classList.add('hidden');
+        noData.classList.remove('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      noData.classList.add('hidden');
+
+      container.innerHTML = tasks.map(task => `
+        <div class="task-card bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+             onclick="goToTaskDetail('${task.id}')">
+          <div class="flex justify-between items-start mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${escapeHtml(task.taskName)}</h3>
+            <span class="px-2 py-1 text-xs font-semibold rounded ${task.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}">
+              ${task.status === 'completed' ? '已完成' : '進行中'}
+            </span>
+          </div>
+
+          <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <p><strong class="text-gray-700 dark:text-gray-300">會計：</strong> ${escapeHtml(task.treasurerName)}</p>
+            <p><strong class="text-gray-700 dark:text-gray-300">財務人員：</strong> ${escapeHtml(task.financeStaffName)}</p>
+            <p><strong class="text-gray-700 dark:text-gray-300">建立時間：</strong> ${formatDate(task.createdAt)}</p>
+
+            ${task.status === 'completed' ? `
+              <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                  <strong>總金額：</strong> NT$ ${task.totalAmount?.toLocaleString() || 0}
+                </p>
+                <p class="text-gray-700 dark:text-gray-300">
+                  <strong>總筆數：</strong> ${task.totalCount || 0}
+                </p>
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="mt-4 flex gap-2">
+            <button onclick="event.stopPropagation(); generateTaskPDF('${task.id}')"
+                    class="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+              下載 PDF
+            </button>
+            ${task.status === 'in-progress' ? `
+              <button onclick="event.stopPropagation(); deleteTask('${task.id}')"
+                      class="px-3 py-2 border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 text-sm font-medium rounded-lg transition-colors">
+                刪除
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 前往任務詳情頁面
+    function goToTaskDetail(taskId) {
+      window.location.href = `?page=titheDetail&taskId=${taskId}`;
+    }
+
+    // 開啟新增任務模態框
+    function openCreateTaskModal() {
+      openModal('createTaskModal');
+      loadFinanceStaff();
+
+      // 設定預設計算時間為現在
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('calculationTimestamp').value = now.toISOString().slice(0, 16);
+    }
+
+    // 載入財務人員列表
+    async function loadFinanceStaff() {
+      try {
+        const response = await callAPI('getFinanceStaff');
+
+        if (response.success) {
+          financeStaff = response.data;
+
+          const treasurerSelect = document.getElementById('treasurerUid');
+          const financeSelect = document.getElementById('financeStaffUid');
+
+          const options = financeStaff.map(staff =>
+            `<option value="${staff.id}">${escapeHtml(staff.displayName)} (${escapeHtml(staff.email)})</option>`
+          ).join('');
+
+          treasurerSelect.innerHTML = '<option value="">請選擇會計</option>' + options;
+          financeSelect.innerHTML = '<option value="">請選擇財務人員</option>' + options;
+        }
+      } catch (error) {
+        console.error('載入財務人員失敗:', error);
+        showToast('載入財務人員失敗', 'error');
+      }
+    }
+
+    // 處理建立任務
+    async function handleCreateTask(event) {
+      event.preventDefault();
+
+      const treasurerUid = document.getElementById('treasurerUid').value;
+      const financeStaffUid = document.getElementById('financeStaffUid').value;
+
+      const treasurer = financeStaff.find(s => s.id === treasurerUid);
+      const financeStaff_selected = financeStaff.find(s => s.id === financeStaffUid);
+
+      const data = {
+        taskName: document.getElementById('taskName').value,
+        calculationTimestamp: new Date(document.getElementById('calculationTimestamp').value).toISOString(),
+        treasurerUid: treasurerUid,
+        financeStaffUid: financeStaffUid
+      };
+
+      try {
+        const response = await callAPI('createTitheTask', data);
+
+        if (response.success) {
+          showToast('任務已建立！', 'success');
+          closeModal('createTaskModal');
+          event.target.reset();
+          loadTasks();
+        } else {
+          throw new Error(response.error?.message || '建立失敗');
+        }
+      } catch (error) {
+        console.error('建立任務失敗:', error);
+        showToast('建立失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 生成任務 PDF
+    async function generateTaskPDF(taskId) {
+      try {
+        showToast('正在生成 PDF，請稍候...', 'info');
+
+        const response = await callAPI('generateTithePDF', { titheTaskId: taskId });
+
+        if (response.success) {
+          showToast('PDF 已生成！', 'success');
+          window.open(response.data.downloadUrl, '_blank');
+        } else {
+          throw new Error(response.error?.message || '生成失敗');
+        }
+      } catch (error) {
+        console.error('生成 PDF 失敗:', error);
+        showToast('生成 PDF 失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 生成摘要 PDF
+    async function generateSummaryPDF() {
+      try {
+        const status = document.getElementById('statusFilter').value;
+
+        showToast('正在生成摘要報告，請稍候...', 'info');
+
+        const filters = {};
+        if (status) filters.status = status;
+
+        const response = await callAPI('generateTitheSummaryPDF', filters);
+
+        if (response.success) {
+          showToast('摘要報告已生成！', 'success');
+          window.open(response.data.downloadUrl, '_blank');
+        } else {
+          throw new Error(response.error?.message || '生成失敗');
+        }
+      } catch (error) {
+        console.error('生成摘要報告失敗:', error);
+        showToast('生成摘要報告失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 刪除任務
+    async function deleteTask(taskId) {
+      if (!confirm('確定要刪除此任務嗎？此操作無法復原。')) {
+        return;
+      }
+
+      try {
+        // 注意：這裡需要在 TitheAPI.gs 中實作 deleteTask API
+        showToast('刪除功能尚未實作', 'warning');
+        // TODO: 實作刪除 API 後取消註解
+        // const response = await callAPI('deleteTitheTask', { id: taskId });
+        // if (response.success) {
+        //   showToast('任務已刪除', 'success');
+        //   loadTasks();
+        // }
+      } catch (error) {
+        console.error('刪除任務失敗:', error);
+        showToast('刪除失敗: ' + error.message, 'error');
+      }
+    }
+
+    // 格式化日期
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // HTML 轉義
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTasks();
+
+      // 狀態篩選變更時重新載入
+      document.getElementById('statusFilter').addEventListener('change', loadTasks);
+
+      // 使用者選單
+      document.getElementById('userMenuButton').addEventListener('click', function(e) {
+        e.stopPropagation();
+        document.getElementById('userMenu').classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', function() {
+        document.getElementById('userMenu').classList.add('hidden');
+      });
+    });
+  </script>
+</body>
+</html>

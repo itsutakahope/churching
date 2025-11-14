@@ -24,9 +24,35 @@ function doGet(e) {
         .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     }
 
-    // 顯示主頁面
-    const template = HtmlService.createTemplateFromFile('Index');
+    // 路由處理 - 取得請求的頁面
+    const page = e.parameter.page || 'purchase';
+
+    // 檢查奉獻系統權限
+    if (page === 'tithe' || page === 'titheDetail') {
+      const hasPermission = userInfo.roles.includes(USER_ROLES.FINANCE_STAFF) ||
+                          userInfo.roles.includes(USER_ROLES.TREASURER) ||
+                          userInfo.roles.includes(USER_ROLES.ADMIN);
+
+      if (!hasPermission) {
+        return HtmlService.createHtmlOutput(
+          '<html><body style="font-family: sans-serif; padding: 2rem; text-align: center;">' +
+          '<h1>權限不足</h1>' +
+          '<p>您沒有權限存取奉獻計算系統</p>' +
+          '<p><a href="?page=purchase">返回採購板</a></p>' +
+          '</body></html>'
+        ).setTitle('權限不足');
+      }
+    }
+
+    // 取得對應的頁面模板
+    const pageName = getPageTemplate(page);
+    const template = HtmlService.createTemplateFromFile(pageName);
     template.user = userInfo;
+
+    // 如果是任務詳情頁面，傳遞 taskId
+    if (page === 'titheDetail' && e.parameter.taskId) {
+      template.taskId = e.parameter.taskId;
+    }
 
     return template.evaluate()
       .setTitle('教會管理系統')
@@ -248,6 +274,24 @@ function handleAPIRequest(request) {
   } catch (error) {
     logError('handleAPIRequest', error);
     return createErrorResponse(error);
+  }
+}
+
+/**
+ * 根據頁面參數取得對應的模板名稱
+ * @param {string} page - 頁面參數
+ * @returns {string} 模板名稱
+ */
+function getPageTemplate(page) {
+  switch (page) {
+    case 'purchase':
+      return 'Index';
+    case 'tithe':
+      return 'TitheTasks';
+    case 'titheDetail':
+      return 'TitheTaskDetail';
+    default:
+      return 'Index';
   }
 }
 
