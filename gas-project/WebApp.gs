@@ -146,6 +146,20 @@ function routeRequest(request, user) {
     'generateRequirementsSummaryPDF': generateRequirementsSummaryPDFAPI,
     'generateMultipleRequirementsPDF': generateMultipleRequirementsPDFAPI,
 
+    // 奉獻計算 API
+    'createTitheTask': createTitheTask,
+    'getTitheTasks': getTitheTasks,
+    'getTitheTask': getTitheTask,
+    'addDedication': addDedication,
+    'batchAddDedications': batchAddDedications,
+    'getDedications': getDedications,
+    'updateDedication': updateDedication,
+    'deleteDedication': deleteDedication,
+    'completeTitheTask': completeTitheTask,
+    'getTitheStatistics': getTitheStatistics,
+    'generateTithePDF': generateTithePDFAPI,
+    'generateTitheSummaryPDF': generateTitheSummaryPDFAPI,
+
     // 使用者 API
     'getUsers': getUsers,
     'getReimbursementContacts': getReimbursementContacts,
