@@ -1015,6 +1015,364 @@ app.get('/api/finance-staff', verifyFirebaseToken, verifyRole(['finance_staff', 
 
 
 // =================================================================
+// AI 辨識功能 API 端點
+// =================================================================
+
+// --- ▼▼▼ 核心修改開始：AI 辨識功能 ▼▼▼ ---
+
+/**
+ * 輔助函式：呼叫 OpenAI Vision API 辨識收據
+ */
+async function recognizeReceiptWithOpenAI(imageBase64, apiKey, model = 'gpt-4o') {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: '請辨識這張收據或發票，提取以下資訊並以 JSON 格式回傳：\n1. items: 商品名稱陣列（如有多項請分別列出）\n2. totalAmount: 總金額（數字）\n3. quantity: 總數量（數字，如果只有一項則為 1）\n4. date: 日期（YYYY-MM-DD 格式）\n5. suggestedCategory: 建議的會計類別（從以下類別中選擇最適合的：「行政費 > 文具印刷」、「行政費 > 郵電費 > 電話網路費」、「行政費 > 郵電費 > 郵資費&匯費」、「事工費」、「水電費」、「維修費」、「雜費」）\n\n請只回傳 JSON，不要有其他文字。'
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('No content in OpenAI response');
+    }
+
+    // 解析 JSON 回應
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in OpenAI response');
+    }
+
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    logger.error('Error calling OpenAI API:', error);
+    throw error;
+  }
+}
+
+/**
+ * 輔助函式：呼叫 Anthropic Claude Vision API 辨識收據
+ */
+async function recognizeReceiptWithAnthropic(imageBase64, apiKey, model = 'claude-3-5-sonnet-20241022') {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/jpeg',
+                  data: imageBase64
+                }
+              },
+              {
+                type: 'text',
+                text: '請辨識這張收據或發票，提取以下資訊並以 JSON 格式回傳：\n1. items: 商品名稱陣列（如有多項請分別列出）\n2. totalAmount: 總金額（數字）\n3. quantity: 總數量（數字，如果只有一項則為 1）\n4. date: 日期（YYYY-MM-DD 格式）\n5. suggestedCategory: 建議的會計類別（從以下類別中選擇最適合的：「行政費 > 文具印刷」、「行政費 > 郵電費 > 電話網路費」、「行政費 > 郵電費 > 郵資費&匯費」、「事工費」、「水電費」、「維修費」、「雜費」）\n\n請只回傳 JSON，不要有其他文字。'
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Anthropic API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const content = data.content[0]?.text;
+
+    if (!content) {
+      throw new Error('No content in Anthropic response');
+    }
+
+    // 解析 JSON 回應
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in Anthropic response');
+    }
+
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    logger.error('Error calling Anthropic API:', error);
+    throw error;
+  }
+}
+
+/**
+ * 輔助函式：呼叫 Google Gemini Vision API 辨識收據
+ */
+async function recognizeReceiptWithGoogle(imageBase64, apiKey, model = 'gemini-1.5-flash') {
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: '請辨識這張收據或發票，提取以下資訊並以 JSON 格式回傳：\n1. items: 商品名稱陣列（如有多項請分別列出）\n2. totalAmount: 總金額（數字）\n3. quantity: 總數量（數字，如果只有一項則為 1）\n4. date: 日期（YYYY-MM-DD 格式）\n5. suggestedCategory: 建議的會計類別（從以下類別中選擇最適合的：「行政費 > 文具印刷」、「行政費 > 郵電費 > 電話網路費」、「行政費 > 郵電費 > 郵資費&匯費」、「事工費」、「水電費」、「維修費」、「雜費」）\n\n請只回傳 JSON，不要有其他文字。'
+              },
+              {
+                inline_data: {
+                  mime_type: 'image/jpeg',
+                  data: imageBase64
+                }
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Google API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const content = data.candidates[0]?.content?.parts[0]?.text;
+
+    if (!content) {
+      throw new Error('No content in Google response');
+    }
+
+    // 解析 JSON 回應
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in Google response');
+    }
+
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    logger.error('Error calling Google API:', error);
+    throw error;
+  }
+}
+
+// GET /api/ai/settings - 取得 AI 設定（admin only）
+app.get('/api/ai/settings', verifyFirebaseToken, verifyRole(['admin']), async (req, res) => {
+  try {
+    const settingsDoc = await db.collection('aiSettings').doc('config').get();
+
+    if (!settingsDoc.exists) {
+      // 如果沒有設定，回傳預設值
+      return res.status(200).json({
+        provider: '',
+        model: '',
+        apiKeyConfigured: false
+      });
+    }
+
+    const settings = settingsDoc.data();
+
+    // 不回傳完整的 API Key，只回傳是否已設定
+    res.status(200).json({
+      provider: settings.provider || '',
+      model: settings.model || '',
+      apiKeyConfigured: !!settings.apiKey,
+      updatedAt: settings.updatedAt,
+      updatedBy: settings.updatedBy
+    });
+
+  } catch (error) {
+    logger.error('Error fetching AI settings:', error);
+    res.status(500).json({
+      message: '取得 AI 設定時發生錯誤',
+      code: 'AI_SETTINGS_FETCH_ERROR',
+      error: error.message
+    });
+  }
+});
+
+// PUT /api/ai/settings - 更新 AI 設定（admin only）
+app.put('/api/ai/settings', verifyFirebaseToken, verifyRole(['admin']), async (req, res) => {
+  try {
+    const { provider, apiKey, model } = req.body;
+
+    // 驗證必要欄位
+    if (!provider || !apiKey || !model) {
+      return res.status(400).json({
+        message: '請提供完整的 AI 設定（provider、apiKey、model）',
+        code: 'MISSING_AI_SETTINGS'
+      });
+    }
+
+    // 驗證 provider 是否有效
+    const validProviders = ['openai', 'anthropic', 'google'];
+    if (!validProviders.includes(provider)) {
+      return res.status(400).json({
+        message: '無效的 AI 提供商，請選擇 openai、anthropic 或 google',
+        code: 'INVALID_PROVIDER'
+      });
+    }
+
+    // 儲存設定到 Firestore
+    await db.collection('aiSettings').doc('config').set({
+      provider,
+      apiKey, // 在生產環境中應該加密儲存
+      model,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedBy: req.user.uid
+    });
+
+    logger.log(`AI settings updated by ${req.user.uid}: provider=${provider}, model=${model}`);
+
+    res.status(200).json({
+      message: 'AI 設定已成功更新',
+      provider,
+      model
+    });
+
+  } catch (error) {
+    logger.error('Error updating AI settings:', error);
+    res.status(500).json({
+      message: '更新 AI 設定時發生錯誤',
+      code: 'AI_SETTINGS_UPDATE_ERROR',
+      error: error.message
+    });
+  }
+});
+
+// POST /api/ai/recognize - 辨識收據圖片（需要認證）
+app.post('/api/ai/recognize', verifyFirebaseToken, async (req, res) => {
+  try {
+    const { imageBase64 } = req.body;
+
+    // 驗證必要欄位
+    if (!imageBase64) {
+      return res.status(400).json({
+        message: '請提供圖片資料（imageBase64）',
+        code: 'MISSING_IMAGE_DATA'
+      });
+    }
+
+    // 取得 AI 設定
+    const settingsDoc = await db.collection('aiSettings').doc('config').get();
+
+    if (!settingsDoc.exists) {
+      return res.status(400).json({
+        message: '尚未設定 AI 辨識功能，請聯絡管理員',
+        code: 'AI_NOT_CONFIGURED'
+      });
+    }
+
+    const settings = settingsDoc.data();
+    const { provider, apiKey, model } = settings;
+
+    if (!provider || !apiKey) {
+      return res.status(400).json({
+        message: 'AI 設定不完整，請聯絡管理員',
+        code: 'INCOMPLETE_AI_SETTINGS'
+      });
+    }
+
+    // 移除 base64 前綴（如果有）
+    const base64Data = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+
+    // 根據提供商呼叫對應的 API
+    let recognitionResult;
+
+    switch (provider) {
+      case 'openai':
+        recognitionResult = await recognizeReceiptWithOpenAI(base64Data, apiKey, model);
+        break;
+      case 'anthropic':
+        recognitionResult = await recognizeReceiptWithAnthropic(base64Data, apiKey, model);
+        break;
+      case 'google':
+        recognitionResult = await recognizeReceiptWithGoogle(base64Data, apiKey, model);
+        break;
+      default:
+        return res.status(400).json({
+          message: '不支援的 AI 提供商',
+          code: 'UNSUPPORTED_PROVIDER'
+        });
+    }
+
+    // 格式化回應
+    const formattedResult = {
+      title: recognitionResult.items?.join('、') || '',
+      description: `數量: ${recognitionResult.quantity || 1}`,
+      amount: recognitionResult.totalAmount || 0,
+      suggestedCategory: recognitionResult.suggestedCategory || '',
+      date: recognitionResult.date || new Date().toISOString().split('T')[0],
+      rawData: recognitionResult
+    };
+
+    logger.log(`Receipt recognized successfully for user ${req.user.uid} using ${provider}`);
+
+    res.status(200).json(formattedResult);
+
+  } catch (error) {
+    logger.error('Error recognizing receipt:', error);
+
+    // 根據錯誤類型提供友善的錯誤訊息
+    if (error.message.includes('API error')) {
+      return res.status(502).json({
+        message: 'AI 服務暫時無法使用，請稍後再試',
+        code: 'AI_SERVICE_ERROR',
+        error: error.message
+      });
+    }
+
+    res.status(500).json({
+      message: '辨識收據時發生錯誤',
+      code: 'RECOGNITION_ERROR',
+      error: error.message
+    });
+  }
+});
+
+// --- ▲▲▲ 核心修改結束：AI 辨識功能 ▲▲▲ ---
+
+
+// =================================================================
 // 只有在所有 API 路由都定義完畢後，才匯出 Express app
 // =================================================================
 

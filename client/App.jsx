@@ -1,15 +1,17 @@
 import React, { useState, Suspense } from 'react';
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import LoginModal from './LoginModal.jsx';
-import ProfileMenu from './ProfileMenu.jsx'; 
+import ProfileMenu from './ProfileMenu.jsx';
 import { useAuth } from './AuthContext.jsx';
 import { useTheme } from './ThemeContext.jsx';
-import { LogIn, LayoutDashboard, HandCoins } from 'lucide-react';
+import { LogIn, LayoutDashboard, HandCoins, Scan, Settings } from 'lucide-react';
 import './App.css';
 
 const PurchaseRequestBoard = React.lazy(() => import('./PurchaseRequestBoard.jsx'));
 const TithingTaskList = React.lazy(() => import('./TithingTaskList.jsx'));
 const TithingTaskDetail = React.lazy(() => import('./TithingTaskDetail.jsx'));
+const AIRecognitionPage = React.lazy(() => import('./AIRecognitionPage.jsx'));
+const AISettingsPage = React.lazy(() => import('./AISettingsPage.jsx'));
 
 const LoadingFallback = () => (
   <div className="text-center py-20">
@@ -35,8 +37,11 @@ const NavLink = ({ to, children }) => {
 };
 
 function App() {
-  const { currentUser } = useAuth();
+  const { currentUser, userRoles } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // 檢查是否為 admin
+  const isAdmin = userRoles.includes('admin');
 
   return (
     <div className="bg-cloud-white dark:bg-dark-background min-h-screen p-1 sm:p-6 transition-theme">
@@ -70,7 +75,7 @@ function App() {
         {/* 不再需要 <UserProfile /> 元件 */}
 
         {currentUser && (
-          <nav className="bg-white dark:bg-dark-surface shadow-md rounded-lg p-2 mb-3 flex items-center gap-2 transition-theme">
+          <nav className="bg-white dark:bg-dark-surface shadow-md rounded-lg p-2 mb-3 flex flex-wrap items-center gap-2 transition-theme">
             <NavLink to="/purchase">
               <LayoutDashboard size={18} />
               採購看板
@@ -79,6 +84,16 @@ function App() {
               <HandCoins size={18} />
               奉獻計算
             </NavLink>
+            <NavLink to="/ai-recognition">
+              <Scan size={18} />
+              AI 辨識
+            </NavLink>
+            {isAdmin && (
+              <NavLink to="/ai-settings">
+                <Settings size={18} />
+                AI 設定
+              </NavLink>
+            )}
           </nav>
         )}
 
@@ -89,6 +104,8 @@ function App() {
               <Route path="/purchase" element={<PurchaseRequestBoard />} />
               <Route path="/tithing" element={<TithingTaskList />} />
               <Route path="/tithing/:taskId" element={<TithingTaskDetail />} />
+              <Route path="/ai-recognition" element={<AIRecognitionPage />} />
+              <Route path="/ai-settings" element={<AISettingsPage />} />
               <Route path="/" element={<Navigate to="/purchase" replace />} />
             </Routes>
           </Suspense>
