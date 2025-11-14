@@ -1,112 +1,504 @@
-# Purchase Board Application
+# Churching - 教會管理系統
 
-This project is a Purchase Request Board application built with React (using Vite) for the client-side and a Node.js (Express) server for serving the application.
+> 一個功能完整的教會管理應用，包含採購申請管理和奉獻計算系統
 
-## Project Structure
+## 📋 專案概述
 
--   `/client`: Contains the React application source code (components, main entry point, styles).
-    -   `client/index.css`: Main stylesheet, includes Tailwind CSS directives.
--   `/server`: Contains the Node.js (Express) server code (`server.js`).
--   `/dist/client`: Default output directory for the React application build (generated after running the build script).
--   `index.html`: Main HTML entry point for the React application (located in project root).
--   `tailwind.config.js`: Configuration file for Tailwind CSS.
--   `postcss.config.js`: Configuration file for PostCSS (integrates Tailwind with Vite).
--   `vite.config.js`: Configuration file for Vite.
--   `package.json`: Project metadata, dependencies, and scripts.
--   `README.md`: This file.
+本專案是為教會設計的全功能管理系統，整合了採購申請管理和奉獻計算兩大核心功能模組。採用現代化的技術棧，提供直觀的使用者介面和完善的權限控制。
 
-## Styling
+### 主要功能
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for utility-first styling.
--   Configuration: `tailwind.config.js`, `postcss.config.js`.
--   Main CSS file with Tailwind directives: `client/index.css` (imported into `client/main.jsx`).
--   Utility classes are applied directly within the `.jsx` components.
+#### 🛒 採購申請管理系統
+- 📝 採購申請的建立、編輯、刪除
+- 👀 申請列表的網格/列表視圖切換
+- 🔍 搜尋和篩選功能
+- 💬 留言系統（支援對申請的評論）
+- 📊 會計科目管理（多層級結構）
+- 💰 轉帳和退款管理
+- 📄 購買憑證 PDF 生成（含簽名區域）
+- 📧 Email 通知（新申請、採購完成）
 
-## Prerequisites
+#### 💝 奉獻/獻金計算系統
+- 📋 奉獻任務的建立和管理
+- 👥 財務同工分配
+- 💵 現金與支票分離計算
+- 📊 奉獻分類管理和統計匯總
+- 📝 奉獻記錄的錄入和列表
+- 📄 奉獻報告 PDF 生成
+- ✅ 結果一致性驗證
 
--   Node.js (version 18.0.0 or higher recommended, as per `package.json` engines)
--   npm (usually comes with Node.js)
+#### 🔐 使用者系統
+- 🔑 Firebase Authentication 整合
+- 👤 使用者資料管理
+- 🎨 深色/淺色模式切換
+- 🛡️ 角色基礎的訪問控制（RBAC）
+  - **admin**: 管理員（完整權限）
+  - **finance_staff**: 財務同工
+  - **treasurer**: 財務主管
 
-## Setup
+## 🛠️ 技術棧
 
-1.  **Clone the repository (if applicable)**
-    ```bash
-    # git clone <repository-url>
-    # cd <project-directory>
-    ```
+### 前端
+- **框架**: React 18.3.1
+- **構建工具**: Vite 6.0.0
+- **路由**: React Router DOM 7.6.2
+- **樣式系統**: Tailwind CSS 3.4.3 + PostCSS
+- **HTTP 客戶端**: Axios 1.7.2
+- **UI 組件**: Lucide React（圖標）
+- **PDF 生成**: jsPDF + jsPDF-AutoTable
 
-2.  **Install dependencies:**
-    This will install both client-side and server-side dependencies listed in `package.json`.
-    ```bash
-    npm install
-    ```
+### 後端
+- **平台**: Firebase Cloud Functions (Node.js 22)
+- **框架**: Express.js 4.19.2
+- **資料庫**: Firebase Firestore
+- **認證**: Firebase Auth
+- **Email**: Gmail API（OAuth2）
 
-## Available Scripts
+### 測試
+- **測試框架**: Vitest 3.2.4
+- **React 測試**: @testing-library/react 16.3.0
+- **DOM 模擬**: jsdom 26.1.0
+- **覆蓋率**: 38 個測試文件
 
-### Development
+### 開發工具
+- Firebase Tools 13.11.2
+- ESBuild 0.25.6
+- npm-run-all 4.1.5
 
-To run both the React development server (with hot reloading for the client) and the Node.js server (with `nodemon` for automatic restarts) concurrently:
+## 📁 專案結構
+
+```
+churching/
+├── client/                          # React 前端應用
+│   ├── *.jsx                        # React 組件（17個）
+│   ├── *.js                         # 工具函數和配置
+│   ├── acount_catagory.json        # 會計科目配置
+│   ├── firebaseConfig.js            # Firebase 配置
+│   ├── main.jsx                     # 應用入口點
+│   ├── index.css                    # 全域樣式
+│   └── test/                        # 前端測試文件（37個）
+│
+├── functions/                       # Firebase Cloud Functions（後端）
+│   ├── index.js                     # API 端點定義（1171行）
+│   ├── package.json                 # 函數依賴
+│   ├── vitest.config.js             # 測試配置
+│   └── test/                        # 後端測試
+│
+├── bqgracechurchmainpage/          # 教會主頁靜態資源
+│   ├── cashmanager/
+│   ├── policy/
+│   └── ...
+│
+├── public/                          # 公開資源
+│   ├── bqlogo.png
+│   ├── logo.png
+│   └── fonts/
+│
+├── dist/                            # 構建輸出目錄
+│
+├── 配置文件
+│   ├── package.json                 # 專案配置和腳本
+│   ├── vite.config.js               # Vite 構建配置
+│   ├── vitest.config.js             # 測試配置
+│   ├── tailwind.config.js           # Tailwind CSS 配置
+│   ├── postcss.config.js            # PostCSS 配置
+│   ├── firebase.json                # Firebase 部署配置
+│   ├── .firebaserc                  # Firebase 專案配置
+│   ├── firestore.rules              # Firestore 安全規則
+│   ├── firestore.indexes.json       # Firestore 索引
+│   └── index.html                   # HTML 入口
+│
+└── README.md                        # 本文件
+```
+
+### 主要組件
+
+#### 採購系統組件
+- `PurchaseRequestBoard.jsx` - 採購申請看板（181KB）
+- `EditRequestModal.jsx` - 編輯採購申請模態框
+- `TransferReimbursementModal.jsx` - 轉帳/退款管理
+- `EditCategoryModal.jsx` - 會計科目編輯器
+- `CategorySelector.jsx` - 會計科目選擇器
+- `pdfGenerator.js` - PDF 憑證生成器
+
+#### 奉獻系統組件
+- `TithingTaskList.jsx` - 奉獻任務列表
+- `TithingTaskDetail.jsx` - 奉獻任務詳情
+- `DedicationEntryForm.jsx` - 奉獻錄入表單
+- `LoggedDedicationsList.jsx` - 奉獻記錄列表
+- `AggregationSummary.jsx` - 統計匯總
+- `PaymentBreakdownDisplay.jsx` - 支付分解顯示
+- `tithingPdfGenerator.js` - 奉獻報告 PDF
+- `paymentCalculationUtils.js` - 支付計算工具（核心）
+
+#### 共用組件
+- `App.jsx` - 主應用程序
+- `AuthContext.jsx` - 認證上下文
+- `ThemeContext.jsx` - 主題上下文
+- `LoginModal.jsx` - 登入模態框
+- `ProfileMenu.jsx` - 使用者資料選單
+- `ToastNotification.jsx` - 提示通知系統
+
+## 🚀 開始使用
+
+### 系統需求
+
+- Node.js 22.x 或更高版本
+- npm 或 yarn
+- Firebase CLI（用於部署）
+
+### 安裝步驟
+
+1. **複製專案**
+   ```bash
+   git clone <repository-url>
+   cd churching
+   ```
+
+2. **安裝依賴**
+   ```bash
+   npm install
+   cd functions
+   npm install
+   cd ..
+   ```
+
+3. **環境變數設定**
+
+   在專案根目錄建立 `.env.local` 文件：
+   ```env
+   # Firebase 配置
+   VITE_API_KEY=your_firebase_api_key
+   VITE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_PROJECT_ID=your_project_id
+   VITE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   VITE_APP_ID=your_app_id
+
+   # Gmail API（用於 Email 通知）
+   GMAIL_CLIENT_ID=your_gmail_client_id
+   GMAIL_CLIENT_SECRET=your_gmail_client_secret
+   GMAIL_REFRESH_TOKEN=your_gmail_refresh_token
+   GMAIL_SENDER=your_email@gmail.com
+   ```
+
+4. **Firebase 專案設定**
+
+   確認 `.firebaserc` 中的專案 ID：
+   ```json
+   {
+     "projects": {
+       "default": "your-project-id"
+     }
+   }
+   ```
+
+## 💻 開發
+
+### 開發模式
+
+啟動開發伺服器（同時啟動前端和 Firebase Functions 模擬器）：
 
 ```bash
 npm run dev
 ```
 
-This command starts two servers:
+這會啟動：
+- **Vite 開發伺服器**: `http://localhost:5173`（前端）
+- **Firebase Functions 模擬器**: `http://127.0.0.1:5007`（後端 API）
 
-1.  **React (Vite) Development Server:**
-    *   Typically runs on `http://localhost:5173` (or the next available port).
-    *   **This is the URL you should use in your browser to see the application and benefit from hot reloading during development.**
+### 分別啟動
 
-2.  **Node.js (Express) Server:**
-    *   Typically runs on `http://localhost:3001` (or the port specified by `PORT` if set).
-    *   This server is responsible for serving the application in production *after* it has been built.
-    *   During development (`npm run dev`), if you access `http://localhost:3001/` directly, you might see an error (like "Cannot GET /" or a file not found error for `index.html`). This is because the `dist/client` directory (which this server serves from) is not created until you run `npm run build`.
-    *   If your React application needs to make API calls to the Node.js backend (e.g., to `/api/health`), Vite is configured to proxy these requests from `http://localhost:5173` to `http://localhost:3001` (this proxy is currently a placeholder in `vite.config.js` and would need to be fully configured if API routes are added).
+僅啟動前端：
+```bash
+npm run dev:client
+```
 
-You can also run the client and server development processes separately:
--   **Client (React Vite dev server only):**
-    ```bash
-    npm run dev:client
-    ```
-    Access at `http://localhost:5173`.
+僅啟動 Functions 模擬器：
+```bash
+npm run emulate:functions
+```
 
--   **Server (Node.js with nodemon only):**
-    ```bash
-    npm run dev:server
-    ```
-    Runs on `http://localhost:3001`.
+### 可用腳本
 
-### Building for Production
+| 指令 | 說明 |
+|------|------|
+| `npm run dev` | 啟動開發環境（前端 + 後端） |
+| `npm run dev:client` | 僅啟動前端開發伺服器 |
+| `npm run emulate:functions` | 僅啟動 Firebase 模擬器 |
+| `npm run build` | 構建生產版本 |
+| `npm run test` | 執行測試（單次） |
+| `npm run test:watch` | 執行測試（監視模式） |
+| `npm run test:ui` | 開啟測試 UI 儀表板 |
+| `npm run deploy:hosting` | 構建並部署到 Firebase |
 
-To build the React application for production:
+## 🧪 測試
+
+本專案包含全面的測試覆蓋：
+
+- **37個前端測試文件** (`client/test/`)
+- **API 測試** (`functions/test/`)
+
+### 執行測試
+
+```bash
+# 單次執行所有測試
+npm run test
+
+# 監視模式（檔案變更時自動執行）
+npm run test:watch
+
+# 開啟視覺化測試介面
+npm run test:ui
+```
+
+### 測試覆蓋範圍
+
+- ✅ React 組件功能測試
+- ✅ API 端點集成測試
+- ✅ 支付計算邏輯驗證
+- ✅ 深色模式和可訪問性測試
+- ✅ 響應式設計驗證
+- ✅ 實時數據同步測試
+
+## 📦 構建與部署
+
+### 構建應用
 
 ```bash
 npm run build
 ```
-This will create a `dist/client` directory with the optimized static assets.
 
-### Running in Production Mode
+構建產物會輸出到 `dist/client/` 目錄。
 
-After building the client application, to start the Node.js server to serve the built files:
+### 部署到 Firebase
+
+本專案配置了 3 個 Firebase Hosting 目標：
+
+1. **bqgracechurch** - 教會主頁（靜態資源）
+2. **bqpurchase** - 採購看板應用
+3. **bqgracechurching** - 奉獻系統
 
 ```bash
-npm start
+# 構建並部署 Hosting
+npm run deploy:hosting
+
+# 部署所有服務（Functions + Hosting + Firestore Rules）
+firebase deploy
+
+# 僅部署 Cloud Functions
+firebase deploy --only functions
+
+# 僅部署 Firestore 規則
+firebase deploy --only firestore:rules
 ```
-The server will serve the application from `http://localhost:3001` (or the port specified by the `PORT` environment variable).
 
-## Deployment
+### Firebase Emulator 配置
 
-To deploy this application:
+開發時可使用 Firebase Emulator Suite：
 
-1.  Ensure your Node.js environment on the server has the required Node version.
-2.  Push your code to the server.
-3.  Install dependencies: `npm install --production` (or `npm install` if devDependencies are needed for the build step on the server).
-4.  Build the React client: `npm run build`.
-5.  Start the server: `npm start`.
+```bash
+firebase emulators:start
+```
 
-You might need to configure a process manager (like PM2 or systemd) to keep the Node.js server running reliably in a production environment. You may also need to configure your server (e.g., Nginx, Apache) to proxy requests to the Node.js application, handle SSL, etc., depending on your setup.
+預設端口：
+- **Auth**: 9099
+- **Functions**: 5001
+- **Firestore**: 8080
+- **Hosting**: 5002
+- **Emulator UI**: 4000
 
-## API Endpoints
+## 🔒 安全與權限
 
--   `GET /api/health`: Returns a JSON object indicating the server's health status.
-    Example: `{ "status": "UP", "message": "Server is healthy" }`
+### Firestore 安全規則
+
+專案使用嚴格的安全規則（`firestore.rules`）：
+
+#### Users 集合
+- **讀取**: 使用者本人或管理員
+- **建立**: 僅管理員
+- **更新**: 使用者可更新自己的資訊
+- **刪除**: 僅管理員
+
+#### Requirements 集合（採購申請）
+- **讀取**: 所有認證使用者
+- **建立**: 所有認證使用者
+- **更新/刪除**: 建立者或管理員
+
+#### Tithe 集合（奉獻任務）
+- **讀取**: 財務人員、treasurer 或管理員
+- **建立**: 管理員
+- **更新**: 分配的負責人或管理員
+- **刪除**: 僅管理員
+
+**Dedications 子集合**（奉獻記錄）
+- 繼承父任務的權限規則
+
+### 使用者角色
+
+| 角色 | 權限 |
+|------|------|
+| `admin` | 完整系統權限 |
+| `finance_staff` | 查看和管理奉獻任務 |
+| `treasurer` | 財務主管權限 |
+| 一般使用者 | 建立和查看採購申請 |
+
+## 📡 API 端點
+
+### 健康檢查
+- `GET /api/health` - 伺服器狀態檢查
+
+### 使用者管理
+- `GET /api/users` - 取得所有使用者
+- `GET /api/users/reimbursement-contacts` - 取得退款聯絡人列表
+- `PUT /api/user/preferences` - 更新使用者偏好設定
+
+### 採購申請
+- `POST /api/requirements` - 建立新申請
+- `GET /api/requirements` - 取得所有申請
+- `PUT /api/requirements/:id` - 更新申請
+- `PUT /api/requirements/:id/transfer` - 執行轉帳操作
+- `DELETE /api/requirements/:id` - 刪除申請
+
+### 留言系統
+- `POST /api/requirements/:reqId/comments` - 新增評論
+- `DELETE /api/requirements/:reqId/comments/:commentId` - 刪除評論
+
+### 奉獻任務管理
+- `GET /api/tithe-tasks` - 取得任務列表
+- `POST /api/tithe-tasks` - 建立新任務
+- `GET /api/finance-staff` - 取得財務同工列表
+
+### Callable Functions
+- `getUserDisplayNameCallable` - 取得使用者顯示名稱
+- `createuserprofile` - 自動建立使用者資料（觸發器）
+- `completeTithingTask` - 完成奉獻任務
+
+## 🎨 主題系統
+
+本專案支援深色/淺色模式切換：
+
+### 品牌色彩
+
+#### 淺色模式
+- **主色**: 榮耀紅 `#A91D22`
+- **輔助色**: 聖光金 `#E4B869`
+- **中性色**: 石墨黑系列（9 級灰度）
+
+#### 深色模式
+- **主色**: 熾熱之紅 `#E5484D`
+- **輔助色**: 榮光金 `#FFD479`
+- **背景色**: 月光白 `#EAEAEA`
+
+### 語意化顏色
+- `success`: 成功狀態
+- `danger`: 錯誤/危險狀態
+- `warning`: 警告狀態
+- `info`: 資訊狀態
+
+配置詳見 `tailwind.config.js`。
+
+## 📚 會計科目系統
+
+會計科目使用多層級結構（`client/acount_catagory.json`）：
+
+```
+2.3 行政費
+  ├── 2.3.1 文具印刷
+  ├── 2.3.2 交通費
+  ├── 2.3.3 郵電費
+  ├── 2.3.4 修繕費
+  └── 2.3.5 水電費
+
+2.4 事工
+  ├── 2.4.1 愛宴
+  ├── 2.4.2 主日
+  ├── 2.4.3 英語
+  ├── 2.4.4 教育
+  └── ...
+
+2.5 其他
+```
+
+## 🔧 配置檔案說明
+
+### `vite.config.js`
+- React 插件配置
+- API 代理設定（開發時）
+- 構建輸出路徑
+- 塊大小警告限制
+
+### `tailwind.config.js`
+- 自定義色彩系統
+- 深色模式配置
+- 主題切換動畫
+- 字體設定
+
+### `firebase.json`
+- 三個 Hosting 目標配置
+- Emulator 端口設定
+- 部署規則
+
+### `firestore.rules`
+- 資料庫安全規則
+- 角色基礎訪問控制
+- 欄位級別驗證
+
+## 📊 專案統計
+
+- **總代碼行數**: ~19,208 行
+- **React 組件**: 17 個
+- **測試文件**: 38 個
+- **API 端點**: 15+ 個
+- **專案大小**: 15MB
+
+## 🤝 開發指南
+
+### 程式碼風格
+
+- 使用 ES6+ 語法
+- 組件採用函數式組件 + Hooks
+- 使用 Tailwind CSS 工具類進行樣式設定
+- 遵循 React 最佳實踐
+
+### 提交規範
+
+建議使用語義化的提交訊息：
+
+```
+feat: 新增奉獻任務自動分配功能
+fix: 修正採購申請的日期格式問題
+docs: 更新 README 部署說明
+style: 調整深色模式下的按鈕顏色
+refactor: 重構支付計算邏輯
+test: 新增 API 端點集成測試
+```
+
+## 🐛 常見問題
+
+### Q: 開發時 API 請求失敗？
+**A**: 確認 Firebase Emulator 已啟動，並檢查 `vite.config.js` 中的代理設定。
+
+### Q: 無法登入？
+**A**: 確認 Firebase Auth 已啟用，且 `.env.local` 中的 Firebase 配置正確。
+
+### Q: 部署後 404 錯誤？
+**A**: 檢查 `firebase.json` 中的 rewrites 規則，確保 SPA 路由正確配置。
+
+### Q: PDF 生成失敗？
+**A**: 確認 jsPDF 和 jspdf-autotable 已正確安裝，並檢查瀏覽器控制台錯誤訊息。
+
+## 📄 授權
+
+本專案為教會內部使用，未開源。
+
+## 📞 支援
+
+如有問題或需要協助，請聯絡開發團隊。
+
+---
+
+**最後更新**: 2025-11-05
+**Node.js 版本**: 22
+**React 版本**: 18.3.1
+**Firebase 版本**: 11.10.0
