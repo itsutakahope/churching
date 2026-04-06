@@ -150,16 +150,6 @@ const TithingTaskDetail = () => {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            {!isTaskCompleted && (
-              <button
-                onClick={handleCompleteTask}
-                disabled={isCompleting}
-                className="bg-success-600 dark:bg-success-dark hover:bg-success-700 dark:hover:bg-success-dark/90 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-gray-600"
-              >
-                <CheckCircle size={20} />
-                {isCompleting ? '計算中...' : '完成本次計算'}
-              </button>
-            )}
             {isTaskCompleted && (
               <button
                 onClick={handleExportPdf}
@@ -189,6 +179,20 @@ const TithingTaskDetail = () => {
         <h3 className="text-xl font-bold text-text-main dark:text-dark-text-main mb-4 transition-theme">已登錄的奉獻</h3>
         <LoggedDedicationsList taskId={taskId} />
       </div>
+
+      {/* 將完成計算按鈕移至頁面最下方，優化行動裝置操作動線 */}
+      {!isTaskCompleted && (
+        <div className="flex justify-center mt-8 pb-8 px-4 sm:px-0">
+          <button
+            onClick={handleCompleteTask}
+            disabled={isCompleting}
+            className="w-full sm:w-auto md:w-1/3 bg-success-600 dark:bg-success-dark hover:bg-success-700 dark:hover:bg-success-dark/90 text-white font-bold py-4 px-8 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-theme disabled:bg-graphite-400 dark:disabled:bg-gray-600 text-lg"
+          >
+            <CheckCircle size={24} />
+            {isCompleting ? '結算處理中...' : '完成本次計算'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
