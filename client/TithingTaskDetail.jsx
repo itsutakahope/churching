@@ -188,7 +188,7 @@ const TithingTaskDetail = () => {
 
       <div className="bg-surface dark:bg-dark-surface shadow-md rounded-lg p-6 transition-theme">
         <h3 className="text-xl font-bold text-text-main dark:text-dark-text-main mb-4 transition-theme">已登錄的奉獻</h3>
-        <LoggedDedicationsList taskId={taskId} />
+        <LoggedDedicationsList taskId={taskId} isTaskCompleted={isTaskCompleted} />
       </div>
 
       {/* 將完成計算按鈕移至頁面最下方，優化行動裝置操作動線 */}
