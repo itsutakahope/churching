@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
+import ToastNotification from './ToastNotification';
 
 const DEDICATION_CATEGORIES = [
   "十一", "感恩", "主日", "宣教", "特別", 
@@ -14,6 +15,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
   const [method, setMethod] = useState('cash');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [toastState, setToastState] = useState({ isVisible: false, message: '', type: 'success' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,18 +34,41 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
       method,
     };
 
-    await onAddDedication(newDedication);
+    try {
+      await onAddDedication(newDedication);
 
-    // Reset form for next entry
-    setDedicatorId('');
-    setAmount('');
-    setDedicationCategory(DEDICATION_CATEGORIES[0]);
-    setMethod('cash');
-    setIsSubmitting(false);
+      // 顯示成功通知，帶有具體資料增加使用者的確認感
+      setToastState({
+        isVisible: true,
+        message: `已成功新增：${dedicatorId} 的 ${dedicationCategory}奉獻 $${Number(amount).toLocaleString()} 元`,
+        type: 'success'
+      });
+
+      // Reset form for next entry
+      setDedicatorId('');
+      setAmount('');
+      setDedicationCategory(DEDICATION_CATEGORIES[0]);
+      setMethod('cash');
+    } catch (err) {
+      setToastState({
+        isVisible: true,
+        message: '新增記錄失敗，請檢查網路或稍後再試。',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      <ToastNotification 
+        isVisible={toastState.isVisible}
+        message={toastState.message}
+        type={toastState.type}
+        onClose={() => setToastState(prev => ({ ...prev, isVisible: false }))}
+      />
+      <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Dedication Date */}
         <div className="flex flex-col">
@@ -128,6 +153,7 @@ const DedicationEntryForm = ({ taskId, onAddDedication }) => {
         {isSubmitting ? '新增中...' : '新增此筆'}
       </button>
     </form>
+    </>
   );
 };
 
