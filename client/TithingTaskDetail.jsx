@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, onSnapshot, collection, addDoc, serverTimestamp, getDocs, query } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -20,6 +20,24 @@ const TithingTaskDetail = () => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [dedications, setDedications] = useState([]);
+
+  // 動態計算即時摘要 (當任務尚未完成時)
+  const liveSummary = useMemo(() => {
+    // 只有在資料載入完成且有奉獻記錄時才計算
+    if (!dedications || dedications.length === 0) return null;
+
+    let totalAmount = 0;
+    const byCategory = {};
+
+    dedications.forEach(d => {
+      const amt = Number(d.amount) || 0;
+      totalAmount += amt;
+      const cat = d.dedicationCategory || '未分類';
+      byCategory[cat] = (byCategory[cat] || 0) + amt;
+    });
+
+    return { totalAmount, byCategory };
+  }, [dedications]);
 
   useEffect(() => {
     setLoading(true);
@@ -190,6 +208,12 @@ const TithingTaskDetail = () => {
         <h3 className="text-xl font-bold text-text-main dark:text-dark-text-main mb-4 transition-theme">已登錄的奉獻</h3>
         <LoggedDedicationsList taskId={taskId} isTaskCompleted={isTaskCompleted} />
       </div>
+
+      {!isTaskCompleted && liveSummary && (
+        <div className="mt-8 mb-6">
+          <AggregationSummary summary={liveSummary} dedications={dedications} isLivePreview={true} />
+        </div>
+      )}
 
       {/* 將完成計算按鈕移至頁面最下方，優化行動裝置操作動線 */}
       {!isTaskCompleted && (
