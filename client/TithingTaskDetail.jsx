@@ -101,6 +101,17 @@ const TithingTaskDetail = () => {
       const dedicationsCollectionRef = collection(firestore, 'tithe', taskId, 'dedications');
       const dedicationsSnapshot = await getDocs(dedicationsCollectionRef);
       const dedications = dedicationsSnapshot.docs.map(doc => doc.data());
+      
+      // 在匯出前進行排序：先依「奉獻科目」，再依「奉獻者代號」
+      dedications.sort((a, b) => {
+        // 使用 localeCompare 來確保中文字串的排序正確性
+        const catCompare = (a.dedicationCategory || '').localeCompare(b.dedicationCategory || '', 'zh-TW');
+        if (catCompare !== 0) return catCompare;
+        
+        // 若科目相同，則比較奉獻者代號
+        return (a.dedicatorId || '').localeCompare(b.dedicatorId || '', 'zh-TW');
+      });
+
       await generateTithingReport(task, dedications); // Corrected function call
     } catch (err) {
       console.error("Error exporting PDF:", err);
