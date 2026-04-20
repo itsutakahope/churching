@@ -40,10 +40,10 @@ service cloud.firestore {
 
    // Tithing Subsystem Rules
     match /tithe/{taskId} {
-      
+
       // READ: Allow access if the user has the required role (finance staff, treasurer, or admin).
       // This allows team members to view tasks they are not directly assigned to.
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      getUserData(request.auth.uid).roles.hasAny(['finance_staff', 'treasurer', 'admin']);
 
       // WRITE: Keep this permission strict. Only the assigned treasurer, finance staff, or an admin can modify the task.
@@ -57,10 +57,10 @@ service cloud.firestore {
       // Rules for the 'dedications' subcollection
       match /dedications/{dedicationId} {
         // Inherit the same logic: read access is role-based, write access is participant-based.
-        
-        allow read: if request.auth != null && 
+
+        allow read: if request.auth != null &&
                        getUserData(request.auth.uid).roles.hasAny(['finance_staff', 'treasurer', 'admin']);
-        
+
         allow write: if request.auth != null && (
                           get(/databases/$(database)/documents/tithe/$(taskId)).data.treasurerUid == request.auth.uid ||
                           get(/databases/$(database)/documents/tithe/$(taskId)).data.financeStaffUid == request.auth.uid ||
@@ -68,5 +68,13 @@ service cloud.firestore {
                         );
       }
     }
+
+    // --- ▼▼▼ 核心修改開始：AI 設定規則 ▼▼▼ ---
+    // AI Settings Rules
+    match /aiSettings/{configId} {
+      // Only admins can read and write AI settings
+      allow read, write: if request.auth != null && hasRole('admin');
+    }
+    // --- ▲▲▲ 核心修改結束：AI 設定規則 ▲▲▲ ---
   }
 }
