@@ -1,15 +1,16 @@
 import React, { useState, Suspense } from 'react';
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import LoginModal from './LoginModal.jsx';
-import ProfileMenu from './ProfileMenu.jsx'; 
+import LoginModal from './loginmodal.jsx';
+import ProfileMenu from './ProfileMenu.jsx';
 import { useAuth } from './AuthContext.jsx';
 import { useTheme } from './ThemeContext.jsx';
-import { LogIn, LayoutDashboard, HandCoins } from 'lucide-react';
+import { LogIn, LayoutDashboard, HandCoins, Settings } from 'lucide-react';
 import './App.css';
 
 const PurchaseRequestBoard = React.lazy(() => import('./PurchaseRequestBoard.jsx'));
 const TithingTaskList = React.lazy(() => import('./TithingTaskList.jsx'));
 const TithingTaskDetail = React.lazy(() => import('./TithingTaskDetail.jsx'));
+const AdminSettings = React.lazy(() => import('./AdminSettings.jsx'));
 
 const LoadingFallback = () => (
   <div className="text-center py-20">
@@ -35,7 +36,7 @@ const NavLink = ({ to, children }) => {
 };
 
 function App() {
-  const { currentUser } = useAuth();
+  const { currentUser, userRoles } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   return (
@@ -79,6 +80,12 @@ function App() {
               <HandCoins size={18} />
               奉獻計算
             </NavLink>
+            {userRoles.includes('admin') && (
+              <NavLink to="/settings">
+                <Settings size={18} />
+                系統管理
+              </NavLink>
+            )}
           </nav>
         )}
 
@@ -89,6 +96,7 @@ function App() {
               <Route path="/purchase" element={<PurchaseRequestBoard />} />
               <Route path="/tithing" element={<TithingTaskList />} />
               <Route path="/tithing/:taskId" element={<TithingTaskDetail />} />
+              <Route path="/settings" element={<AdminSettings />} />
               <Route path="/" element={<Navigate to="/purchase" replace />} />
             </Routes>
           </Suspense>
